@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python:*)",
+      "WebSearch",
+      "Bash(del appserviceagentsanalysis_tools.py)",
+      "Bash(dir:*)",
+      "Bash(findstr:*)",
+      "Bash(cmd /c:*)",
+      "WebFetch(domain:langchain-ai.github.io)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

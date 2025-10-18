@@ -1,0 +1,232 @@
+// Legal Metadata Database Schema - DBML Format
+// dbdiagram.io에서 시각화 가능
+// Created: 2025-10-18
+// Updated: FAISS 마이그레이션 준비
+
+Project legal_metadata_db {
+  database_type: 'SQLite'
+  Note: '''
+    # 법률 메타데이터 DB
+    - FAISS 벡터 DB와 연동
+    - 빠른 메타데이터 쿼리 및 필터링
+    - 총 28개 법령, 1,700개 조항 (2025-10-18 기준)
+  '''
+}
+
+// =============================================================================
+// Table 1: laws - 법령 기본 정보
+// =============================================================================
+Table laws {
+  law_id integer [pk, increment, note: '법령 고유 ID']
+  doc_type text [not null, note: '법률/시행령/시행규칙/대법원규칙/용어집/기타']
+  title text [not null, note: '법령명 (전체, 번호 포함)']
+  number text [null, note: '법령번호 (예: 제01349호)']
+  enforcement_date text [null, note: '시행일 (YYYY.MM.DD)']
+  category text [not null, note: '카테고리 (1_공통 매매_임대차, 2_임대차_전세_월세, 3_공급_및_관리_매매_분양, 4_기타)']
+  total_articles integer [default: 0, note: '총 조항 수']
+  last_article text [null, note: '마지막 조항 번호']
+  source_file text [null, note: '원본 청크 파일명']
+  created_at timestamp [default: `CURRENT_TIMESTAMP`, note: '생성 시각']
+
+  Indexes {
+    doc_type [name: 'idx_laws_doc_type']
+    enforcement_date [name: 'idx_laws_enforcement_date']
+    category [name: 'idx_laws_category']
+    title [name: 'idx_laws_title']
+    (title, number, doc_type) [unique, name: 'unique_law']
+  }
+
+  Note: '''
+    ## 법령 기본 정보
+    - 28개 법령 보관
+    - doc_type별 분류 (법률 9, 시행령 7, 시행규칙 7, 대법원규칙 2, 용어집 1, 기타 2)
+    - 카테고리별 그룹화
+  '''
+}
+
+// =============================================================================
+// Table 2: articles - 조항 상세 정보
+// =============================================================================
+Table articles {
+  article_id integer [pk, increment, note: '조항 고유 ID']
+  law_id integer [not null, note: '법령 ID (FK)']
+  article_number text [not null, note: '조항 번호 (예: 제1조, 제6조의3) 또는 용어집 item_id']
+  article_title text [null, note: '조항 제목']
+  chapter text [null, note: '장 (예: 제1장 총칙)']
+  section text [null, note: '절']
+  is_deleted integer [default: 0, note: '삭제 여부 (0=유효, 1=삭제)']
+  is_tenant_protection integer [default: 0, note: '임차인 보호 조항 (1=예, 0=아니오)']
+  is_tax_related integer [default: 0, note: '세금 관련 (1=예, 0=아니오)']
+  is_delegation integer [default: 0, note: '위임 조항 (1=예, 0=아니오)']
+  is_penalty_related integer [default: 0, note: '벌칙 관련 (1=예, 0=아니오)']
+  chunk_ids text [null, note: 'FAISS chunk ID 배열 (JSON) - FAISS 매칭용']
+  metadata_json text [null, note: '전체 메타데이터 (JSON)']
+
+  Indexes {
+    law_id [name: 'idx_articles_law_id']
+    article_number [name: 'idx_articles_number']
+    is_deleted [name: 'idx_articles_deleted']
+    is_tenant_protection [name: 'idx_articles_tenant']
+    is_tax_related [name: 'idx_articles_tax']
+    is_delegation [name: 'idx_articles_delegation']
+    is_penalty_related [name: 'idx_articles_penalty']
+    (law_id, article_number) [unique, name: 'unique_article']
+  }
+
+  Note: '''
+    ## 조항 상세 정보
+    - 1,700개 조항 (법령 조항 1,608개 + 용어집 92개)
+    - FAISS chunk_id와 매칭
+    - 특수 플래그로 빠른 필터링
+    - 임차인 보호 조항 자동 태깅
+  '''
+}
+
+// =============================================================================
+// Table 3: legal_references - 법령 간 참조 관계
+// =============================================================================
+Table legal_references {
+  reference_id integer [pk, increment, note: '참조 관계 고유 ID']
+  source_article_id integer [not null, note: '참조하는 조항 ID']
+  reference_type text [not null, note: '참조 유형 (law_references, decree_references, form_references)']
+  target_law_title text [null, note: '참조 대상 법령명']
+  target_article_number text [null, note: '참조 대상 조항 번호']
+  reference_text text [null, note: '원본 참조 텍스트']
+
+  Indexes {
+    source_article_id [name: 'idx_references_source']
+    reference_type [name: 'idx_references_type']
+  }
+
+  Note: '''
+    ## 법령 간 참조 관계
+    - 법령/시행령/양식 참조 추적
+    - 의존성 분석 가능
+    - 현재 데이터: 미구축 (향후 추가 예정)
+  '''
+}
+
+// =============================================================================
+// Relationships
+// =============================================================================
+Ref: articles.law_id > laws.law_id [delete: cascade]
+Ref: legal_references.source_article_id > articles.article_id [delete: cascade]
+
+// =============================================================================
+// Enums
+// =============================================================================
+Enum doc_type {
+  법률 [note: '법률 (9개)']
+  시행령 [note: '대통령령 (7개)']
+  시행규칙 [note: '국토교통부령 등 (7개)']
+  대법원규칙 [note: '대법원규칙 (2개)']
+  용어집 [note: '부동산 용어집 (1개)']
+  기타 [note: '기타 (2개)']
+}
+
+Enum category {
+  "1_공통 매매_임대차" [note: '공통 법령 (9개)']
+  "2_임대차_전세_월세" [note: '임대차 전문 (5개)']
+  "3_공급_및_관리_매매_분양" [note: '분양/관리 (8개)']
+  "4_기타" [note: '기타 (6개)']
+}
+
+Enum reference_type {
+  law_references [note: '다른 법률 참조']
+  decree_references [note: '시행령/규칙 참조']
+  form_references [note: '서식/양식 참조']
+}
+
+// =============================================================================
+// Table Groups
+// =============================================================================
+TableGroup legal_metadata {
+  laws
+  articles
+  legal_references
+}
+
+// =============================================================================
+// Notes
+// =============================================================================
+Note statistics {
+  '''
+  ## 데이터 통계 (2025-10-18 기준)
+
+  ### 법령 현황
+  - 총 법령: 28개
+  - 총 조항: 1,700개 (법령 조항 1,608 + 용어 92)
+
+  ### 문서 타입별 분포
+  - 법률: 9개 (32%)
+  - 시행령: 7개 (25%)
+  - 시행규칙: 7개 (25%)
+  - 대법원규칙: 2개 (7%)
+  - 용어집: 1개 (4%)
+  - 기타: 2개 (7%)
+
+  ### 카테고리별 분포
+  - 1_공통 매매_임대차: 9개
+  - 3_공급_및_관리_매매_분양: 8개
+  - 4_기타: 6개
+  - 2_임대차_전세_월세: 5개
+
+  ### 특수 조항 통계
+  - 임차인 보호: 자동 태깅 (임차인, 전세, 보증금 키워드)
+  - 위임 조항: 자동 태깅
+  - 세금 관련: 자동 태깅
+  - 벌칙 관련: 자동 태깅
+
+  ### FAISS 연동
+  - FAISS 벡터: 1,700개
+  - SQLite 조항: 1,700개
+  - 1:1 매칭 (chunk_ids 필드)
+  '''
+}
+
+Note common_queries {
+  '''
+  ## 자주 사용되는 쿼리
+
+  ### 1. 법령 정보 조회
+  ```sql
+  SELECT * FROM laws
+  WHERE title LIKE '%공인중개사법%';
+  ```
+
+  ### 2. 특정 법령의 모든 조항
+  ```sql
+  SELECT a.* FROM articles a
+  JOIN laws l ON a.law_id = l.law_id
+  WHERE l.title = '공인중개사법'
+    AND a.is_deleted = 0;
+  ```
+
+  ### 3. 임차인 보호 조항 찾기
+  ```sql
+  SELECT a.*, l.title FROM articles a
+  JOIN laws l ON a.law_id = l.law_id
+  WHERE a.is_tenant_protection = 1;
+  ```
+
+  ### 4. 카테고리별 법령 조회
+  ```sql
+  SELECT * FROM laws
+  WHERE category = '2_임대차_전세_월세';
+  ```
+
+  ### 5. 시행일 범위 검색
+  ```sql
+  SELECT * FROM laws
+  WHERE enforcement_date BETWEEN '2024.01.01' AND '2024.12.31'
+  ORDER BY enforcement_date;
+  ```
+
+  ### 6. FAISS 매칭 (조항 → chunk_id)
+  ```sql
+  SELECT law_id, article_number, chunk_ids
+  FROM articles
+  WHERE chunk_ids IS NOT NULL;
+  ```
+  '''
+}

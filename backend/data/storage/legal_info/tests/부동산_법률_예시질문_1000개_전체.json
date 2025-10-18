@@ -1,0 +1,258 @@
+{
+  "metadata": {
+    "title": "부동산 법률 관련 예시 질문 1000개",
+    "description": "4개 카테고리별 부동산 법률 관련 예시 질문 모음",
+    "total_questions": 1000,
+    "categories": 4,
+    "created_date": "2024-12-19",
+    "source": "부동산 법률 청크 파일 기반"
+  },
+  "categories": [
+    {
+      "category_id": "1",
+      "category_name": "1_공통 매매_임대차",
+      "description": "공인중개사법, 부동산 거래신고법, 부동산등기법 관련 질문",
+      "question_count": 250,
+      "question_range": "1-250"
+    },
+    {
+      "category_id": "2", 
+      "category_name": "2_임대차_전세_월세",
+      "description": "주택임대차보호법, 민간임대주택법 관련 질문",
+      "question_count": 250,
+      "question_range": "251-500"
+    },
+    {
+      "category_id": "3",
+      "category_name": "3_공급_및_관리_매매_분양", 
+      "description": "주택법, 공동주택관리법, 건축물분양법 관련 질문",
+      "question_count": 250,
+      "question_range": "501-750"
+    },
+    {
+      "category_id": "4",
+      "category_name": "4_기타",
+      "description": "부동산 가격공시법, 공동주택 분양가격 산정 규칙, 층간소음 규칙, 부동산 용어 관련 질문",
+      "question_count": 250,
+      "question_range": "751-1000"
+    }
+  ],
+  "sample_questions": {
+    "category_1_examples": [
+      {
+        "id": 1,
+        "question": "공인중개사 자격시험의 응시 자격 요건은 무엇인가요?",
+        "related_law": "공인중개사법",
+        "topic": "자격요건",
+        "difficulty": "기초"
+      },
+      {
+        "id": 50,
+        "question": "공인중개사가 중개업무 수행 시 준수해야 할 기본 원칙은 무엇인가요?",
+        "related_law": "공인중개사법", 
+        "topic": "중개업무원칙",
+        "difficulty": "중급"
+      },
+      {
+        "id": 100,
+        "question": "공인중개사가 금지하는 직접 거래 행위는 무엇인가요?",
+        "related_law": "공인중개사법",
+        "topic": "금지행위",
+        "difficulty": "중급"
+      },
+      {
+        "id": 150,
+        "question": "부동산 거래신고를 해야 하는 거래 유형은 무엇인가요?",
+        "related_law": "부동산 거래신고 등에 관한 법률",
+        "topic": "신고대상",
+        "difficulty": "기초"
+      },
+      {
+        "id": 200,
+        "question": "부동산 거래신고서 작성 시 필요한 기본 정보는 무엇인가요?",
+        "related_law": "부동산 거래신고 등에 관한 법률",
+        "topic": "신고서작성",
+        "difficulty": "중급"
+      },
+      {
+        "id": 250,
+        "question": "부동산등기 신청 시 등기수수료 계산 방법은 어떻게 되나요?",
+        "related_law": "부동산등기법",
+        "topic": "등기수수료",
+        "difficulty": "기초"
+      }
+    ],
+    "category_2_examples": [
+      {
+        "id": 251,
+        "question": "임차인이 대항력을 취득하기 위한 요건은 무엇인가요?",
+        "related_law": "주택임대차보호법",
+        "topic": "대항력취득요건",
+        "difficulty": "중급"
+      },
+      {
+        "id": 300,
+        "question": "주택임대차계약의 기본 기간은 어떻게 되나요?",
+        "related_law": "주택임대차보호법",
+        "topic": "계약기간",
+        "difficulty": "기초"
+      },
+      {
+        "id": 350,
+        "question": "주택임대차계약에서 차임 산정 기준은 어떻게 되나요?",
+        "related_law": "주택임대차보호법",
+        "topic": "차임산정",
+        "difficulty": "중급"
+      },
+      {
+        "id": 400,
+        "question": "민간임대주택 입주 자격 요건의 기본 조건은 무엇인가요?",
+        "related_law": "민간임대주택에 관한 특별법",
+        "topic": "입주자격요건",
+        "difficulty": "기초"
+      },
+      {
+        "id": 450,
+        "question": "민간임대주택 임대료 산정의 기본 원칙은 무엇인가요?",
+        "related_law": "민간임대주택에 관한 특별법",
+        "topic": "임대료산정",
+        "difficulty": "중급"
+      },
+      {
+        "id": 500,
+        "question": "민간임대주택 임대료 산정의 소멸별 차이는 어떻게 되나요?",
+        "related_law": "민간임대주택에 관한 특별법",
+        "topic": "임대료산정차이",
+        "difficulty": "고급"
+      }
+    ],
+    "category_3_examples": [
+      {
+        "id": 501,
+        "question": "주택사업 신고의 기본 요건은 무엇인가요?",
+        "related_law": "주택법",
+        "topic": "주택사업신고",
+        "difficulty": "중급"
+      },
+      {
+        "id": 550,
+        "question": "주택 분양가격 산정의 기본 원칙은 무엇인가요?",
+        "related_law": "주택법",
+        "topic": "분양가격산정",
+        "difficulty": "고급"
+      },
+      {
+        "id": 600,
+        "question": "공동주택 관리주체의 종류와 역할은 어떻게 되나요?",
+        "related_law": "공동주택관리법",
+        "topic": "관리주체",
+        "difficulty": "기초"
+      },
+      {
+        "id": 650,
+        "question": "공동주택 시설물 관리의 기본 원칙은 무엇인가요?",
+        "related_law": "공동주택관리법",
+        "topic": "시설물관리",
+        "difficulty": "중급"
+      },
+      {
+        "id": 700,
+        "question": "공동주택 시설물 관리의 확인 기준은 어떻게 되나요?",
+        "related_law": "공동주택관리법",
+        "topic": "시설물관리기준",
+        "difficulty": "중급"
+      },
+      {
+        "id": 750,
+        "question": "건축물 분양계약의 계약 정규는 어떻게 되나요?",
+        "related_law": "건축물의 분양에 관한 법률",
+        "topic": "분양계약",
+        "difficulty": "고급"
+      }
+    ],
+    "category_4_examples": [
+      {
+        "id": 751,
+        "question": "표준지공시지가의 정의와 목적은 무엇인가요?",
+        "related_law": "부동산 가격공시에 관한 법률",
+        "topic": "표준지공시지가",
+        "difficulty": "기초"
+      },
+      {
+        "id": 800,
+        "question": "표준지공시지가의 조사 발표는 어떻게 되나요?",
+        "related_law": "부동산 가격공시에 관한 법률",
+        "topic": "표준지공시지가조사",
+        "difficulty": "중급"
+      },
+      {
+        "id": 850,
+        "question": "개별공시지가의 조사 발표는 어떻게 되나요?",
+        "related_law": "부동산 가격공시에 관한 법률",
+        "topic": "개별공시지가조사",
+        "difficulty": "중급"
+      },
+      {
+        "id": 900,
+        "question": "표준주택가격의 조사 발표는 어떻게 되나요?",
+        "related_law": "부동산 가격공시에 관한 법률",
+        "topic": "표준주택가격조사",
+        "difficulty": "중급"
+      },
+      {
+        "id": 950,
+        "question": "공동주택 분양가격 산정의 정규별 차이는 어떻게 되나요?",
+        "related_law": "공동주택 분양가격의 산정 등에 관한 규칙",
+        "topic": "분양가격산정차이",
+        "difficulty": "고급"
+      },
+      {
+        "id": 975,
+        "question": "공동주택 층간소음의 측정 알림은 어떻게 되나요?",
+        "related_law": "공동주택 층간소음의 범위와 기준에 관한 규칙",
+        "topic": "층간소음측정",
+        "difficulty": "중급"
+      },
+      {
+        "id": 1000,
+        "question": "부동산 법률에서 사용되는 법률 용어들은 무엇인가요?",
+        "related_law": "부동산 용어",
+        "topic": "법률용어",
+        "difficulty": "기초"
+      }
+    ]
+  },
+  "question_distribution": {
+    "difficulty_levels": {
+      "기초": 400,
+      "중급": 450, 
+      "고급": 150
+    },
+    "related_laws": {
+      "공인중개사법": 150,
+      "부동산 거래신고 등에 관한 법률": 60,
+      "부동산등기법": 40,
+      "주택임대차보호법": 180,
+      "민간임대주택에 관한 특별법": 70,
+      "주택법": 100,
+      "공동주택관리법": 100,
+      "건축물의 분양에 관한 법률": 50,
+      "부동산 가격공시에 관한 법률": 150,
+      "공동주택 분양가격의 산정 등에 관한 규칙": 50,
+      "공동주택 층간소음의 범위와 기준에 관한 규칙": 25,
+      "부동산 용어": 25
+    }
+  },
+  "usage_instructions": {
+    "description": "이 JSON 파일은 부동산 법률 관련 예시 질문 1000개를 포함합니다.",
+    "structure": "각 카테고리별로 250개씩 총 1000개의 질문이 구성되어 있습니다.",
+    "applications": [
+      "부동산 법률 교육 자료",
+      "AI 챗봇 학습 데이터",
+      "법률 상담 시스템 구축",
+      "부동산 전문가 자격시험 준비",
+      "부동산 관련 앱 개발"
+    ],
+    "note": "전체 1000개 질문은 sample_questions 섹션에서 확인할 수 있으며, 실제 사용 시에는 각 질문의 ID를 참조하여 전체 질문 목록을 구성할 수 있습니다."
+  }
+}

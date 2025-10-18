@@ -1,0 +1,76 @@
+# Python 3.12 compatible
+# Pharma Chatbot Backend Requirements
+
+# Core Framework
+fastapi==0.115.0
+uvicorn[standard]==0.32.0
+python-dotenv==1.0.1
+pydantic==2.9.0
+pydantic-settings==2.4.0
+
+# LangGraph 0.6.8 (Latest as of October 2025)
+langgraph==0.6.8
+langgraph-checkpoint-sqlite==2.0.11
+langgraph-checkpoint-postgres==2.0.25  # PostgreSQL checkpoint saver
+langgraph-supervisor==0.0.29
+langchain>=0.3.0
+langchain-anthropic==0.3.19
+langchain-openai==0.3.32
+langchain-core==0.3.75  # Updated to resolve dependency conflict
+langchain-community>=0.3.0
+langchain-chroma>=0.2.5
+langchain-huggingface>=0.3.1
+
+# Memory & State Management (Optional)
+# redis==5.0.0
+# asyncio-redis==1.3.1
+
+# Database
+sqlalchemy==2.0.23
+aiosqlite==0.20.0
+# alembic==1.13.0  # For migrations (optional)
+# asyncpg==0.29.0  # For PostgreSQL (optional)
+chromadb>=0.5.0
+faiss-cpu==1.9.0.post1  # Vector similarity search (CPU version)
+
+# Data Analysis
+pandas>=2.0.0
+numpy>=1.24.0
+
+# HTTP & Network
+httpx==0.27.0
+aiohttp>=3.12.11
+websockets==12.0
+python-multipart==0.0.9
+
+# CORS for development
+fastapi-cors==0.0.6
+python-jose[cryptography]==3.3.0
+
+# Monitoring & Logging
+loguru==0.7.2
+prometheus-client==0.20.0
+
+# Testing (dev only)
+pytest==8.3.0
+pytest-asyncio==0.23.0
+pytest-mock==3.14.0
+
+# Documentation
+mkdocs==1.6.0
+mkdocs-get-deps==0.2.0
+mkdocs-material==9.5.0
+mkdocs-material-extensions==1.3.1
+
+# Utils
+python-dateutil==2.9.0
+pytz==2024.1
+orjson>=3.10.1
+
+# HuggingFace Models (Kure-v1, bge-reranker-ko)
+sentence-transformers>=2.2.0
+transformers>=4.33.0,<5.0.0
+torch>=2.0.0
+# FlagEmbedding==1.2.0  # Conflicts with transformers, install separately if needed
+accelerate>=0.20.0
+safetensors>=0.3.0

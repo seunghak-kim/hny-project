@@ -1,0 +1,263 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "주택임대차 표준계약서 입력 데이터",
+  "description": "주택임대차 표준계약서 생성을 위한 입력 필드 스키마",
+  "type": "object",
+
+  "required": [
+    "address_road",
+    "deposit",
+    "start_date",
+    "end_date",
+    "lessor_name",
+    "lessee_name"
+  ],
+
+  "properties": {
+    "물건_정보": {
+      "type": "object",
+      "properties": {
+        "address_road": {
+          "type": "string",
+          "description": "도로명주소",
+          "example": "서울특별시 강남구 테헤란로 123"
+        },
+        "address_detail": {
+          "type": "string",
+          "description": "상세주소 (동/층/호)",
+          "example": "456호 (101동 10층)"
+        },
+        "land_area": {
+          "type": "string",
+          "description": "토지 면적 (㎡)",
+          "example": "150"
+        },
+        "building_area": {
+          "type": "string",
+          "description": "건물 면적 (㎡)",
+          "example": "85"
+        },
+        "rental_area": {
+          "type": "string",
+          "description": "임차 면적 (㎡)",
+          "example": "85"
+        }
+      }
+    },
+
+    "금액_정보": {
+      "type": "object",
+      "properties": {
+        "deposit": {
+          "type": "string",
+          "description": "보증금 (숫자)",
+          "example": "500,000,000"
+        },
+        "deposit_hangeul": {
+          "type": "string",
+          "description": "보증금 (한글)",
+          "example": "오억"
+        },
+        "contract_payment": {
+          "type": "string",
+          "description": "계약금",
+          "example": "50,000,000"
+        },
+        "monthly_rent": {
+          "type": "string",
+          "description": "월세",
+          "example": "2,000,000"
+        },
+        "monthly_rent_day": {
+          "type": "string",
+          "description": "월세 납부일 (매월 N일)",
+          "example": "1"
+        },
+        "management_fee": {
+          "type": "string",
+          "description": "관리비",
+          "example": "150,000"
+        }
+      }
+    },
+
+    "기간_정보": {
+      "type": "object",
+      "properties": {
+        "start_date": {
+          "type": "string",
+          "description": "계약 시작일",
+          "example": "2024년 1월 1일"
+        },
+        "end_date": {
+          "type": "string",
+          "description": "계약 종료일",
+          "example": "2026년 1월 1일"
+        }
+      }
+    },
+
+    "임대인_정보": {
+      "type": "object",
+      "properties": {
+        "lessor_name": {
+          "type": "string",
+          "description": "임대인 성명",
+          "example": "홍길동"
+        },
+        "lessor_address": {
+          "type": "string",
+          "description": "임대인 주소",
+          "example": "서울특별시 서초구 반포대로 100"
+        },
+        "lessor_phone": {
+          "type": "string",
+          "description": "임대인 전화번호",
+          "example": "010-1234-5678"
+        }
+      }
+    },
+
+    "임차인_정보": {
+      "type": "object",
+      "properties": {
+        "lessee_name": {
+          "type": "string",
+          "description": "임차인 성명",
+          "example": "김철수"
+        },
+        "lessee_address": {
+          "type": "string",
+          "description": "임차인 주소",
+          "example": "서울특별시 강남구 테헤란로 123, 456호"
+        },
+        "lessee_phone": {
+          "type": "string",
+          "description": "임차인 전화번호",
+          "example": "010-9876-5432"
+        }
+      }
+    },
+
+    "특약사항": {
+      "type": "object",
+      "properties": {
+        "special_terms": {
+          "type": "string",
+          "description": "특약사항 (자유 기재)",
+          "example": "반려동물 사육 가능. 소음 발생 시간 제한 (22:00-08:00)"
+        }
+      }
+    }
+  },
+
+  "샘플_데이터_예시": {
+    "설명": "아래는 실제 사용 가능한 샘플 데이터입니다",
+
+    "예시1_전세": {
+      "address_road": "서울특별시 강남구 테헤란로 123",
+      "address_detail": "456호 (101동 10층)",
+      "rental_area": "85",
+      "deposit": "500,000,000",
+      "deposit_hangeul": "오억",
+      "contract_payment": "50,000,000",
+      "start_date": "2024년 1월 1일",
+      "end_date": "2026년 1월 1일",
+      "lessor_name": "홍길동",
+      "lessor_address": "서울특별시 서초구 반포대로 100",
+      "lessor_phone": "010-1234-5678",
+      "lessee_name": "김철수",
+      "lessee_address": "서울특별시 강남구 테헤란로 123, 456호",
+      "lessee_phone": "010-9876-5432",
+      "special_terms": "반려동물 사육 가능"
+    },
+
+    "예시2_월세": {
+      "address_road": "경기도 성남시 분당구 판교역로 235",
+      "address_detail": "102동 1203호",
+      "rental_area": "59",
+      "deposit": "100,000,000",
+      "deposit_hangeul": "일억",
+      "contract_payment": "10,000,000",
+      "monthly_rent": "1,500,000",
+      "monthly_rent_day": "5",
+      "management_fee": "120,000",
+      "start_date": "2024년 3월 15일",
+      "end_date": "2026년 3월 14일",
+      "lessor_name": "이영희",
+      "lessor_address": "경기도 성남시 분당구 정자동",
+      "lessor_phone": "010-2222-3333",
+      "lessee_name": "박민수",
+      "lessee_address": "경기도 성남시 분당구 판교역로 235, 102동 1203호",
+      "lessee_phone": "010-4444-5555",
+      "special_terms": "주차 1대 가능. 에어컨 2대 포함. 월세 납부는 자동이체 사용."
+    },
+
+    "예시3_최소필수만": {
+      "address_road": "부산광역시 해운대구 해운대로 100",
+      "deposit": "300,000,000",
+      "start_date": "2024년 6월 1일",
+      "end_date": "2026년 5월 31일",
+      "lessor_name": "최지훈",
+      "lessee_name": "정수연"
+    }
+  },
+
+  "필드_설명_한글": {
+    "필수_필드": {
+      "address_road": "도로명 주소 (지번주소 불가)",
+      "deposit": "보증금 금액 (숫자로, 콤마 구분 가능)",
+      "start_date": "임대차 시작일 (예: 2024년 1월 1일)",
+      "end_date": "임대차 종료일 (예: 2026년 1월 1일)",
+      "lessor_name": "임대인(집주인) 이름",
+      "lessee_name": "임차인(세입자) 이름"
+    },
+
+    "선택_필드": {
+      "address_detail": "아파트/오피스텔 동/층/호수",
+      "land_area": "토지 면적 (제곱미터, 숫자만)",
+      "building_area": "건물 면적 (제곱미터, 숫자만)",
+      "rental_area": "실제 임차하는 면적 (제곱미터)",
+      "deposit_hangeul": "보증금을 한글로 (예: 오억, 삼억오천만)",
+      "contract_payment": "계약금 (계약 시 지불)",
+      "monthly_rent": "월세 금액",
+      "monthly_rent_day": "매월 월세 내는 날 (1~31)",
+      "management_fee": "관리비 (정액인 경우)",
+      "lessor_address": "임대인의 주소",
+      "lessor_phone": "임대인 연락처",
+      "lessee_address": "임차인의 주소",
+      "lessee_phone": "임차인 연락처",
+      "special_terms": "특약사항 (특별히 약정한 내용)"
+    }
+  },
+
+  "사용_방법": {
+    "1단계": "위의 예시 데이터를 참고하여 실제 계약 정보를 입력합니다",
+    "2단계": "필수 필드는 반드시 입력해야 하며, 선택 필드는 필요시 입력합니다",
+    "3단계": "LeaseContractGeneratorTool의 execute() 메서드에 파라미터로 전달합니다",
+    "4단계": "생성된 DOCX 파일과 Markdown 요약본을 받습니다",
+
+    "Python_코드_예시": {
+      "설명": "아래 코드처럼 사용하세요",
+      "코드": [
+        "tool = LeaseContractGeneratorTool()",
+        "result = await tool.execute(",
+        "    address_road='서울특별시 강남구 테헤란로 123',",
+        "    deposit='500000000',",
+        "    start_date='2024년 1월 1일',",
+        "    end_date='2026년 1월 1일',",
+        "    lessor_name='홍길동',",
+        "    lessee_name='김철수'",
+        ")"
+      ]
+    }
+  },
+
+  "주의사항": {
+    "1": "날짜는 '2024년 1월 1일' 형식으로 입력하세요",
+    "2": "금액은 콤마를 포함하거나 제외해도 됩니다 (예: 500000000 또는 500,000,000)",
+    "3": "필수 필드가 누락되면 플레이스홀더 [값]으로 표시됩니다",
+    "4": "생성된 DOCX 파일은 backend/data/storage/documents/generated/ 폴더에 저장됩니다",
+    "5": "원본 템플릿(주택임대차 표준계약서.docx)은 수정되지 않습니다"
+  }
+}

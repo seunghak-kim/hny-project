@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(do echo \"=== $f ===\")",
+      "Bash(xxd:*)",
+      "Bash(for dir in */)",
+      "Bash(do echo \"=== $dir ===\")",
+      "Bash(find:*)",
+      "Read(//c/kdy/Projects/holmesnyangz/beta_v001/backend/**)",
+      "Bash(wc:*)",
+      "Bash(dir:*)",
+      "Bash(findstr:*)",
+      "Read(//c/kdy/Projects/holmesnyangz/beta_v001/**)",
+      "Bash(python:*)",
+      "Bash(cat:*)",
+      "Bash(sqlite3:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

@@ -1,0 +1,198 @@
+---
+title: HolmesNyangz State Lifecycle (Sequence Diagram)
+---
+sequenceDiagram
+    %% ============================================================================
+    %% State 생성부터 응답까지의 전체 생명 주기
+    %% ============================================================================
+
+    actor User
+    participant API as FastAPI
+    participant Supervisor as TeamBasedSupervisor
+    participant StateManager as StateManager
+    participant Planning as Planning Agent
+    participant SearchTeam as Search Team
+    participant DocumentTeam as Document Team
+    participant AnalysisTeam as Analysis Team
+    participant Memory as Long-term Memory
+    participant WebSocket as WebSocket (Progress)
+
+    %% ============================================================================
+    %% Phase 1: 초기화 및 Planning
+    %% ============================================================================
+    rect rgb(200, 220, 255)
+        note over User,WebSocket: Phase 1: 초기화 및 Planning
+
+        User->>API: POST /api/v1/chat<br/>{query, session_id, chat_session_id}
+        API->>Supervisor: ainvoke(initial_state)
+
+        %% MainSupervisorState 초기화
+        Supervisor->>StateManager: create MainSupervisorState
+        StateManager-->>Supervisor: MainSupervisorState {<br/>  query, session_id, chat_session_id,<br/>  status: "initialized"<br/>}
+
+        %% Long-term Memory 로드
+        Supervisor->>Memory: load_memories(user_id, session_id)
+        Memory-->>Supervisor: loaded_memories
+        Supervisor->>Supervisor: Update MainSupervisorState<br/>loaded_memories
+
+        %% Planning Agent 실행
+        Supervisor->>Planning: planning_node(MainSupervisorState)
+        Planning->>Planning: LLM 분석:<br/>- Intent 분석<br/>- 필요한 팀 식별<br/>- 실행 계획 수립
+
+        %% PlanningState 생성
+        Planning->>StateManager: create PlanningState
+        StateManager-->>Planning: PlanningState {<br/>  analyzed_intent,<br/>  execution_steps: [...]<br/>}
+
+        Planning->>WebSocket: broadcast_progress()<br/>execution_steps → TODO 리스트
+        WebSocket-->>User: 실시간 TODO 업데이트
+
+        Planning-->>Supervisor: MainSupervisorState {<br/>  planning_state: PlanningState,<br/>  active_teams: ["search", "analysis"]<br/>}
+    end
+
+    %% ============================================================================
+    %% Phase 2: Search Team 실행
+    %% ============================================================================
+    rect rgb(200, 255, 220)
+        note over User,WebSocket: Phase 2: Search Team 실행 (병렬 가능)
+
+        Supervisor->>StateManager: create_initial_team_state("search", SharedState)
+        StateManager-->>Supervisor: SearchTeamState {<br/>  status: "initialized",<br/>  search_scope: ["legal", "real_estate", "loan"]<br/>}
+
+        Supervisor->>SearchTeam: execute_search_node(SearchTeamState)
+
+        %% 키워드 추출
+        SearchTeam->>SearchTeam: extract_keywords_node()<br/>→ SearchKeywords
+        SearchTeam->>StateManager: update SearchTeamState<br/>keywords
+        SearchTeam->>WebSocket: broadcast_progress()<br/>"키워드 추출 완료"
+        WebSocket-->>User: TODO 상태 업데이트
+
+        %% 도구 선택
+        SearchTeam->>SearchTeam: _select_tools_with_llm()<br/>→ ["legal_search", "market_data"]
+
+        %% 법률 검색
+        par 병렬 검색
+            SearchTeam->>SearchTeam: HybridLegalSearch.search()
+            SearchTeam->>StateManager: Update SearchTeamState<br/>legal_results
+            SearchTeam->>WebSocket: broadcast_progress()<br/>"법률 검색 완료 (N건)"
+            WebSocket-->>User: TODO 상태 업데이트
+        and 시세 검색
+            SearchTeam->>SearchTeam: MarketDataTool.search()
+            SearchTeam->>StateManager: Update SearchTeamState<br/>real_estate_results
+            SearchTeam->>WebSocket: broadcast_progress()<br/>"시세 검색 완료 (N건)"
+            WebSocket-->>User: TODO 상태 업데이트
+        and 매물 검색
+            SearchTeam->>SearchTeam: RealEstateSearchTool.search()
+            SearchTeam->>StateManager: Update SearchTeamState<br/>property_search_results
+            SearchTeam->>WebSocket: broadcast_progress()<br/>"매물 검색 완료 (N건)"
+            WebSocket-->>User: TODO 상태 업데이트
+        end
+
+        %% 결과 집계
+        SearchTeam->>SearchTeam: aggregate_results_node()
+        SearchTeam->>StateManager: Update SearchTeamState<br/>aggregated_results
+
+        SearchTeam-->>Supervisor: SearchTeamState {<br/>  status: "completed",<br/>  total_results: N<br/>}
+
+        Supervisor->>StateManager: merge_team_results(<br/>  "search", SearchTeamState<br/>)
+        StateManager-->>Supervisor: MainSupervisorState {<br/>  team_results: {"search": ...},<br/>  completed_teams: ["search"]<br/>}
+    end
+
+    %% ============================================================================
+    %% Phase 3: Document Team 실행 (조건부)
+    %% ============================================================================
+    rect rgb(255, 240, 200)
+        note over User,WebSocket: Phase 3: Document Team (필요 시)
+
+        alt 문서 생성 필요
+            Supervisor->>StateManager: create_initial_team_state("document", SharedState)
+            StateManager-->>Supervisor: DocumentTeamState {<br/>  document_type: "contract"<br/>}
+
+            Supervisor->>DocumentTeam: generate_document_node(DocumentTeamState)
+
+            DocumentTeam->>DocumentTeam: select_template_node()<br/>→ DocumentTemplate
+            DocumentTeam->>WebSocket: broadcast_progress()<br/>"템플릿 선택 완료"
+            WebSocket-->>User: TODO 상태 업데이트
+
+            DocumentTeam->>DocumentTeam: fill_template_node()<br/>→ DocumentContent
+            DocumentTeam->>WebSocket: broadcast_progress()<br/>"문서 생성 완료"
+            WebSocket-->>User: TODO 상태 업데이트
+
+            DocumentTeam->>DocumentTeam: review_document_node()<br/>→ ReviewResult
+            DocumentTeam->>WebSocket: broadcast_progress()<br/>"문서 검토 완료"
+            WebSocket-->>User: TODO 상태 업데이트
+
+            DocumentTeam-->>Supervisor: DocumentTeamState {<br/>  status: "completed",<br/>  final_document: "..."<br/>}
+
+            Supervisor->>StateManager: merge_team_results(<br/>  "document", DocumentTeamState<br/>)
+        else 문서 불필요
+            note over Supervisor: Skip Document Team
+        end
+    end
+
+    %% ============================================================================
+    %% Phase 4: Analysis Team 실행
+    %% ============================================================================
+    rect rgb(255, 220, 220)
+        note over User,WebSocket: Phase 4: Analysis Team 실행
+
+        Supervisor->>StateManager: create_initial_team_state("analysis", SharedState)
+        StateManager-->>Supervisor: AnalysisTeamState {<br/>  analysis_type: "comprehensive"<br/>}
+
+        Supervisor->>AnalysisTeam: execute_analysis_node(AnalysisTeamState)
+
+        AnalysisTeam->>AnalysisTeam: prepare_analysis_input_node()<br/>→ input_data
+
+        AnalysisTeam->>AnalysisTeam: perform_analysis_node()<br/>→ AnalysisMetrics, insights
+        AnalysisTeam->>WebSocket: broadcast_progress()<br/>"분석 완료"
+        WebSocket-->>User: TODO 상태 업데이트
+
+        AnalysisTeam->>AnalysisTeam: generate_report_node()<br/>→ AnalysisReport
+        AnalysisTeam->>WebSocket: broadcast_progress()<br/>"보고서 생성 완료"
+        WebSocket-->>User: TODO 상태 업데이트
+
+        AnalysisTeam-->>Supervisor: AnalysisTeamState {<br/>  status: "completed",<br/>  report: AnalysisReport<br/>}
+
+        Supervisor->>StateManager: merge_team_results(<br/>  "analysis", AnalysisTeamState<br/>)
+    end
+
+    %% ============================================================================
+    %% Phase 5: 최종 응답 생성
+    %% ============================================================================
+    rect rgb(220, 200, 255)
+        note over User,WebSocket: Phase 5: 최종 응답 생성
+
+        Supervisor->>Supervisor: aggregate_final_results_node()
+        Supervisor->>StateManager: Update MainSupervisorState<br/>aggregated_results
+
+        Supervisor->>Supervisor: generate_final_response_node()
+        Supervisor->>Supervisor: LLM 종합:<br/>- Search 결과<br/>- Document<br/>- Analysis 인사이트
+
+        Supervisor->>StateManager: Update MainSupervisorState<br/>final_response
+
+        Supervisor->>StateManager: mark_completed(MainSupervisorState)
+        StateManager-->>Supervisor: MainSupervisorState {<br/>  status: "completed",<br/>  end_time: now(),<br/>  total_execution_time: X.X sec<br/>}
+
+        Supervisor->>WebSocket: broadcast_progress()<br/>"응답 생성 완료"
+        WebSocket-->>User: 모든 TODO 완료
+    end
+
+    %% ============================================================================
+    %% Phase 6: Memory 저장 및 응답 반환
+    %% ============================================================================
+    rect rgb(240, 240, 240)
+        note over User,WebSocket: Phase 6: Memory 저장 및 응답
+
+        Supervisor->>Memory: save_conversation(<br/>  query, final_response,<br/>  chat_session_id<br/>)
+        Memory-->>Supervisor: saved
+
+        Supervisor-->>API: MainSupervisorState {<br/>  final_response,<br/>  status: "completed"<br/>}
+
+        API-->>User: {<br/>  response: "...",<br/>  metadata: {...}<br/>}
+    end
+
+    %% ============================================================================
+    %% Notes
+    %% ============================================================================
+    note over Supervisor: MainSupervisorState는 전체 생명주기 동안 유지
+    note over StateManager: 모든 State 변경은 StateManager를 통해 검증
+    note over WebSocket: 실시간 TODO 업데이트로 사용자 경험 개선

@@ -1,0 +1,23 @@
+사용자 질문을 분석하여 필요한 AI 팀을 선택하세요.
+
+## 질문 정보
+- 질문: {query}
+- 의도: {intent_type}
+
+## 사용 가능한 팀
+1. **search_team** - 법률/시세/대출 검색
+2. **analysis_team** - 데이터 분석 및 평가
+3. **document_team** - 계약서 작성/검토
+
+## 선택 기준 (간단)
+- 법률/시세/대출 질문 → search_team
+- 분석/평가/리스크 → search_team + analysis_team
+- 계약서 작성/검토 → document_team
+- 불확실 → search_team + analysis_team
+
+## 응답 (JSON만)
+```json
+{
+    "agents": ["팀이름1", "팀이름2"]
+}
+```
