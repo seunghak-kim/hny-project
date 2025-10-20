@@ -195,14 +195,46 @@ class TeamBasedSupervisor:
 
         # 의도 분석
         query = state.get("query", "")
-        intent_result = await self.planning_agent.analyze_intent(query)
+        chat_session_id = state.get("chat_session_id")
+
+        # Chat history 조회 (문맥 이해를 위해)
+        chat_history = await self._get_chat_history(
+            session_id=chat_session_id,
+            limit=3  # 최근 3개 대화 쌍 (6개 메시지)
+        )
+
+        # Context 생성
+        context = {"chat_history": chat_history} if chat_history else None
+
+        # Intent 분석 (context 전달)
+        intent_result = await self.planning_agent.analyze_intent(query, context)
 
         # ============================================================================
-        # Long-term Memory 로딩 (조기 단계 - RELEVANT 쿼리만)
+        # Long-term Memory 로딩 (조기 단계 - 모든 쿼리)
+        # ============================================================================
+        # 메모리 공유 범위는 settings.MEMORY_LOAD_LIMIT로 제어됩니다.
+        #
+        # 현재 구현 방식:
+        #   - user_id 기반: 같은 유저의 모든 대화창(세션) 간 메모리 공유
+        #   - limit으로 범위 제어: 최근 N개 세션만 로드
+        #   - session_id 제외: 현재 진행 중인 세션은 제외 (불완전한 데이터 방지)
+        #
+        # 메모리 범위 설정 (.env 파일):
+        #   MEMORY_LOAD_LIMIT=0   → 다른 세션 기억 안 함 (세션별 완전 격리)
+        #   MEMORY_LOAD_LIMIT=1   → 최근 1개 세션만 기억
+        #   MEMORY_LOAD_LIMIT=5   → 최근 5개 세션 기억 (기본값, 적당한 공유)
+        #   MEMORY_LOAD_LIMIT=10  → 최근 10개 세션 기억 (긴 기억)
+        #
+        # 사용 예시:
+        #   - 프라이버시 중요: MEMORY_LOAD_LIMIT=0 (세션별 격리)
+        #   - 일반 사용: MEMORY_LOAD_LIMIT=5 (기본값)
+        #   - 긴 프로젝트: MEMORY_LOAD_LIMIT=10 (오래 기억)
+        #
+        # 상세 설명: reports/Manual/MEMORY_CONFIGURATION_GUIDE.md
         # ============================================================================
         user_id = state.get("user_id")
         chat_session_id = state.get("chat_session_id")  # 현재 진행 중인 세션 ID
-        if user_id and intent_result.intent_type != IntentType.IRRELEVANT:
+        if user_id:
             try:
                 logger.info(f"[TeamSupervisor] Loading Long-term Memory for user {user_id}")
                 async for db_session in get_async_db():
@@ -972,6 +1004,65 @@ class TeamBasedSupervisor:
             "teams_used": [],
             "data": {}
         }
+
+    async def _get_chat_history(
+        self,
+        session_id: Optional[str],
+        limit: int = 3
+    ) -> List[Dict[str, str]]:
+        """
+        Chat history 조회 (최근 N개 대화 쌍)
+
+        Args:
+            session_id: 세션 ID
+            limit: 조회할 대화 쌍 개수 (기본 3개 = 6개 메시지)
+
+        Returns:
+            Chat history 리스트:
+            [
+                {"role": "user", "content": "..."},
+                {"role": "assistant", "content": "..."},
+                ...
+            ]
+        """
+        if not session_id:
+            return []
+
+        try:
+            async for db_session in get_async_db():
+                # Import
+                from app.models.chat import ChatMessage
+                from sqlalchemy import select
+
+                # Query 구성
+                query = (
+                    select(ChatMessage)
+                    .where(ChatMessage.session_id == session_id)
+                    .order_by(ChatMessage.created_at.desc())
+                    .limit(limit * 2)  # user + assistant 쌍
+                )
+
+                # 실행
+                result = await db_session.execute(query)
+                messages = result.scalars().all()
+
+                # 시간순 정렬 (최신순 → 시간순)
+                messages = sorted(messages, key=lambda m: m.created_at)
+
+                # 포맷팅
+                chat_history = [
+                    {
+                        "role": msg.role,
+                        "content": msg.content[:500]  # 길이 제한
+                    }
+                    for msg in messages
+                ]
+
+                return chat_history[-limit * 2:]  # 최근 N개 쌍만
+
+        except Exception as e:
+            logger.warning(f"Failed to load chat history: {e}")
+            return []
 
     async def _ensure_checkpointer(self):
         """Checkpointer 초기화 및 graph 재컴파일 (최초 1회만)"""

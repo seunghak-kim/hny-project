@@ -778,7 +778,8 @@ async def _process_query_async(
         # Streaming 방식으로 쿼리 처리
         result = await supervisor.process_query_streaming(
             query=query,
-            session_id=session_id,
+            session_id=session_id,  # HTTP/WebSocket session ID
+            chat_session_id=session_id,  # Chat History & State Endpoints용 (동일한 session_id 사용)
             user_id=user_id,
             progress_callback=progress_callback
         )

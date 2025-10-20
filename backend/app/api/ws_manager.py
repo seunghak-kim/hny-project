@@ -60,16 +60,20 @@ class ConnectionManager:
 
     def _serialize_datetimes(self, obj: Any) -> Any:
         """
-        재귀적으로 datetime 객체를 ISO 형식 문자열로 변환
+        재귀적으로 datetime, Enum 객체를 직렬화 가능한 형식으로 변환
 
         Args:
             obj: 변환할 객체
 
         Returns:
-            변환된 객체 (datetime은 문자열로 변환됨)
+            변환된 객체 (datetime은 문자열로, Enum은 값으로 변환됨)
         """
+        from enum import Enum
+
         if isinstance(obj, datetime):
             return obj.isoformat()
+        elif isinstance(obj, Enum):
+            return obj.value
         elif isinstance(obj, dict):
             return {key: self._serialize_datetimes(value) for key, value in obj.items()}
         elif isinstance(obj, list):

@@ -183,10 +183,31 @@ class PlanningAgent:
     async def _analyze_with_llm(self, query: str, context: Optional[Dict]) -> IntentResult:
         """LLM을 사용한 의도 분석 (LLMService 사용)"""
         try:
+            # Context에서 chat_history 추출
+            chat_history = context.get("chat_history", []) if context else []
+
+            # Chat history를 문자열로 포맷팅
+            chat_history_text = ""
+            if chat_history:
+                formatted_history = []
+                for msg in chat_history:
+                    role = msg.get("role", "unknown")
+                    content = msg.get("content", "")
+                    if role == "user":
+                        formatted_history.append(f"사용자: {content}")
+                    elif role == "assistant":
+                        formatted_history.append(f"AI: {content}")
+
+                if formatted_history:
+                    chat_history_text = "\n".join(formatted_history)
+
             # LLMService를 통한 의도 분석
             result = await self.llm_service.complete_json_async(
                 prompt_name="intent_analysis",
-                variables={"query": query},
+                variables={
+                    "query": query,
+                    "chat_history": chat_history_text
+                },
                 temperature=0.0,  # 더 빠른 샘플링 (deterministic)
                 max_tokens=500    # 불필요하게 긴 reasoning 방지
             )

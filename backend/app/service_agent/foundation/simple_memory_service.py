@@ -224,19 +224,73 @@ class SimpleMemoryService:
         """
         최근 세션의 메모리 로드 (chat_sessions.metadata 기반)
 
+        이 메서드는 Long-term Memory의 핵심으로, 사용자의 이전 대화 맥락을 로드합니다.
+        user_id 기반으로 조회하므로 여러 대화창(세션) 간 메모리가 공유됩니다.
+
+        메모리 공유 범위 (settings.MEMORY_LOAD_LIMIT로 제어):
+            현재 구현은 "여러 대화창 간 메모리 공유" 방식입니다:
+            - user_id 기반: 같은 유저의 모든 세션 검색
+            - limit으로 범위 제어: 최근 N개 세션만 로드
+            - session_id 제외: 현재 진행 중인 세션은 제외
+
+        동작 방식:
+            1. user_id로 모든 세션 조회 (같은 유저의 전체 대화 이력)
+            2. session_id가 주어지면 해당 세션 제외 (불완전한 데이터 방지)
+            3. metadata가 있는 세션만 필터링
+            4. updated_at 기준 최신순 정렬
+            5. limit 개수만큼만 로드
+
+        메모리 범위 조정 방법:
+            .env 파일에서 MEMORY_LOAD_LIMIT 값 변경:
+            - 0  : 다른 세션 기억 안 함 (세션별 격리, 프라이버시 중요 시)
+            - 1  : 최근 1개 세션만 기억 (최소 문맥)
+            - 3  : 최근 3개 세션 기억 (균형)
+            - 5  : 최근 5개 세션 기억 (기본값, 권장)
+            - 10 : 최근 10개 세션 기억 (긴 기억, 장기 프로젝트)
+
+        사용 예시:
+            # 기본 사용 (최근 5개 세션)
+            memories = await memory_service.load_recent_memories(
+                user_id="1",
+                session_id="current-session-123"
+            )
+
+            # 최근 3개만
+            memories = await memory_service.load_recent_memories(
+                user_id="1",
+                limit=3,
+                session_id="current-session-123"
+            )
+
         Args:
-            user_id: 사용자 ID
-            limit: 조회할 세션 개수 (기본 5개)
+            user_id: 사용자 ID (필수)
+            limit: 조회할 세션 개수 (기본 5개, settings.MEMORY_LOAD_LIMIT)
             relevance_filter: 필터 옵션 (현재 미사용, 향후 확장용)
-            session_id: 제외할 세션 ID (현재 진행 중인 세션)
+            session_id: 제외할 세션 ID (현재 진행 중인 세션, 선택적)
 
         Returns:
-            메모리 리스트 [{"session_id": str, "summary": str, "timestamp": str}, ...]
+            메모리 리스트:
+            [
+                {
+                    "session_id": "session-abc-123",
+                    "summary": "강남구 아파트 전세 시세 문의 (5억~7억)",
+                    "timestamp": "2025-10-20T14:30:00",
+                    "title": "강남구 전세 시세"
+                },
+                ...
+            ]
 
         Note:
-            - chat_sessions.metadata에서 conversation_summary 추출
-            - session_id가 제공되면 해당 세션 제외 (진행 중인 세션의 불완전한 데이터 방지)
-            - updated_at 기준 내림차순 정렬
+            - 저장 위치: chat_sessions.metadata (JSONB)
+            - 저장 키: conversation_summary
+            - 저장 시점: 대화 완료 후 (save_conversation 메서드)
+            - session_id가 None이면 모든 세션 포함 (주의: 현재 세션의 불완전한 데이터 포함 가능)
+            - limit=0이면 빈 리스트 반환 (다른 세션 기억 안 함)
+
+        See Also:
+            - config.py: MEMORY_LOAD_LIMIT 설정
+            - team_supervisor.py: 실제 호출 지점
+            - reports/Manual/MEMORY_CONFIGURATION_GUIDE.md: 상세 설정 가이드
         """
         try:
             # 기본 쿼리: user_id와 metadata가 있는 세션만

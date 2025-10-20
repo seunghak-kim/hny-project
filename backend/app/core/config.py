@@ -20,11 +20,57 @@ class Settings(BaseSettings):
     POSTGRES_PASSWORD: str = "root1234"
     POSTGRES_DB: str = "real_estate"
 
+    # ============================================================================
     # Session & Memory Configuration
+    # ============================================================================
     SESSION_TTL_HOURS: int = 24
     MEMORY_RETENTION_DAYS: int = 90
     MEMORY_LIMIT_PER_USER: int = 100
+
+    # Long-term Memory 범위 설정
     MEMORY_LOAD_LIMIT: int = 5  # Number of recent memories to load per user
+
+    # 메모리 공유 범위 가이드:
+    # -------------------------
+    # 이 설정은 user_id 기반으로 최근 N개 세션의 메모리를 로드합니다.
+    # 같은 유저의 여러 대화창(세션) 간 메모리 공유 범위를 제어합니다.
+    #
+    # 설정 값별 동작:
+    #   0  : 다른 세션 기억 안 함 (현재 대화창만, 완전 격리)
+    #        - 프라이버시가 중요한 경우
+    #        - 각 대화가 독립적인 경우
+    #
+    #   1  : 최근 1개 세션만 기억
+    #        - 최소한의 문맥 유지
+    #        - 메모리 사용 최소화
+    #
+    #   3  : 최근 3개 세션 기억 (적당한 균형)
+    #        - 일반적인 사용 케이스
+    #        - 성능과 문맥의 균형
+    #
+    #   5  : 최근 5개 세션 기억 (기본값, 권장)
+    #        - 여러 대화창 간 자연스러운 문맥 공유
+    #        - 적당한 메모리 사용
+    #
+    #   10 : 최근 10개 세션 기억 (긴 기억)
+    #        - 장기 프로젝트나 상담
+    #        - 오랜 기간 문맥 유지 필요
+    #
+    # 사용 방법:
+    #   1. .env 파일에 MEMORY_LOAD_LIMIT=N 추가
+    #   2. 서버 재시작
+    #   3. 새로운 설정이 적용됨
+    #
+    # 예시:
+    #   # .env 파일
+    #   MEMORY_LOAD_LIMIT=0   # 세션별 완전 격리
+    #   MEMORY_LOAD_LIMIT=3   # 최근 3개만
+    #   MEMORY_LOAD_LIMIT=10  # 긴 기억
+    #
+    # 참고:
+    #   - 현재 진행 중인 세션은 항상 자동 제외됩니다 (불완전한 데이터 방지)
+    #   - user_id 기반이므로 같은 유저의 모든 세션에서 검색합니다
+    #   - 자세한 내용은 reports/Manual/MEMORY_CONFIGURATION_GUIDE.md 참조
 
     class Config:
         env_file = ".env"
