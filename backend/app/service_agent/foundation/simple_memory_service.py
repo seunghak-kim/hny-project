@@ -4,10 +4,12 @@ SimpleMemoryService - Memory 테이블 없이 chat_messages만 사용
 
 import logging
 from typing import List, Dict, Any, Optional
+from datetime import datetime
 from sqlalchemy import select, desc
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm.attributes import flag_modified
 
-from app.models.chat import ChatMessage
+from app.models.chat import ChatMessage, ChatSession
 
 logger = logging.getLogger(__name__)
 
@@ -209,6 +211,125 @@ class SimpleMemoryService:
         """
         logger.debug(f"get_entity_memories called (returns empty): user_id={user_id}")
         return []
+
+    # === 핵심 메모리 메서드 (Phase 1 구현) ===
+
+    async def load_recent_memories(
+        self,
+        user_id: str,
+        limit: int = 5,
+        relevance_filter: str = "ALL",
+        session_id: Optional[str] = None
+    ) -> List[Dict[str, Any]]:
+        """
+        최근 세션의 메모리 로드 (chat_sessions.metadata 기반)
+
+        Args:
+            user_id: 사용자 ID
+            limit: 조회할 세션 개수 (기본 5개)
+            relevance_filter: 필터 옵션 (현재 미사용, 향후 확장용)
+            session_id: 제외할 세션 ID (현재 진행 중인 세션)
+
+        Returns:
+            메모리 리스트 [{"session_id": str, "summary": str, "timestamp": str}, ...]
+
+        Note:
+            - chat_sessions.metadata에서 conversation_summary 추출
+            - session_id가 제공되면 해당 세션 제외 (진행 중인 세션의 불완전한 데이터 방지)
+            - updated_at 기준 내림차순 정렬
+        """
+        try:
+            # 기본 쿼리: user_id와 metadata가 있는 세션만
+            query = select(ChatSession).where(
+                ChatSession.user_id == user_id,
+                ChatSession.session_metadata.isnot(None)
+            )
+
+            # 현재 진행 중인 세션 제외 (불완전한 데이터 방지)
+            if session_id:
+                query = query.where(ChatSession.session_id != session_id)
+
+            # 최신순 정렬 및 개수 제한
+            query = query.order_by(ChatSession.updated_at.desc()).limit(limit)
+
+            result = await self.db.execute(query)
+            sessions = result.scalars().all()
+
+            # conversation_summary 추출
+            memories = []
+            for session in sessions:
+                metadata = session.session_metadata
+                if metadata and "conversation_summary" in metadata:
+                    memories.append({
+                        "session_id": session.session_id,
+                        "summary": metadata["conversation_summary"],
+                        "timestamp": session.updated_at.isoformat(),
+                        "title": session.title
+                    })
+
+            logger.info(f"Loaded {len(memories)} memories for user {user_id}")
+            return memories
+
+        except Exception as e:
+            logger.error(f"Failed to load recent memories for user {user_id}: {e}")
+            return []
+
+    async def save_conversation(
+        self,
+        user_id: str,
+        session_id: str,
+        messages: List[dict],
+        summary: str
+    ) -> None:
+        """
+        대화 요약을 chat_sessions.metadata에 저장
+
+        Args:
+            user_id: 사용자 ID
+            session_id: 세션 ID (ChatSession.session_id)
+            messages: 메시지 리스트 (개수 카운트용)
+            summary: 대화 요약
+
+        Note:
+            - chat_sessions.metadata에 conversation_summary 저장
+            - flag_modified로 JSONB 변경 추적
+            - user_id 일치 확인으로 보안 강화
+        """
+        try:
+            # 세션 조회 (user_id 일치 확인)
+            query = select(ChatSession).where(
+                ChatSession.session_id == session_id,
+                ChatSession.user_id == user_id
+            )
+            result = await self.db.execute(query)
+            session = result.scalar_one_or_none()
+
+            if not session:
+                logger.warning(
+                    f"Session not found or user mismatch: "
+                    f"session_id={session_id}, user_id={user_id}"
+                )
+                return
+
+            # metadata 초기화 (없는 경우)
+            if session.session_metadata is None:
+                session.session_metadata = {}
+
+            # conversation_summary 저장
+            session.session_metadata["conversation_summary"] = summary
+            session.session_metadata["last_updated"] = datetime.now().isoformat()
+            session.session_metadata["message_count"] = len(messages)
+
+            # JSONB 변경 플래그 설정
+            flag_modified(session, "session_metadata")
+
+            await self.db.commit()
+            logger.info(f"Conversation saved: session_id={session_id}, summary_length={len(summary)}")
+
+        except Exception as e:
+            logger.error(f"Failed to save conversation for session {session_id}: {e}")
+            await self.db.rollback()
+            raise
 
 
 # === 호환성 레이어 (기존 코드 호환) ===

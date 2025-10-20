@@ -201,17 +201,19 @@ class TeamBasedSupervisor:
         # Long-term Memory 로딩 (조기 단계 - RELEVANT 쿼리만)
         # ============================================================================
         user_id = state.get("user_id")
+        chat_session_id = state.get("chat_session_id")  # 현재 진행 중인 세션 ID
         if user_id and intent_result.intent_type != IntentType.IRRELEVANT:
             try:
                 logger.info(f"[TeamSupervisor] Loading Long-term Memory for user {user_id}")
                 async for db_session in get_async_db():
                     memory_service = LongTermMemoryService(db_session)
 
-                    # 최근 대화 기록 로드 (RELEVANT만)
+                    # 최근 대화 기록 로드 (RELEVANT만, 현재 세션 제외)
                     loaded_memories = await memory_service.load_recent_memories(
                         user_id=user_id,
                         limit=settings.MEMORY_LOAD_LIMIT,
-                        relevance_filter="RELEVANT"
+                        relevance_filter="RELEVANT",
+                        session_id=chat_session_id  # 현재 진행 중인 세션 제외
                     )
 
                     # 사용자 선호도 로드
@@ -851,20 +853,12 @@ class TeamBasedSupervisor:
                     # chat_session_id 추출 (Chat History & State Endpoints)
                     chat_session_id = state.get("chat_session_id")
 
-                    # 대화 저장
+                    # 대화 저장 (Phase 1: 간소화된 4개 파라미터)
                     await memory_service.save_conversation(
                         user_id=user_id,
-                        query=state.get("query", ""),
-                        response_summary=response_summary,
-                        relevance="RELEVANT",
                         session_id=chat_session_id,
-                        intent_detected=intent_type,
-                        entities_mentioned=analyzed_intent.get("entities", {}),
-                        conversation_metadata={
-                            "teams_used": state.get("active_teams", []),
-                            "response_time": state.get("total_execution_time"),
-                            "confidence": confidence
-                        }
+                        messages=[],  # Phase 1에서는 빈 리스트 (message_count는 metadata에 저장됨)
+                        summary=response_summary
                     )
 
                     logger.info(f"[TeamSupervisor] Conversation saved to Long-term Memory")
@@ -877,13 +871,16 @@ class TeamBasedSupervisor:
         return state
 
     def _safe_json_dumps(self, obj: Any) -> str:
-        """Safely convert object to JSON string, handling datetime objects"""
+        """Safely convert object to JSON string, handling datetime and Enum objects"""
         from datetime import datetime
+        from enum import Enum
 
         def json_serial(obj):
             """JSON serializer for objects not serializable by default json code"""
             if isinstance(obj, datetime):
                 return obj.isoformat()
+            elif isinstance(obj, Enum):
+                return obj.value
             raise TypeError(f"Type {type(obj)} not serializable")
 
         return json.dumps(obj, default=json_serial, ensure_ascii=False, indent=2)

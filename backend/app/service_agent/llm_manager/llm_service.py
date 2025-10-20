@@ -417,7 +417,7 @@ class LLMService:
 
     def _safe_json_dumps(self, obj: Any) -> str:
         """
-        객체를 안전하게 JSON 문자열로 변환 (datetime 처리 포함)
+        객체를 안전하게 JSON 문자열로 변환 (datetime, Enum 처리 포함)
 
         Args:
             obj: 변환할 객체
@@ -426,12 +426,15 @@ class LLMService:
             JSON 문자열
         """
         from datetime import datetime
+        from enum import Enum
         import json
 
         def json_serial(obj):
-            """datetime 등 기본 JSON 직렬화 불가능한 객체 처리"""
+            """datetime, Enum 등 기본 JSON 직렬화 불가능한 객체 처리"""
             if isinstance(obj, datetime):
                 return obj.isoformat()
+            elif isinstance(obj, Enum):
+                return obj.value
             raise TypeError(f"Type {type(obj)} not serializable")
 
         try:

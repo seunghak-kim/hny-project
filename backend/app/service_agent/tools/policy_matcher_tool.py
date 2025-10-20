@@ -48,7 +48,7 @@ class PolicyMatcherTool:
             {
                 "id": "디딤돌대출",
                 "name": "디딤돌대출",
-                "type": PolicyType.LOAN_SUPPORT,
+                "type": PolicyType.LOAN_SUPPORT.value,
                 "provider": "주택도시기금",
                 "target": ["무주택자", "신혼부부", "청년"],
                 "conditions": {
@@ -75,7 +75,7 @@ class PolicyMatcherTool:
             {
                 "id": "보금자리론",
                 "name": "보금자리론",
-                "type": PolicyType.LOAN_SUPPORT,
+                "type": PolicyType.LOAN_SUPPORT.value,
                 "provider": "한국주택금융공사",
                 "target": ["무주택자", "1주택자"],
                 "conditions": {
@@ -99,7 +99,7 @@ class PolicyMatcherTool:
             {
                 "id": "전세자금대출",
                 "name": "버팀목 전세자금대출",
-                "type": PolicyType.LOAN_SUPPORT,
+                "type": PolicyType.LOAN_SUPPORT.value,
                 "provider": "주택도시기금",
                 "target": ["무주택자", "청년", "신혼부부"],
                 "conditions": {
@@ -126,7 +126,7 @@ class PolicyMatcherTool:
             {
                 "id": "청년월세지원",
                 "name": "청년월세 한시 특별지원",
-                "type": PolicyType.SUBSIDY,
+                "type": PolicyType.SUBSIDY.value,
                 "provider": "국토교통부",
                 "target": ["청년"],
                 "conditions": {
@@ -147,7 +147,7 @@ class PolicyMatcherTool:
             {
                 "id": "청년전세임대",
                 "name": "청년 전세임대주택",
-                "type": PolicyType.PUBLIC_HOUSING,
+                "type": PolicyType.PUBLIC_HOUSING.value,
                 "provider": "LH/SH",
                 "target": ["청년"],
                 "conditions": {
@@ -169,7 +169,7 @@ class PolicyMatcherTool:
             {
                 "id": "신혼부부전용대출",
                 "name": "신혼부부 전용 디딤돌대출",
-                "type": PolicyType.LOAN_SUPPORT,
+                "type": PolicyType.LOAN_SUPPORT.value,
                 "provider": "주택도시기금",
                 "target": ["신혼부부"],
                 "conditions": {
@@ -192,7 +192,7 @@ class PolicyMatcherTool:
             {
                 "id": "신혼희망타운",
                 "name": "신혼희망타운",
-                "type": PolicyType.SPECIAL_SUPPLY,
+                "type": PolicyType.SPECIAL_SUPPLY.value,
                 "provider": "LH",
                 "target": ["신혼부부", "예비신혼부부"],
                 "conditions": {
@@ -215,7 +215,7 @@ class PolicyMatcherTool:
             {
                 "id": "생애최초취득세감면",
                 "name": "생애최초 주택구입 취득세 감면",
-                "type": PolicyType.TAX_BENEFIT,
+                "type": PolicyType.TAX_BENEFIT.value,
                 "provider": "지방자치단체",
                 "target": ["생애최초구매자"],
                 "conditions": {
@@ -234,7 +234,7 @@ class PolicyMatcherTool:
             {
                 "id": "청약통장소득공제",
                 "name": "청약저축 소득공제",
-                "type": PolicyType.TAX_BENEFIT,
+                "type": PolicyType.TAX_BENEFIT.value,
                 "provider": "국세청",
                 "target": ["무주택자"],
                 "conditions": {
@@ -254,7 +254,7 @@ class PolicyMatcherTool:
             {
                 "id": "다자녀특별공급",
                 "name": "다자녀가구 특별공급",
-                "type": PolicyType.SPECIAL_SUPPLY,
+                "type": PolicyType.SPECIAL_SUPPLY.value,
                 "provider": "각 건설사",
                 "target": ["다자녀가구"],
                 "conditions": {
@@ -273,7 +273,7 @@ class PolicyMatcherTool:
             {
                 "id": "노부모부양특별공급",
                 "name": "노부모부양 특별공급",
-                "type": PolicyType.SPECIAL_SUPPLY,
+                "type": PolicyType.SPECIAL_SUPPLY.value,
                 "provider": "각 건설사",
                 "target": ["노부모부양자"],
                 "conditions": {
@@ -426,7 +426,7 @@ class PolicyMatcherTool:
 
         for policy in self.policies:
             # 정책 유형 필터
-            if policy_types and policy["type"].value not in policy_types:
+            if policy_types and policy["type"] not in policy_types:
                 continue
 
             # 대상 확인
@@ -523,11 +523,11 @@ class PolicyMatcherTool:
 
         # 정책 유형별 가중치
         type_weights = {
-            PolicyType.LOAN_SUPPORT: 20,
-            PolicyType.SUBSIDY: 15,
-            PolicyType.TAX_BENEFIT: 10,
-            PolicyType.PUBLIC_HOUSING: 15,
-            PolicyType.SPECIAL_SUPPLY: 10
+            PolicyType.LOAN_SUPPORT.value: 20,
+            PolicyType.SUBSIDY.value: 15,
+            PolicyType.TAX_BENEFIT.value: 10,
+            PolicyType.PUBLIC_HOUSING.value: 15,
+            PolicyType.SPECIAL_SUPPLY.value: 10
         }
         score += type_weights.get(policy["type"], 0)
 
@@ -644,7 +644,7 @@ class PolicyMatcherTool:
 
     def _get_application_steps(self, policy: Dict) -> List[str]:
         """신청 절차 생성"""
-        if policy["type"] == PolicyType.LOAN_SUPPORT:
+        if policy["type"] == PolicyType.LOAN_SUPPORT.value:
             return [
                 "자격 요건 확인",
                 "필요 서류 준비",
@@ -652,7 +652,7 @@ class PolicyMatcherTool:
                 "심사 진행",
                 "승인 및 대출 실행"
             ]
-        elif policy["type"] == PolicyType.SUBSIDY:
+        elif policy["type"] == PolicyType.SUBSIDY.value:
             return [
                 "복지로 사이트 접속",
                 "자격 확인 및 신청서 작성",
@@ -660,7 +660,7 @@ class PolicyMatcherTool:
                 "심사 대기",
                 "승인 및 지급"
             ]
-        elif policy["type"] == PolicyType.SPECIAL_SUPPLY:
+        elif policy["type"] == PolicyType.SPECIAL_SUPPLY.value:
             return [
                 "청약홈 가입 및 청약통장 확인",
                 "분양 공고 확인",
@@ -700,7 +700,7 @@ class PolicyMatcherTool:
         if "special_benefits" in policy:
             tips.append("추가 혜택 조건을 확인하세요")
 
-        if policy["type"] == PolicyType.LOAN_SUPPORT:
+        if policy["type"] == PolicyType.LOAN_SUPPORT.value:
             tips.append("여러 은행의 조건을 비교해보세요")
 
         return tips
@@ -747,9 +747,9 @@ class PolicyMatcherTool:
         if policy["match_score"] >= 80:
             reasons.append("매우 높은 적합도")
 
-        if policy["type"] == PolicyType.LOAN_SUPPORT:
+        if policy["type"] == PolicyType.LOAN_SUPPORT.value:
             reasons.append("대출 지원으로 자금 조달 용이")
-        elif policy["type"] == PolicyType.SUBSIDY:
+        elif policy["type"] == PolicyType.SUBSIDY.value:
             reasons.append("직접적인 금전 지원")
 
         if "청년" in profile.get("household_types", []) and "청년" in policy.get("target", []):
@@ -821,7 +821,7 @@ if __name__ == "__main__":
         print("\n매칭된 정책 (상위 3개):")
         for policy in result['matched_policies'][:3]:
             print(f"\n  {policy['priority']}. {policy['name']}")
-            print(f"     유형: {policy['type'].value}")
+            print(f"     유형: {policy['type']}")
             print(f"     매칭 점수: {policy['match_score']:.1f}")
             print(f"     추천 이유: {policy['priority_reason']}")
 
