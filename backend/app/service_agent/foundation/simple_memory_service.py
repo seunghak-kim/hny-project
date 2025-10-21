@@ -5,11 +5,15 @@ SimpleMemoryService - Memory 테이블 없이 chat_messages만 사용
 import logging
 from typing import List, Dict, Any, Optional
 from datetime import datetime
-from sqlalchemy import select, desc
+import asyncio
+import tiktoken
+from sqlalchemy import select, desc, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm.attributes import flag_modified
 
 from app.models.chat import ChatMessage, ChatSession
+from app.core.config import settings
+from app.service_agent.llm_manager.llm_service import LLMService
 
 logger = logging.getLogger(__name__)
 
@@ -99,7 +103,7 @@ class SimpleMemoryService:
     async def save_conversation_memory(
         self,
         session_id: str,
-        user_id: str,
+        user_id: int,
         user_message: str,
         ai_response: str,
         metadata: Optional[Dict[str, Any]] = None
@@ -123,7 +127,7 @@ class SimpleMemoryService:
 
     async def get_recent_memories(
         self,
-        user_id: str,
+        user_id: int,
         limit: int = 5
     ) -> List[Dict[str, Any]]:
         """
@@ -141,7 +145,7 @@ class SimpleMemoryService:
 
     async def update_user_preference(
         self,
-        user_id: str,
+        user_id: int,
         key: str,
         value: Any
     ) -> bool:
@@ -159,7 +163,7 @@ class SimpleMemoryService:
 
     async def get_user_preferences(
         self,
-        user_id: str
+        user_id: int
     ) -> Dict[str, Any]:
         """
         사용자 선호도 조회 (호환성용 - 빈 dict 반환)
@@ -175,7 +179,7 @@ class SimpleMemoryService:
 
     async def save_entity_memory(
         self,
-        user_id: str,
+        user_id: int,
         entity_type: str,
         entity_name: str,
         properties: Dict[str, Any]
@@ -197,7 +201,7 @@ class SimpleMemoryService:
 
     async def get_entity_memories(
         self,
-        user_id: str,
+        user_id: int,
         entity_type: Optional[str] = None
     ) -> List[Dict[str, Any]]:
         """
@@ -216,13 +220,13 @@ class SimpleMemoryService:
 
     async def load_recent_memories(
         self,
-        user_id: str,
+        user_id: int,
         limit: int = 5,
         relevance_filter: str = "ALL",
         session_id: Optional[str] = None
     ) -> List[Dict[str, Any]]:
         """
-        최근 세션의 메모리 로드 (chat_sessions.metadata 기반)
+        최근 세션의 메모리 로드 (chat_sessions.session_metadata 기반)
 
         이 메서드는 Long-term Memory의 핵심으로, 사용자의 이전 대화 맥락을 로드합니다.
         user_id 기반으로 조회하므로 여러 대화창(세션) 간 메모리가 공유됩니다.
@@ -281,7 +285,7 @@ class SimpleMemoryService:
             ]
 
         Note:
-            - 저장 위치: chat_sessions.metadata (JSONB)
+            - 저장 위치: chat_sessions.session_metadata (JSONB)
             - 저장 키: conversation_summary
             - 저장 시점: 대화 완료 후 (save_conversation 메서드)
             - session_id가 None이면 모든 세션 포함 (주의: 현재 세션의 불완전한 데이터 포함 가능)
@@ -330,13 +334,13 @@ class SimpleMemoryService:
 
     async def save_conversation(
         self,
-        user_id: str,
+        user_id: int,
         session_id: str,
         messages: List[dict],
         summary: str
     ) -> None:
         """
-        대화 요약을 chat_sessions.metadata에 저장
+        대화 요약을 chat_sessions.session_metadata에 저장
 
         Args:
             user_id: 사용자 ID
@@ -345,7 +349,7 @@ class SimpleMemoryService:
             summary: 대화 요약
 
         Note:
-            - chat_sessions.metadata에 conversation_summary 저장
+            - chat_sessions.session_metadata에 conversation_summary 저장
             - flag_modified로 JSONB 변경 추적
             - user_id 일치 확인으로 보안 강화
         """
@@ -384,6 +388,265 @@ class SimpleMemoryService:
             logger.error(f"Failed to save conversation for session {session_id}: {e}")
             await self.db.rollback()
             raise
+
+    # === 3-Tier Memory 메서드 (Phase 1 구현) ===
+
+    async def load_tiered_memories(
+        self,
+        user_id: int,
+        current_session_id: Optional[str] = None
+    ) -> Dict[str, List[Dict[str, Any]]]:
+        """
+        3-Tier Hybrid Memory 로드
+
+        1-5 세션: 전체 메시지
+        6-10 세션: LLM 요약
+        11-20 세션: LLM 요약
+
+        Args:
+            user_id: 사용자 ID
+            current_session_id: 현재 세션 ID (제외할 세션)
+
+        Returns:
+            {
+                "shortterm": [...],  # 1-5 세션 전체 메시지
+                "midterm": [...],    # 6-10 세션 요약
+                "longterm": [...]    # 11-20 세션 요약
+            }
+        """
+        try:
+            # 토큰 카운팅 준비
+            encoding = tiktoken.get_encoding("cl100k_base")
+            total_tokens = 0
+
+            # 결과 구조
+            tiered_memories = {
+                "shortterm": [],
+                "midterm": [],
+                "longterm": []
+            }
+
+            # 전체 세션 조회 (최신순)
+            total_limit = (
+                settings.SHORTTERM_MEMORY_LIMIT +
+                settings.MIDTERM_MEMORY_LIMIT +
+                settings.LONGTERM_MEMORY_LIMIT
+            )
+
+            query = select(ChatSession).where(
+                ChatSession.user_id == user_id
+            )
+
+            if current_session_id:
+                query = query.where(ChatSession.session_id != current_session_id)
+
+            query = query.order_by(ChatSession.updated_at.desc()).limit(total_limit)
+
+            result = await self.db.execute(query)
+            sessions = result.scalars().all()
+
+            # 세션별 처리
+            for idx, session in enumerate(sessions):
+                # 토큰 제한 체크
+                if total_tokens >= settings.MEMORY_TOKEN_LIMIT:
+                    logger.info(f"Token limit reached: {total_tokens}")
+                    break
+
+                if idx < settings.SHORTTERM_MEMORY_LIMIT:
+                    # Short-term: 전체 메시지
+                    messages_query = select(ChatMessage).where(
+                        ChatMessage.session_id == session.session_id
+                    ).order_by(ChatMessage.created_at).limit(settings.MEMORY_MESSAGE_LIMIT)
+
+                    messages_result = await self.db.execute(messages_query)
+                    messages = messages_result.scalars().all()
+
+                    messages_list = [
+                        {
+                            "role": msg.role,
+                            "content": msg.content,
+                            "timestamp": msg.created_at.isoformat()
+                        }
+                        for msg in messages
+                    ]
+
+                    # 토큰 계산
+                    content_text = " ".join([m["content"] for m in messages_list])
+                    tokens = len(encoding.encode(content_text))
+                    total_tokens += tokens
+
+                    if total_tokens > settings.MEMORY_TOKEN_LIMIT:
+                        break
+
+                    tiered_memories["shortterm"].append({
+                        "session_id": session.session_id,
+                        "messages": messages_list,
+                        "metadata": session.session_metadata,
+                        "tier": "shortterm",
+                        "timestamp": session.updated_at.isoformat()
+                    })
+
+                elif idx < settings.SHORTTERM_MEMORY_LIMIT + settings.MIDTERM_MEMORY_LIMIT:
+                    # Mid-term: 요약
+                    summary = await self._get_or_create_summary(session)
+
+                    tokens = len(encoding.encode(summary))
+                    total_tokens += tokens
+
+                    if total_tokens > settings.MEMORY_TOKEN_LIMIT:
+                        break
+
+                    tiered_memories["midterm"].append({
+                        "session_id": session.session_id,
+                        "summary": summary,
+                        "metadata": session.session_metadata,
+                        "tier": "midterm",
+                        "timestamp": session.updated_at.isoformat()
+                    })
+
+                else:
+                    # Long-term: 요약
+                    summary = await self._get_or_create_summary(session)
+
+                    tokens = len(encoding.encode(summary))
+                    total_tokens += tokens
+
+                    if total_tokens > settings.MEMORY_TOKEN_LIMIT:
+                        break
+
+                    tiered_memories["longterm"].append({
+                        "session_id": session.session_id,
+                        "summary": summary,
+                        "metadata": session.session_metadata,
+                        "tier": "longterm",
+                        "timestamp": session.updated_at.isoformat()
+                    })
+
+            logger.info(
+                f"Loaded tiered memories - Tokens: {total_tokens}, "
+                f"Short: {len(tiered_memories['shortterm'])}, "
+                f"Mid: {len(tiered_memories['midterm'])}, "
+                f"Long: {len(tiered_memories['longterm'])}"
+            )
+
+            return tiered_memories
+
+        except Exception as e:
+            logger.error(f"Failed to load tiered memories: {e}")
+            return {"shortterm": [], "midterm": [], "longterm": []}
+
+    async def _get_or_create_summary(self, session: ChatSession) -> str:
+        """요약 캐시 조회 또는 생성"""
+        metadata = session.session_metadata
+
+        if metadata and "conversation_summary" in metadata:
+            return metadata["conversation_summary"]
+
+        # 요약 없으면 LLM으로 생성
+        summary = await self.summarize_with_llm(session.session_id)
+
+        # 캐시 저장
+        await self._save_summary_to_metadata(session.session_id, summary)
+
+        return summary
+
+    async def summarize_with_llm(self, session_id: str) -> str:
+        """LLM으로 대화 요약 생성"""
+        try:
+            # 메시지 로드
+            messages_query = select(ChatMessage).where(
+                ChatMessage.session_id == session_id
+            ).order_by(ChatMessage.created_at).limit(settings.MEMORY_MESSAGE_LIMIT)
+
+            result = await self.db.execute(messages_query)
+            messages = result.scalars().all()
+
+            if not messages:
+                return "대화 없음"
+
+            # 대화 포맷팅
+            conversation_text = "\n".join([
+                f"{msg.role}: {msg.content}"
+                for msg in messages
+            ])
+
+            # LLM 호출
+            llm_service = LLMService()
+            summary = await llm_service.complete_async(
+                prompt_name="conversation_summary",
+                variables={
+                    "conversation": conversation_text,
+                    "max_length": settings.SUMMARY_MAX_LENGTH
+                },
+                temperature=0.3,
+                max_tokens=150
+            )
+
+            logger.info(f"LLM summarization completed: {summary[:50]}...")
+            return summary.strip()
+
+        except Exception as e:
+            logger.error(f"LLM summarization failed: {e}")
+            # Fallback: 마지막 메시지 잘라내기
+            if messages:
+                return messages[-1].content[:settings.SUMMARY_MAX_LENGTH]
+            return "요약 생성 실패"
+
+    async def _save_summary_to_metadata(self, session_id: str, summary: str) -> None:
+        """JSONB에 요약 저장"""
+        try:
+            query = select(ChatSession).where(ChatSession.session_id == session_id)
+            result = await self.db.execute(query)
+            session = result.scalar_one_or_none()
+
+            if not session:
+                return
+
+            if session.session_metadata is None:
+                session.session_metadata = {}
+
+            session.session_metadata["conversation_summary"] = summary
+            session.session_metadata["summary_method"] = "llm"
+            session.session_metadata["summary_updated_at"] = datetime.now().isoformat()
+
+            flag_modified(session, "session_metadata")
+            await self.db.commit()
+
+            logger.info(f"Summary saved for session: {session_id}")
+
+        except Exception as e:
+            logger.error(f"Failed to save summary: {e}")
+            await self.db.rollback()
+
+    async def summarize_conversation_background(
+        self,
+        session_id: str,
+        user_id: int,
+        messages: List[Dict[str, Any]]
+    ) -> None:
+        """백그라운드에서 대화 요약 (fire-and-forget)"""
+        asyncio.create_task(
+            self._background_summary_with_new_session(session_id, user_id)
+        )
+        logger.info(f"Background summary task created for session: {session_id}")
+
+    async def _background_summary_with_new_session(
+        self,
+        session_id: str,
+        user_id: int
+    ) -> None:
+        """독립 세션으로 백그라운드 요약"""
+        try:
+            from app.db.postgre_db import get_async_db
+
+            async for db_session in get_async_db():
+                temp_service = SimpleMemoryService(db_session)
+                summary = await temp_service.summarize_with_llm(session_id)
+                await temp_service._save_summary_to_metadata(session_id, summary)
+                break
+
+        except Exception as e:
+            logger.error(f"Background summary failed for session {session_id}: {e}")
 
 
 # === 호환성 레이어 (기존 코드 호환) ===

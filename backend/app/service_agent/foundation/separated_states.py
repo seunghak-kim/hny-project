@@ -251,7 +251,8 @@ class ExecutionStepState(TypedDict):
     agent_name: str                 # 담당 에이전트 (예: "search_team")
     team: str                       # 담당 팀 (예: "search")
 
-    # 작업 정보 (2개)
+    # 작업 정보 (3개)
+    priority: int                   # 실행 우선순위 (0, 1, 2, ...) - 낮을수록 먼저 실행
     task: str                       # 간단한 작업명 (예: "법률 정보 검색")
     description: str                # 상세 설명 (사용자에게 표시)
 

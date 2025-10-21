@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 import logging
 import asyncio
 import json
-from sqlalchemy import func
+from sqlalchemy import func, text
 
 from app.api.schemas import (
     SessionStartRequest, SessionStartResponse,
@@ -479,17 +479,19 @@ async def delete_chat_session(
             await db.delete(session)
 
             # checkpoints 관련 테이블도 정리
+            # Note: LangGraph uses 'thread_id' column (not 'session_id')
+            # thread_id value = session_id value (e.g., 'session-xxx')
             await db.execute(
-                "DELETE FROM checkpoints WHERE session_id = :session_id",
-                {"session_id": session_id}
+                text("DELETE FROM checkpoints WHERE thread_id = :thread_id"),
+                {"thread_id": session_id}
             )
             await db.execute(
-                "DELETE FROM checkpoint_writes WHERE session_id = :session_id",
-                {"session_id": session_id}
+                text("DELETE FROM checkpoint_writes WHERE thread_id = :thread_id"),
+                {"thread_id": session_id}
             )
             await db.execute(
-                "DELETE FROM checkpoint_blobs WHERE session_id = :session_id",
-                {"session_id": session_id}
+                text("DELETE FROM checkpoint_blobs WHERE thread_id = :thread_id"),
+                {"thread_id": session_id}
             )
 
             await db.commit()

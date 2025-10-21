@@ -120,7 +120,10 @@ export class ChatWSClient {
       };
 
       this.ws.onerror = (event) => {
-        console.error('[ChatWSClient] ❌ WebSocket error:', event);
+        // 개발 환경에서만 경고 표시 (자동 재연결되므로 에러가 아님)
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('[ChatWSClient] ⚠️ WebSocket connection issue (will auto-reconnect)');
+        }
         if (this.config.onError) {
           this.config.onError(new Error('WebSocket error'));
         }

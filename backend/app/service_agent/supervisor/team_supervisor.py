@@ -240,22 +240,31 @@ class TeamBasedSupervisor:
                 async for db_session in get_async_db():
                     memory_service = LongTermMemoryService(db_session)
 
-                    # 최근 대화 기록 로드 (RELEVANT만, 현재 세션 제외)
-                    loaded_memories = await memory_service.load_recent_memories(
+                    # ✅ 3-Tier Hybrid Memory 로드
+                    tiered_memories = await memory_service.load_tiered_memories(
                         user_id=user_id,
-                        limit=settings.MEMORY_LOAD_LIMIT,
-                        relevance_filter="RELEVANT",
-                        session_id=chat_session_id  # 현재 진행 중인 세션 제외
+                        current_session_id=chat_session_id  # 현재 진행 중인 세션 제외
                     )
 
                     # 사용자 선호도 로드
                     user_preferences = await memory_service.get_user_preferences(user_id)
 
-                    state["loaded_memories"] = loaded_memories
+                    # State 저장
+                    state["tiered_memories"] = tiered_memories
+                    state["loaded_memories"] = (  # 하위 호환성 유지
+                        tiered_memories.get("shortterm", []) +
+                        tiered_memories.get("midterm", []) +
+                        tiered_memories.get("longterm", [])
+                    )
                     state["user_preferences"] = user_preferences
                     state["memory_load_time"] = datetime.now().isoformat()
 
-                    logger.info(f"[TeamSupervisor] Loaded {len(loaded_memories)} memories and preferences for user {user_id}")
+                    logger.info(
+                        f"[TeamSupervisor] 3-Tier memories loaded - "
+                        f"Short({len(tiered_memories.get('shortterm', []))}), "
+                        f"Mid({len(tiered_memories.get('midterm', []))}), "
+                        f"Long({len(tiered_memories.get('longterm', []))})"
+                    )
                     break  # get_db()는 generator이므로 첫 번째 세션만 사용
             except Exception as e:
                 logger.error(f"[TeamSupervisor] Failed to load Long-term Memory: {e}")
@@ -328,6 +337,7 @@ class TeamBasedSupervisor:
                     "team": self._get_team_for_agent(step.agent_name),
 
                     # 작업 정보
+                    "priority": step.priority,  # ✅ 추가: PlanningAgent의 priority 복사
                     "task": self._get_task_name_for_agent(step.agent_name, intent_result),
                     "description": self._get_task_description_for_agent(step.agent_name, intent_result),
 
@@ -359,20 +369,30 @@ class TeamBasedSupervisor:
             "steps": planning_state["execution_steps"]
         }
 
-        # 활성화할 팀 결정
-        active_teams = set()
-        for step in planning_state["execution_steps"]:
-            team = step.get("team")
-            if team:
-                active_teams.add(team)
+        # 활성화할 팀 결정 (priority 순서 보장)
+        active_teams = []
+        seen_teams = set()
 
-        state["active_teams"] = list(active_teams)
+        # ✅ priority 순으로 정렬
+        sorted_steps = sorted(
+            planning_state["execution_steps"],
+            key=lambda x: x.get("priority", 999)
+        )
+
+        for step in sorted_steps:
+            team = step.get("team")
+            if team and team not in seen_teams:
+                active_teams.append(team)
+                seen_teams.add(team)
+
+        state["active_teams"] = active_teams  # ✅ 순서 보장!
 
         logger.info(f"[TeamSupervisor] Plan created: {len(planning_state['execution_steps'])} steps, {len(active_teams)} teams")
+        logger.info(f"[TeamSupervisor] Active teams (priority order): {active_teams}")
 
         # 디버그: execution_steps 내용 로깅
         for step in planning_state["execution_steps"]:
-            logger.debug(f"  Step: agent={step.get('agent_name')}, team={step.get('team')}, status={step.get('status')}")
+            logger.debug(f"  Step: agent={step.get('agent_name')}, team={step.get('team')}, priority={step.get('priority')}, status={step.get('status')}")
 
         if not planning_state["execution_steps"]:
             logger.warning("[TeamSupervisor] WARNING: No execution steps created in planning phase!")
@@ -603,8 +623,12 @@ class TeamBasedSupervisor:
         shared_state: SharedState,
         main_state: MainSupervisorState
     ) -> Dict[str, Any]:
-        """팀 병렬 실행"""
+        """팀 병렬 실행 + execution_steps status 업데이트"""
         logger.info(f"[TeamSupervisor] Executing {len(teams)} teams in parallel")
+
+        planning_state = main_state.get("planning_state")
+        session_id = main_state.get("session_id")
+        progress_callback = self._progress_callbacks.get(session_id) if session_id else None
 
         tasks = []
         for team_name in teams:
@@ -614,12 +638,77 @@ class TeamBasedSupervisor:
 
         results = {}
         for team_name, task in tasks:
+            # ✅ 실행 전: status = "in_progress"
+            step_id = self._find_step_id_for_team(team_name, planning_state)
+            if step_id and planning_state:
+                planning_state = StateManager.update_step_status(
+                    planning_state,
+                    step_id,
+                    "in_progress",
+                    progress=0
+                )
+                main_state["planning_state"] = planning_state
+
+                # WebSocket: TODO 상태 변경 알림 (in_progress)
+                if progress_callback:
+                    try:
+                        await progress_callback("todo_updated", {
+                            "execution_steps": planning_state["execution_steps"]
+                        })
+                    except Exception as ws_error:
+                        logger.error(f"[TeamSupervisor] Failed to send todo_updated (in_progress): {ws_error}")
+
             try:
                 result = await task
                 results[team_name] = result
+
+                # ✅ 실행 성공: status = "completed"
+                if step_id and planning_state:
+                    planning_state = StateManager.update_step_status(
+                        planning_state,
+                        step_id,
+                        "completed",
+                        progress=100
+                    )
+                    # 결과 저장
+                    for step in planning_state["execution_steps"]:
+                        if step["step_id"] == step_id:
+                            step["result"] = result
+                            break
+                    main_state["planning_state"] = planning_state
+
+                    # WebSocket: TODO 상태 변경 알림 (completed)
+                    if progress_callback:
+                        try:
+                            await progress_callback("todo_updated", {
+                                "execution_steps": planning_state["execution_steps"]
+                            })
+                        except Exception as ws_error:
+                            logger.error(f"[TeamSupervisor] Failed to send todo_updated (completed): {ws_error}")
+
                 logger.info(f"[TeamSupervisor] Team '{team_name}' completed")
             except Exception as e:
+                # ✅ 실행 실패: status = "failed"
                 logger.error(f"[TeamSupervisor] Team '{team_name}' failed: {e}")
+
+                if step_id and planning_state:
+                    planning_state = StateManager.update_step_status(
+                        planning_state,
+                        step_id,
+                        "failed",
+                        error=str(e)
+                    )
+                    main_state["planning_state"] = planning_state
+
+                    # WebSocket: TODO 상태 변경 알림 (failed)
+                    if progress_callback:
+                        try:
+                            await progress_callback("todo_updated", {
+                                "execution_steps": planning_state["execution_steps"]
+                            })
+                        except Exception as ws_error:
+                            logger.error(f"[TeamSupervisor] Failed to send todo_updated (failed): {ws_error}")
+
                 results[team_name] = {"status": "failed", "error": str(e)}
 
         return results
@@ -884,6 +973,14 @@ class TeamBasedSupervisor:
 
                     # chat_session_id 추출 (Chat History & State Endpoints)
                     chat_session_id = state.get("chat_session_id")
+
+                    # ✅ 백그라운드 요약 시작 (Fire-and-forget)
+                    await memory_service.summarize_conversation_background(
+                        session_id=chat_session_id,
+                        user_id=user_id,
+                        messages=[]  # Phase 1: 빈 리스트 (실제 메시지는 DB에서 로드됨)
+                    )
+                    logger.info(f"[TeamSupervisor] Background summary started for session: {chat_session_id}")
 
                     # 대화 저장 (Phase 1: 간소화된 4개 파라미터)
                     await memory_service.save_conversation(

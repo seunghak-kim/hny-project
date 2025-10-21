@@ -301,7 +301,7 @@ class PlanningAgent:
         keywords: List[str]
     ) -> List[str]:
         """
-        LLM 기반 Agent 추천 - 다층 Fallback 전략
+        LLM 기반 Agent 추천 - 다층 Fallback 전략 + 키워드 필터
 
         Args:
             intent_type: 분석된 의도 타입
@@ -311,6 +311,34 @@ class PlanningAgent:
         Returns:
             추천 Agent 목록
         """
+        # === 0차: 키워드 기반 필터 (경계 케이스 해결) ===
+        # LEGAL_CONSULT: 단순 질문은 search만, 복잡한 질문은 search + analysis
+        if intent_type == IntentType.LEGAL_CONSULT:
+            # 분석이 필요한 키워드
+            analysis_keywords = [
+                "비교", "분석", "계산", "평가", "추천", "검토",
+                "어떻게", "방법", "차이", "장단점", "괜찮아",
+                "해야", "대응", "해결", "조치", "문제"
+            ]
+
+            needs_analysis = any(kw in query for kw in analysis_keywords)
+
+            if not needs_analysis:
+                logger.info(f"✅ LEGAL_CONSULT without analysis keywords → search_team only")
+                return ["search_team"]
+            else:
+                logger.info(f"✅ LEGAL_CONSULT with analysis keywords → search + analysis")
+                return ["search_team", "analysis_team"]
+
+        # MARKET_INQUIRY: 비교/분석 키워드 체크
+        if intent_type == IntentType.MARKET_INQUIRY:
+            analysis_keywords = ["비교", "분석", "평가", "추천", "차이", "장단점"]
+            needs_analysis = any(kw in query for kw in analysis_keywords)
+
+            if not needs_analysis:
+                logger.info(f"✅ MARKET_INQUIRY without analysis keywords → search_team only")
+                return ["search_team"]
+
         # === 1차: Primary LLM으로 Agent 선택 ===
         if self.llm_service:
             try:

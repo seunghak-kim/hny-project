@@ -6,7 +6,7 @@ import uuid
 import logging
 from datetime import datetime, timedelta, timezone
 from typing import Optional, Dict, Tuple
-from sqlalchemy import select, delete, update, func
+from sqlalchemy import select, delete, update, func, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.chat import ChatSession
@@ -213,19 +213,20 @@ class PostgreSQLSessionManager:
         """
         try:
             # checkpoints 테이블 정리
+            # Note: LangGraph checkpoint tables use 'thread_id' column
             await db_session.execute(
-                "DELETE FROM checkpoints WHERE session_id = :session_id",
-                {"session_id": session_id}
+                text("DELETE FROM checkpoints WHERE thread_id = :thread_id"),
+                {"thread_id": session_id}
             )
             # checkpoint_writes 테이블 정리
             await db_session.execute(
-                "DELETE FROM checkpoint_writes WHERE session_id = :session_id",
-                {"session_id": session_id}
+                text("DELETE FROM checkpoint_writes WHERE thread_id = :thread_id"),
+                {"thread_id": session_id}
             )
             # checkpoint_blobs 테이블 정리
             await db_session.execute(
-                "DELETE FROM checkpoint_blobs WHERE session_id = :session_id",
-                {"session_id": session_id}
+                text("DELETE FROM checkpoint_blobs WHERE thread_id = :thread_id"),
+                {"thread_id": session_id}
             )
             await db_session.commit()
             logger.debug(f"Checkpoints deleted for session: {session_id}")

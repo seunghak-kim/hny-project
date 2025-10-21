@@ -1,4 +1,5 @@
 from typing import List
+from pydantic import Field
 from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
@@ -29,6 +30,37 @@ class Settings(BaseSettings):
 
     # Long-term Memory 범위 설정
     MEMORY_LOAD_LIMIT: int = 5  # Number of recent memories to load per user
+
+    # === 3-Tier Memory Configuration ===
+    SHORTTERM_MEMORY_LIMIT: int = Field(
+        default=5,
+        description="최근 N개 세션 전체 메시지 로드 (1-5 세션)"
+    )
+
+    MIDTERM_MEMORY_LIMIT: int = Field(
+        default=5,
+        description="중기 메모리 세션 수 (6-10번째 세션)"
+    )
+
+    LONGTERM_MEMORY_LIMIT: int = Field(
+        default=10,
+        description="장기 메모리 세션 수 (11-20번째 세션)"
+    )
+
+    MEMORY_TOKEN_LIMIT: int = Field(
+        default=2000,
+        description="메모리 로드 시 최대 토큰 제한"
+    )
+
+    MEMORY_MESSAGE_LIMIT: int = Field(
+        default=10,
+        description="Short-term 세션당 최대 메시지 수"
+    )
+
+    SUMMARY_MAX_LENGTH: int = Field(
+        default=200,
+        description="LLM 요약 최대 글자 수"
+    )
 
     # 메모리 공유 범위 가이드:
     # -------------------------
