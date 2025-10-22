@@ -1,8 +1,10 @@
 # 데이터베이스 가이드
 
-**버전**: 1.0
+**버전**: 2.0
 **작성일**: 2025-10-14
+**최종 업데이트**: 2025-10-21 (Phase 1 Long-term Memory 반영)
 **데이터베이스**: PostgreSQL 15+
+**주요 변경사항**: user_id int 통일, chat_sessions.metadata 구조, Long-term Memory 구현
 
 ---
 
@@ -36,15 +38,18 @@
 | `real_estate` | 메인 애플리케이션 데이터 | ~500MB |
 | `postgres` | 시스템 기본 DB | ~10MB |
 
-### 주요 테이블 (5개)
+### 주요 테이블 (8개)
 
 | 테이블명 | 행 수 (예상) | 용도 |
 |---------|-------------|------|
-| `sessions` | ~10,000 | 세션 관리 |
-| `checkpoints` | ~50,000 | LangGraph 체크포인트 |
+| `users` | ~1,000 | 사용자 정보 ✅ |
+| `chat_sessions` | ~10,000 | 채팅 세션 관리 (Phase 1 Long-term Memory) ✅ |
+| `chat_messages` | ~100,000 | 채팅 메시지 저장 ✅ |
+| `checkpoints` | ~50,000 | LangGraph 체크포인트 (PostgreSQL) ✅ |
 | `legal_clauses` | ~500 | 법률 조항 (pgvector) |
-| `properties` | ~10,000 | 부동산 매물 |
+| `real_estates` | ~10,000 | 부동산 매물 |
 | `transactions` | ~11,000 | 거래 내역 |
+| `trusts` | ~100 | 신탁 정보 |
 
 ---
 
@@ -54,59 +59,56 @@
 
 ```mermaid
 erDiagram
-    SESSIONS ||--o{ CONVERSATION_MEMORIES : has
-    USERS ||--o{ CONVERSATION_MEMORIES : creates
-    USERS ||--o| USER_PREFERENCES : has
-    PROPERTIES ||--o{ TRANSACTIONS : has
-    PROPERTIES ||--o{ PROPERTY_NEARBY : has
-
-    SESSIONS {
-        varchar session_id PK
-        integer user_id FK
-        text metadata
-        timestamp created_at
-        timestamp expires_at
-        timestamp last_activity
-        integer request_count
-    }
+    USERS ||--o{ CHAT_SESSIONS : creates
+    CHAT_SESSIONS ||--o{ CHAT_MESSAGES : contains
+    CHECKPOINTS ||--o| CHAT_SESSIONS : tracks
+    REAL_ESTATES ||--o{ TRANSACTIONS : has
 
     USERS {
         integer id PK
-        varchar username UK
         varchar email UK
-        varchar password_hash
+        varchar type
+        boolean is_active
         timestamp created_at
+        timestamp updated_at
     }
 
-    CONVERSATION_MEMORIES {
-        uuid id PK
+    CHAT_SESSIONS {
+        varchar session_id PK
         integer user_id FK
-        varchar session_id
-        text user_query
-        text assistant_response_summary
-        varchar intent_type
-        float intent_confidence
-        jsonb teams_used
-        jsonb entities_mentioned
+        varchar title
+        text last_message
+        integer message_count
+        jsonb session_metadata
+        boolean is_active
         timestamp created_at
+        timestamp updated_at
     }
 
-    USER_PREFERENCES {
+    CHAT_MESSAGES {
         integer id PK
-        integer user_id FK
-        jsonb preferred_regions
-        jsonb preferred_property_types
-        jsonb price_range
-        integer interaction_count
-        timestamp last_updated
+        varchar session_id FK
+        varchar role
+        text content
+        jsonb structured_data
+        timestamp created_at
     }
 
-    PROPERTIES {
+    CHECKPOINTS {
+        text thread_id PK
+        text checkpoint_id PK
+        text parent_checkpoint_id
+        bytea checkpoint
+        bytea metadata
+        timestamp created_at
+    }
+
+    REAL_ESTATES {
         integer id PK
         varchar property_type
         varchar region
-        integer price
-        float area
+        bigint price
+        numeric area
         integer build_year
         varchar status
         timestamp created_at
@@ -116,10 +118,15 @@ erDiagram
         integer id PK
         integer property_id FK
         varchar transaction_type
-        integer amount
+        bigint amount
         date transaction_date
     }
 ```
+
+**Phase 1 Long-term Memory 구현 완료** ✅
+- `chat_sessions.session_metadata` (JSONB): conversation_summary 저장
+- `chat_messages`: 대화 히스토리 저장
+- `users.id`: Integer 타입 (통일 완료)
 
 ---
 
@@ -294,32 +301,99 @@ alembic upgrade head
 
 ## 📊 데이터 모델
 
-### 1. Sessions (세션 관리)
+### 1. Users (사용자 정보)
 
 ```sql
-CREATE TABLE sessions (
-    session_id VARCHAR(100) PRIMARY KEY,
-    user_id INTEGER,  -- ✅ Integer (User 테이블 FK)
-    metadata TEXT,
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    email VARCHAR(200) UNIQUE NOT NULL,
+    type VARCHAR(20) NOT NULL DEFAULT 'user',  -- 'admin'|'user'|'agent'
+    is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
-    last_activity TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    request_count INTEGER DEFAULT 0
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 -- 인덱스
-CREATE INDEX idx_sessions_user_id ON sessions(user_id);
-CREATE INDEX idx_sessions_expires_at ON sessions(expires_at);
+CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_users_type ON users(type);
 ```
 
 **필드 설명**:
-- `session_id`: UUID 기반 세션 ID (Primary Key)
-- `user_id`: 사용자 ID (로그인 시, 익명은 NULL)
-- `metadata`: 추가 세션 정보 (JSON 형식 TEXT)
-- `expires_at`: 세션 만료 시간 (기본 24시간)
-- `request_count`: 요청 횟수 (rate limiting용)
+- `id`: **Integer Primary Key** (user_id 통일 완료) ✅
+- `email`: 이메일 (Unique, 로그인용)
+- `type`: 사용자 유형 (admin/user/agent)
+- `is_active`: 활성화 상태
 
-### 2. Checkpoints (LangGraph 체크포인트)
+---
+
+### 2. Chat Sessions (채팅 세션 관리)
+
+```sql
+CREATE TABLE chat_sessions (
+    session_id VARCHAR(100) PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    title VARCHAR(200) DEFAULT '새 대화',
+    last_message TEXT,
+    message_count INTEGER DEFAULT 0,
+    session_metadata JSONB,  -- ✅ Phase 1: conversation_summary 저장
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 인덱스
+CREATE INDEX idx_chat_sessions_user_id ON chat_sessions(user_id);
+CREATE INDEX idx_chat_sessions_updated_at ON chat_sessions(updated_at);
+CREATE INDEX idx_chat_sessions_user_updated ON chat_sessions(user_id, updated_at DESC);
+```
+
+**필드 설명**:
+- `session_id`: 채팅 세션 ID (Primary Key)
+- `user_id`: **Integer FK** (users.id) ✅
+- `title`: 대화 제목 (자동 생성)
+- `last_message`: 마지막 메시지 미리보기
+- `message_count`: 메시지 개수
+- **`session_metadata` (JSONB)**: Phase 1 Long-term Memory 저장소 ✅
+  ```json
+  {
+    "conversation_summary": "강남구 아파트 전세 시세 조회 (5억~7억)",
+    "last_updated": "2025-10-20T18:30:00",
+    "message_count": 5,
+    "summary_method": "simple"
+  }
+  ```
+- `is_active`: 활성화 상태
+- `updated_at`: 마지막 업데이트 시간 (정렬용)
+
+---
+
+### 3. Chat Messages (채팅 메시지)
+
+```sql
+CREATE TABLE chat_messages (
+    id SERIAL PRIMARY KEY,
+    session_id VARCHAR(100) NOT NULL REFERENCES chat_sessions(session_id) ON DELETE CASCADE,
+    role VARCHAR(20) NOT NULL,  -- 'user'|'assistant'|'system'
+    content TEXT NOT NULL,
+    structured_data JSONB,  -- 구조화된 데이터 (sections 등)
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 인덱스
+CREATE INDEX idx_chat_messages_session_id ON chat_messages(session_id);
+CREATE INDEX idx_chat_messages_created_at ON chat_messages(created_at);
+```
+
+**필드 설명**:
+- `id`: Auto-increment Primary Key
+- `session_id`: FK (chat_sessions.session_id)
+- `role`: 메시지 발신자 (user/assistant/system)
+- `content`: 메시지 내용
+- `structured_data`: 구조화된 응답 데이터 (JSON)
+
+---
+
+### 4. Checkpoints (LangGraph 체크포인트)
 
 ```sql
 CREATE TABLE checkpoints (
@@ -337,12 +411,20 @@ CREATE INDEX idx_checkpoints_thread ON checkpoints(thread_id);
 ```
 
 **필드 설명**:
-- `thread_id`: 세션 ID (session_id와 동일)
-- `checkpoint_id`: 체크포인트 ID (LangGraph 생성)
-- `checkpoint`: msgpack 직렬화된 State
+- `thread_id`: **chat_session_id** (대화창 ID, chat_sessions.session_id와 매핑) ✅
+- `checkpoint_id`: 체크포인트 ID (LangGraph 자동 생성)
+- `parent_checkpoint_id`: 부모 체크포인트 ID
+- `checkpoint`: msgpack 직렬화된 MainSupervisorState
 - `metadata`: 체크포인트 메타데이터
 
-### 3. Legal Clauses (법률 조항 - pgvector)
+**Phase 1 변경사항** ✅:
+- `thread_id`가 **chat_session_id**를 사용하도록 변경
+- 이전: HTTP session_id (임시)
+- 현재: chat_session_id (영구적, 대화창 단위)
+
+---
+
+### 5. Legal Clauses (법률 조항 - pgvector)
 
 ```sql
 CREATE EXTENSION IF NOT EXISTS vector;
@@ -374,7 +456,9 @@ CREATE INDEX idx_legal_clauses_tenant ON legal_clauses(is_tenant_protection);
 - `is_tenant_protection`: 임차인 보호 관련 조항 여부
 - HNSW 인덱스: 빠른 벡터 유사도 검색 (ANN)
 
-### 4. Properties (부동산 매물)
+---
+
+### 6. Real Estates (부동산 매물)
 
 ```sql
 CREATE TABLE properties (
@@ -406,7 +490,9 @@ CREATE INDEX idx_properties_area ON properties(area);
 CREATE INDEX idx_properties_status ON properties(status);
 ```
 
-### 5. Transactions (거래 내역)
+---
+
+### 7. Transactions (거래 내역)
 
 ```sql
 CREATE TABLE transactions (
@@ -426,71 +512,167 @@ CREATE INDEX idx_transactions_date ON transactions(transaction_date);
 CREATE INDEX idx_transactions_type ON transactions(transaction_type);
 ```
 
-### 6. Conversation Memories (Long-term Memory) 🔜 구현 예정
+---
 
+### 8. Long-term Memory 구현 (Phase 1) ✅
+
+**현재 구현 방식**: Conversation Memories 테이블 없음
+
+Phase 1에서는 별도 테이블 대신 **chat_sessions.session_metadata (JSONB)**를 사용합니다.
+
+**저장 위치**: `chat_sessions.session_metadata`
+```json
+{
+  "conversation_summary": "강남구 아파트 전세 시세 조회 (5억~7억)",
+  "last_updated": "2025-10-20T18:30:00",
+  "message_count": 5,
+  "summary_method": "simple"
+}
+```
+
+**로드 메서드**: `SimpleMemoryService.load_recent_memories()`
+```python
+# user_id 기반으로 최근 N개 세션의 요약 로드
+memories = await memory_service.load_recent_memories(
+    user_id=42,
+    limit=5,  # settings.MEMORY_LOAD_LIMIT
+    session_id="current-session-123"  # 현재 세션 제외
+)
+```
+
+**저장 메서드**: `SimpleMemoryService.save_conversation()`
+```python
+# 대화 요약을 chat_sessions.session_metadata에 저장
+await memory_service.save_conversation(
+    user_id=42,
+    session_id="session-abc-123",
+    messages=[],
+    summary="강남구 아파트 전세 시세 조회"
+)
+```
+
+**Phase 2 계획** (별도 테이블 추가):
 ```sql
+-- Phase 2에서 추가 예정
 CREATE TABLE conversation_memories (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    id UUID PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id),
     session_id VARCHAR(100),
-    user_query TEXT NOT NULL,
-    assistant_response_summary TEXT,
-    conversation_summary TEXT,
+    summary TEXT,
     intent_type VARCHAR(50),
-    intent_confidence FLOAT,
     teams_used JSONB,
-    entities_mentioned JSONB,
-    execution_time_ms INTEGER,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP
 );
-
--- 인덱스
-CREATE INDEX idx_memories_user ON conversation_memories(user_id);
-CREATE INDEX idx_memories_created ON conversation_memories(created_at DESC);
-CREATE INDEX idx_memories_user_created ON conversation_memories(user_id, created_at DESC);
-CREATE INDEX idx_memories_intent ON conversation_memories(intent_type);
 ```
 
 ---
 
 ## 🔍 쿼리 예시
 
-### 1. 세션 관리
+### 1. 채팅 세션 & 메시지 관리
 
 ```python
-# 세션 생성
-from app.models.session import Session
-from app.db.postgre_db import AsyncSessionLocal
+from app.models.chat import ChatSession, ChatMessage
+from app.db.postgre_db import get_async_db
 
-async def create_session(session_id: str, user_id: int = None):
-    async with AsyncSessionLocal() as db:
-        session = Session(
-            session_id=session_id,
+# 1. 채팅 세션 생성
+async def create_chat_session(user_id: int, title: str = "새 대화"):
+    async for db in get_async_db():
+        session = ChatSession(
+            session_id=f"session-{uuid.uuid4()}",
             user_id=user_id,
-            expires_at=datetime.now() + timedelta(hours=24)
+            title=title
         )
         db.add(session)
         await db.commit()
         return session
 
-# 세션 조회
-async def get_session(session_id: str):
-    async with AsyncSessionLocal() as db:
-        result = await db.execute(
-            select(Session).where(Session.session_id == session_id)
+# 2. 채팅 메시지 저장
+async def save_message(session_id: str, role: str, content: str):
+    async for db in get_async_db():
+        message = ChatMessage(
+            session_id=session_id,
+            role=role,  # 'user' or 'assistant'
+            content=content
         )
-        return result.scalar_one_or_none()
-
-# 만료된 세션 삭제
-async def cleanup_expired_sessions():
-    async with AsyncSessionLocal() as db:
-        await db.execute(
-            delete(Session).where(Session.expires_at < func.now())
-        )
+        db.add(message)
         await db.commit()
+        return message
+
+# 3. 최근 메시지 조회 (Chat History)
+async def get_recent_messages(session_id: str, limit: int = 6):
+    async for db in get_async_db():
+        result = await db.execute(
+            select(ChatMessage)
+            .where(ChatMessage.session_id == session_id)
+            .order_by(ChatMessage.created_at.desc())
+            .limit(limit)
+        )
+        messages = result.scalars().all()
+        return sorted(messages, key=lambda m: m.created_at)
+
+# 4. 사용자의 모든 세션 조회
+async def get_user_sessions(user_id: int):
+    async for db in get_async_db():
+        result = await db.execute(
+            select(ChatSession)
+            .where(ChatSession.user_id == user_id)
+            .where(ChatSession.is_active == True)
+            .order_by(ChatSession.updated_at.desc())
+        )
+        return result.scalars().all()
 ```
 
-### 2. 법률 조항 벡터 검색
+### 2. Long-term Memory (Phase 1) ✅
+
+```python
+from app.service_agent.foundation.simple_memory_service import SimpleMemoryService
+from app.db.postgre_db import get_async_db
+
+# 1. 대화 요약 저장
+async def save_conversation_summary(user_id: int, session_id: str, summary: str):
+    async for db in get_async_db():
+        memory_service = SimpleMemoryService(db)
+        await memory_service.save_conversation(
+            user_id=user_id,
+            session_id=session_id,
+            messages=[],  # Phase 1에서는 빈 리스트
+            summary=summary
+        )
+
+# 2. 최근 대화 기록 로드
+async def load_user_memories(user_id: int, current_session_id: str, limit: int = 5):
+    async for db in get_async_db():
+        memory_service = SimpleMemoryService(db)
+        memories = await memory_service.load_recent_memories(
+            user_id=user_id,
+            limit=limit,
+            session_id=current_session_id  # 현재 세션 제외
+        )
+        return memories
+        # [
+        #     {
+        #         "session_id": "session-abc-123",
+        #         "summary": "강남구 아파트 전세 시세 조회",
+        #         "timestamp": "2025-10-20T14:30:00",
+        #         "title": "강남구 전세 시세"
+        #     },
+        #     ...
+        # ]
+
+# 3. session_metadata 직접 조회 (디버깅용)
+async def get_session_metadata(session_id: str):
+    async for db in get_async_db():
+        result = await db.execute(
+            select(ChatSession.session_metadata)
+            .where(ChatSession.session_id == session_id)
+        )
+        return result.scalar_one_or_none()
+```
+
+---
+
+### 3. 법률 조항 벡터 검색
 
 ```python
 # pgvector 유사도 검색
@@ -514,7 +696,7 @@ async def search_legal_clauses(query_embedding: list, limit: int = 10):
         return result.fetchall()
 ```
 
-### 3. 부동산 시세 조회
+### 4. 부동산 시세 조회
 
 ```python
 # 지역별 평균 시세
@@ -732,15 +914,26 @@ VACUUM FULL sessions;
 
 ---
 
-## 📚 참고 자료
+## 📚 추가 참고 자료
 
 - [PostgreSQL 공식 문서](https://www.postgresql.org/docs/15/)
 - [pgvector GitHub](https://github.com/pgvector/pgvector)
 - [SQLAlchemy 비동기 문서](https://docs.sqlalchemy.org/en/20/orm/extensions/asyncio.html)
 - [asyncpg 문서](https://magicstack.github.io/asyncpg/current/)
+- [STATE_MANAGEMENT_GUIDE.md](./STATE_MANAGEMENT_GUIDE.md) - State Management 가이드
+- [SYSTEM_FLOW_DIAGRAM.md](./SYSTEM_FLOW_DIAGRAM.md) - 시스템 흐름도
+- [simple_memory_service.py](../../backend/app/service_agent/foundation/simple_memory_service.py) - Long-term Memory 구현
 
 ---
 
 **생성일**: 2025-10-14
-**버전**: 1.0
-**상태**: ✅ 프로덕션 준비 완료
+**버전**: 2.0
+**최종 업데이트**: 2025-10-21
+**상태**: ✅ Phase 1 Long-term Memory 구현 완료
+
+**주요 변경사항**:
+- ✅ user_id 타입을 Integer로 통일
+- ✅ chat_sessions, chat_messages 테이블 추가
+- ✅ session_metadata (JSONB)를 통한 Long-term Memory 구현
+- ✅ checkpoints 테이블의 thread_id를 chat_session_id로 변경
+- ✅ SimpleMemoryService 사용 예시 추가

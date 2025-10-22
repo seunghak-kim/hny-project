@@ -11,6 +11,7 @@ import { ChatWSClient, createWSClient, type WSMessage } from "@/lib/ws"
 import type { ExecutionStepState } from "@/lib/types"
 import { ExecutionPlanPage } from "@/components/execution-plan-page"
 import { ExecutionProgressPage } from "@/components/execution-progress-page"
+import { ResponseGeneratingPage } from "@/components/response-generating-page"
 import { AnswerDisplay } from "@/components/answer-display"
 import { GuidancePage } from "@/components/guidance-page"
 import type { ProcessState, AgentType } from "@/types/process"
@@ -40,11 +41,15 @@ interface GuidanceData {
 
 interface Message {
   id: string
-  type: "user" | "bot" | "execution-plan" | "execution-progress" | "guidance"
+  type: "user" | "bot" | "execution-plan" | "execution-progress" | "response-generating" | "guidance"
   content: string
   timestamp: Date
   executionPlan?: ExecutionPlan
   executionSteps?: ExecutionStep[]
+  responseGenerating?: {
+    message?: string
+    phase?: "aggregation" | "response_generation"
+  }
   structuredData?: {
     sections: AnswerSection[]
     metadata: AnswerMetadata
@@ -198,12 +203,58 @@ export function ChatInterface({ onSplitView: _onSplitView, currentSessionId }: C
         })
         break
 
+      case 'response_generating_start':
+        // 응답 생성 시작 - ResponseGeneratingPage 생성
+        // Backend 전송 형식: { message, phase }
+        const responseGenMessage: Message = {
+          id: `response-generating-${Date.now()}`,
+          type: "response-generating",
+          content: "",
+          timestamp: new Date(),
+          responseGenerating: {
+            message: message.message || "답변을 생성하고 있습니다...",
+            phase: message.phase || "aggregation"
+          }
+        }
+
+        // ExecutionProgressPage 제거하고 ResponseGeneratingPage 추가
+        setMessages((prev) => prev
+          .filter(m => m.type !== "execution-progress")
+          .concat(responseGenMessage)
+        )
+
+        setProcessState({
+          step: "generating_response",
+          agentType: null,
+          message: message.message || "답변을 생성하고 있습니다..."
+        })
+        break
+
+      case 'response_generating_progress':
+        // 응답 생성 진행 - ResponseGeneratingPage 업데이트
+        // Backend 전송 형식: { message, phase }
+        setMessages((prev) =>
+          prev.map(m =>
+            m.type === "response-generating"
+              ? {
+                  ...m,
+                  responseGenerating: {
+                    message: message.message || "최종 답변을 생성하고 있습니다...",
+                    phase: message.phase || "response_generation"
+                  }
+                }
+              : m
+          )
+        )
+        break
 
       case 'final_response':
         // 최종 응답 수신
-        // ✅ ExecutionPlan과 Progress 모두 제거
+        // ✅ ExecutionPlan, Progress, ResponseGenerating 모두 제거
         setMessages((prev) => prev.filter(m =>
-          m.type !== "execution-progress" && m.type !== "execution-plan"
+          m.type !== "execution-progress" &&
+          m.type !== "execution-plan" &&
+          m.type !== "response-generating"
         ))
 
         // ✅ Guidance 응답 체크
@@ -513,6 +564,12 @@ export function ChatInterface({ onSplitView: _onSplitView, currentSessionId }: C
                 <ExecutionProgressPage
                   steps={message.executionSteps}
                   plan={message.executionPlan}
+                />
+              )}
+              {message.type === "response-generating" && message.responseGenerating && (
+                <ResponseGeneratingPage
+                  message={message.responseGenerating.message}
+                  phase={message.responseGenerating.phase}
                 />
               )}
               {message.type === "guidance" && message.guidanceData && (

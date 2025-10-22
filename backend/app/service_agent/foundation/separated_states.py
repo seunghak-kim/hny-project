@@ -333,6 +333,13 @@ class MainSupervisorState(TypedDict, total=False):
     memory_load_time: Optional[str]  # Memory 로드 시간 (ISO format)
 
     # ============================================================================
+    # Data Reuse Fields
+    # ============================================================================
+    data_reused: Optional[bool]  # 데이터 재사용 여부
+    reused_from_index: Optional[int]  # 몇 번째 메시지에서 재사용
+    reuse_intent: Optional[bool]  # LLM이 판단한 재사용 의도
+
+    # ============================================================================
     # Progress Flow - WebSocket Real-time Integration
     # ============================================================================
     #

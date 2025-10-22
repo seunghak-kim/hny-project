@@ -2,7 +2,7 @@
 
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Target, Loader2 } from "lucide-react"
+import { Target } from "lucide-react"
 import type { ExecutionPlan } from "@/types/execution"
 
 interface ExecutionPlanPageProps {
@@ -23,24 +23,37 @@ export function ExecutionPlanPage({ plan }: ExecutionPlanPageProps) {
   if (isLoading) {
     return (
       <div className="flex justify-start mb-4">
-        <div className="flex items-start gap-3 max-w-2xl w-full">
-          <Card className="p-4 bg-card border flex-1">
-            <div className="flex items-center gap-3">
-              <Loader2 className="w-5 h-5 text-primary animate-spin" />
-              <div>
-                <h3 className="text-lg font-semibold">작업 계획 분석 중...</h3>
-                <p className="text-sm text-muted-foreground mt-1">
-                  질문을 분석하고 실행 계획을 수립하고 있습니다
-                </p>
-              </div>
+        <div className="flex items-start gap-3 max-w-5xl w-full">
+          <Card className="p-0 bg-card border flex-1 overflow-hidden">
+            {/* 상단: 제목과 설명 */}
+            <div className="px-6 pt-6 pb-3">
+              <h3 className="text-2xl font-bold">작업 계획 분석 중</h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                질문을 분석하고 실행 계획을 수립하고 있습니다
+              </p>
             </div>
 
-            {/* 스켈레톤 로딩 */}
-            <div className="mt-4 space-y-3">
-              <div className="h-20 bg-muted/50 animate-pulse rounded-lg"></div>
-              <div className="space-y-2">
-                <div className="h-12 bg-muted/30 animate-pulse rounded-md"></div>
-                <div className="h-12 bg-muted/30 animate-pulse rounded-md"></div>
+            {/* 하단: GIF와 콘텐츠 - 30:70 비율 */}
+            <div className="flex items-start gap-4 px-6 pb-6">
+              {/* 좌측 스피너 - 30% */}
+              <div className="w-[30%] flex-shrink-0">
+                <img
+                  src="/animation/spinner/1_execution-plan_spinner.gif"
+                  alt="planning"
+                  className="w-full h-auto object-contain"
+                />
+              </div>
+
+              {/* 우측 콘텐츠 - 70% */}
+              <div className="w-[70%] flex-shrink-0">
+                {/* 스켈레톤 로딩 */}
+                <div className="space-y-3">
+                  <div className="h-20 bg-muted/50 animate-pulse rounded-lg"></div>
+                  <div className="space-y-2">
+                    <div className="h-12 bg-muted/30 animate-pulse rounded-md"></div>
+                    <div className="h-12 bg-muted/30 animate-pulse rounded-md"></div>
+                  </div>
+                </div>
               </div>
             </div>
           </Card>

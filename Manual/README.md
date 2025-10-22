@@ -22,8 +22,9 @@
 | [DATABASE_GUIDE.md](DATABASE_GUIDE.md) | 12p | 20+ | ✅ ERD | 데이터베이스 가이드 |
 | [API_REFERENCE.md](API_REFERENCE.md) | 10p | 15+ | ❌ | API 레퍼런스 |
 | [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md) | 11p | 25+ | ✅ Mermaid | 배포 가이드 |
+| [MEMORY_CONFIGURATION_GUIDE.md](MEMORY_CONFIGURATION_GUIDE.md) | 10p | 15+ | ✅ Mermaid | Long-term Memory 설정 |
 
-**총 문서량**: ~63 페이지 (A4 기준), 80+ 코드 예시
+**총 문서량**: ~73 페이지 (A4 기준), 95+ 코드 예시
 
 ---
 
@@ -524,6 +525,7 @@ pg_dump -U postgres -d real_estate > backup.sql
 
 | 버전 | 날짜 | 변경 사항 |
 |------|------|----------|
+| 1.1 | 2025-10-20 | MEMORY_CONFIGURATION_GUIDE.md 추가 (Long-term Memory 설정 가이드) |
 | 1.0 | 2025-10-14 | 초기 버전 생성 (5개 가이드 문서) |
 
 ### 기여 방법

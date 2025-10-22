@@ -233,12 +233,20 @@ class PlanningAgent:
                     keywords=result.get("keywords", [])
                 )
 
+            # 🆕 reuse_previous_data를 entities에 추가
+            entities = result.get("entities", {})
+            reuse_previous_data = result.get("reuse_previous_data", False)
+
+            # entities에 reuse_previous_data 추가 (team_supervisor에서 사용하기 위해)
+            if reuse_previous_data:
+                entities["reuse_previous_data"] = reuse_previous_data
+
             return IntentResult(
                 intent_type=intent_type,
                 confidence=result.get("confidence", 0.5),
                 keywords=result.get("keywords", []),
                 reasoning=result.get("reasoning", ""),
-                entities=result.get("entities", {}),
+                entities=entities,  # reuse_previous_data가 포함된 entities
                 suggested_agents=suggested_agents,
                 fallback=False
             )

@@ -1,8 +1,9 @@
 # State Management 가이드
 
-**버전**: 1.0
-**작성일**: 2025-10-14
-**아키텍처**: LangGraph TypedDict State Management
+**버전**: 2.2
+**작성일**: 2025-10-21
+**최종 업데이트**: 2025-10-22 (3-Tier Hybrid Memory, Priority 정렬 반영)
+**아키텍처**: LangGraph TypedDict State Management + 3-Tier Hybrid Memory
 
 ---
 
@@ -165,7 +166,7 @@ class MainSupervisorState(TypedDict, total=False):
     query: str                              # 사용자 쿼리
     session_id: str                         # 세션 ID (UUID)
     request_id: str                         # 요청 ID (타임스탬프 기반)
-    user_id: Optional[int]                  # 사용자 ID (Long-term Memory용)
+    user_id: Optional[int]                  # 사용자 ID (Phase 1: Long-term Memory 활성화)
 
     # ============================================================================
     # Planning 관련
@@ -203,10 +204,12 @@ class MainSupervisorState(TypedDict, total=False):
     total_execution_time: Optional[float]
 
     # ============================================================================
-    # Long-term Memory (Phase 1 추가)
+    # 3-Tier Hybrid Memory (v2.2 구현 완료) ✅
     # ============================================================================
-    loaded_memories: Optional[List[Dict]]    # 로드된 대화 기록
-    user_preferences: Optional[Dict]         # 사용자 선호도
+    chat_session_id: Optional[str]           # Chat History & State Endpoints (대화창 ID)
+    tiered_memories: Optional[Dict]          # 3-Tier 메모리 {"shortterm": [], "midterm": [], "longterm": []}
+    loaded_memories: Optional[List[Dict]]    # 하위 호환성 (모든 티어 통합)
+    user_preferences: Optional[Dict]         # 사용자 선호도 (Phase 2 예정)
     memory_load_time: Optional[str]          # Memory 로드 시간 (ISO format)
 
     # ============================================================================
@@ -238,12 +241,16 @@ state["error_log"] = []
 | `session_id` | `str` | UUID | 초기화 | WebSocket 세션 ID |
 | `user_id` | `Optional[int]` | None | 초기화 | Long-term Memory 사용자 ID |
 | `planning_state` | `Optional[PlanningState]` | None | planning_node | 의도 분석 + 실행 계획 |
-| `active_teams` | `List[str]` | [] | planning_node | 계획에서 선택된 팀 목록 |
+| `active_teams` | `List[str]` | [] | planning_node | 계획에서 선택된 팀 목록 (**Priority 정렬**) |
 | `completed_teams` | `List[str]` | [] | execute_teams_node | 실행 완료된 팀 목록 |
 | `team_results` | `Dict[str, Any]` | {} | execute_teams_node | 팀별 실행 결과 |
 | `aggregated_results` | `Dict[str, Any]` | {} | aggregate_results_node | 모든 팀 결과 통합 |
 | `final_response` | `Optional[Dict]` | None | generate_response_node | LLM #10 최종 응답 |
-| `loaded_memories` | `Optional[List[Dict]]` | None | planning_node | Long-term Memory 로드 결과 |
+| `chat_session_id` | `Optional[str]` | None | 초기화 | Chat History & State Endpoints ID |
+| `tiered_memories` | `Optional[Dict]` | None | planning_node | **3-Tier Hybrid Memory (v2.2)** |
+| `loaded_memories` | `Optional[List[Dict]]` | None | planning_node | 하위 호환성 (모든 티어 통합) |
+| `user_preferences` | `Optional[Dict]` | None | planning_node | 사용자 선호도 (Phase 2 예정) |
+| `memory_load_time` | `Optional[str]` | None | planning_node | Memory 로드 시간 |
 
 ---
 
@@ -707,12 +714,13 @@ class ExecutionStepState(TypedDict):
     - WebSocket으로 Frontend에 전송
     """
     # ============================================================================
-    # 식별 정보 (4개)
+    # 식별 정보 (5개) - v2.2: priority 추가
     # ============================================================================
     step_id: str                             # 고유 ID (예: "step_0", "step_1")
-    step_type: str                           # 'search' | 'analysis' | 'document'
+    step_type: str                           # 'planning'|'search'|'document'|'analysis'|'synthesis'|'generation'
     agent_name: str                          # 담당 에이전트 (예: "search_team")
     team: str                                # 담당 팀 (예: "search")
+    priority: int                            # 실행 우선순위 (0, 1, 2, ...) - 낮을수록 먼저 실행 ✅
 
     # ============================================================================
     # 작업 정보 (2개)
@@ -748,6 +756,7 @@ class ExecutionStepState(TypedDict):
     "step_type": "search",
     "agent_name": "search_team",
     "team": "search",
+    "priority": 0,                    # ✅ v2.2: priority 추가
     "task": "법률 정보 검색",
     "description": "법률 관련 정보 및 판례 검색",
     "status": "pending",              # ← 초기 상태
@@ -908,11 +917,19 @@ MainSupervisorState {
     "current_phase": "planning",
     "planning_state": {
         "analyzed_intent": {"intent_type": "legal_consult", ...},
-        "execution_steps": [{"step_id": "step_0", ...}, ...],
+        "execution_steps": [
+            {"step_id": "step_0", "priority": 0, ...},  # ✅ priority 정렬
+            {"step_id": "step_1", "priority": 1, ...}
+        ],
         "execution_strategy": "sequential"
     },
-    "active_teams": ["search", "analysis"],
-    "loaded_memories": [...],  # Long-term Memory 로드
+    "active_teams": ["search", "analysis"],  # ✅ priority 순서 보장
+    "tiered_memories": {  # ✅ v2.2: 3-Tier Hybrid Memory
+        "shortterm": [{...}, {...}],  # 1-5 세션 전체 메시지
+        "midterm": [{...}],           # 6-10 세션 요약
+        "longterm": [{...}]           # 11-20 세션 요약
+    },
+    "loaded_memories": [...],  # 하위 호환성 (모든 티어 통합)
     "user_preferences": {...}
 }
 
@@ -991,9 +1008,9 @@ MainSupervisorState {
     "end_time": datetime.now(),
     "total_execution_time": 5.2
 }
-# → Long-term Memory 저장
+# → 3-Tier Hybrid Memory 저장 (save_conversation + background summarize)
 # → WebSocket으로 Frontend 전송
-# → LangGraph Checkpoint 저장 (enable_checkpointing=True)
+# → LangGraph Checkpoint 저장 (thread_id 기반, PostgreSQL)
 ```
 
 ---
@@ -1798,7 +1815,34 @@ def prepare_state_for_checkpoint(state: MainSupervisorState) -> MainSupervisorSt
 
 ---
 
-**문서 버전**: 1.0
-**최종 업데이트**: 2025-10-14
+## 🔄 버전 이력
+
+| 버전 | 날짜 | 변경 사항 |
+|------|------|----------|
+| 1.0 | 2025-10-14 | 초기 버전 (LangGraph State Management) |
+| 2.0 | 2025-10-21 | Long-term Memory 통합 (Phase 1) |
+| **2.2** | **2025-10-22** | **3-Tier Hybrid Memory, Priority 정렬 반영** |
+| | | - `tiered_memories` 필드 추가 |
+| | | - `ExecutionStepState.priority` 추가 |
+| | | - `active_teams` Priority 정렬 보장 |
+| | | - Checkpoint PostgreSQL 전환 (thread_id) |
+
+---
+
+## 📚 관련 문서 (v2.2 업데이트)
+
+- [SYSTEM_FLOW_DIAGRAM.md](./SYSTEM_FLOW_DIAGRAM.md) - 전체 시스템 흐름도 (v2.2)
+- [MEMORY_CONFIGURATION_GUIDE.md](./MEMORY_CONFIGURATION_GUIDE.md) - 3-Tier Memory 설정 가이드 (v2.0)
+- [DATABASE_GUIDE.md](./DATABASE_GUIDE.md) - Database 스키마 가이드
+
+### 패치노트
+- `reports/PatchNode/251021_Long-term_Memory.md` - 3-Tier Memory 구현
+- `reports/PatchNode/251021_Agent Routing.md` - Priority 정렬 수정
+- `reports/PatchNode/251020_memory_phase1.md` - Memory Phase 1
+
+---
+
+**문서 버전**: 2.2
+**최종 업데이트**: 2025-10-22 (3-Tier Hybrid Memory, Priority 정렬 반영)
 **작성자**: Claude Code
 **문의**: 개발팀

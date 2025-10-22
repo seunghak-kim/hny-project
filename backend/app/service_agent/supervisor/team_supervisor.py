@@ -210,6 +210,82 @@ class TeamBasedSupervisor:
         intent_result = await self.planning_agent.analyze_intent(query, context)
 
         # ============================================================================
+        # 데이터 재사용 로직 (Data Reuse Logic)
+        # ============================================================================
+        # LLM이 판단한 재사용 의도 확인
+        logger.info(f"[TeamSupervisor] Intent result entities: {intent_result.entities}")
+        reuse_intent = intent_result.entities.get("reuse_previous_data", False) if intent_result.entities else False
+        state["reuse_intent"] = reuse_intent
+        logger.info(f"[TeamSupervisor] Data reuse intent from LLM: {reuse_intent}")
+
+        if reuse_intent and chat_history:
+            logger.info("[TeamSupervisor] Data reuse intent detected, checking for available data")
+
+            # 설정에서 메시지 개수 제한 가져오기
+            message_limit = settings.DATA_REUSE_MESSAGE_LIMIT
+            recent_messages = chat_history[-message_limit * 2:] if message_limit > 0 else []  # user + assistant 쌍
+
+            # SearchTeam 결과가 있는지 확인
+            has_search_data = False
+            data_message_index = -1
+
+            for i, msg in enumerate(recent_messages):
+                if msg["role"] == "assistant":
+                    # 검색 결과 키워드 체크
+                    search_keywords = ["시세", "매물", "대출", "법률", "조회", "검색 결과", "정보"]
+                    if any(keyword in msg["content"] for keyword in search_keywords):
+                        has_search_data = True
+                        data_message_index = len(recent_messages) - i
+                        logger.info(f"[TeamSupervisor] Found search data in message {data_message_index} messages ago")
+                        break
+
+            # 데이터 재사용 결정
+            if has_search_data:
+                logger.info(f"✅ [TeamSupervisor] Reusing data from {data_message_index} messages ago")
+
+                # State에 표시
+                state["data_reused"] = True
+                state["reused_from_index"] = data_message_index
+
+                # 사용자에게 알림 (WebSocket)
+                if progress_callback:
+                    try:
+                        await progress_callback("data_reuse_notification", {
+                            "message": "이전 대화의 정보를 활용하여 분석 중입니다",
+                            "reused_from": f"{data_message_index}개 메시지 전"
+                        })
+                        logger.info("[TeamSupervisor] Sent data_reuse_notification via WebSocket")
+                    except Exception as e:
+                        logger.error(f"[TeamSupervisor] Failed to send data_reuse_notification: {e}")
+
+                # 이전 검색 결과를 team_results에 미리 저장
+                # (나중에 AnalysisTeam이 사용할 수 있도록)
+                for msg in recent_messages:
+                    if msg["role"] == "assistant" and any(kw in msg.get("content", "") for kw in search_keywords):
+                        state["team_results"]["search"] = {
+                            "data": msg["content"],
+                            "reused": True,
+                            "from_message_index": data_message_index
+                        }
+                        break
+            else:
+                # 데이터 불완전 - SearchTeam 실행 필요
+                logger.warning("[TeamSupervisor] Previous data incomplete, will run SearchTeam")
+                state["data_reused"] = False
+        else:
+            state["data_reused"] = False
+
+        # 🆕 데이터 재사용 시 suggested_agents에서 SearchTeam 제거
+        if state.get("data_reused") and intent_result.suggested_agents:
+            original_agents = intent_result.suggested_agents.copy()
+            intent_result.suggested_agents = [
+                agent for agent in intent_result.suggested_agents
+                if agent != "search_team"
+            ]
+            logger.info(f"[TeamSupervisor] Removed search_team from suggested_agents due to data reuse")
+            logger.info(f"[TeamSupervisor] Original agents: {original_agents} -> Modified: {intent_result.suggested_agents}")
+
+        # ============================================================================
         # Long-term Memory 로딩 (조기 단계 - 모든 쿼리)
         # ============================================================================
         # 메모리 공유 범위는 settings.MEMORY_LOAD_LIMIT로 제어됩니다.
@@ -381,6 +457,16 @@ class TeamBasedSupervisor:
 
         for step in sorted_steps:
             team = step.get("team")
+            # 🆕 데이터 재사용 시 SearchTeam 제외
+            if state.get("data_reused") and team == "search":
+                logger.info("🎯 [TeamSupervisor] Skipping SearchTeam - reusing previous data")
+                # Step 상태를 skipped로 변경
+                for exec_step in planning_state["execution_steps"]:
+                    if exec_step.get("team") == "search":
+                        exec_step["status"] = "skipped"
+                        exec_step["result"] = {"message": "Reused previous data"}
+                continue
+
             if team and team not in seen_teams:
                 active_teams.append(team)
                 seen_teams.add(team)
@@ -888,6 +974,19 @@ class TeamBasedSupervisor:
 
         state["current_phase"] = "aggregation"
 
+        # WebSocket: 응답 생성 시작 알림 (aggregation 단계)
+        session_id = state.get("session_id")
+        progress_callback = self._progress_callbacks.get(session_id) if session_id else None
+        if progress_callback:
+            try:
+                await progress_callback("response_generating_start", {
+                    "message": "수집된 정보를 정리하고 있습니다...",
+                    "phase": "aggregation"
+                })
+                logger.info("[TeamSupervisor] Sent response_generating_start (aggregation) via WebSocket")
+            except Exception as e:
+                logger.error(f"[TeamSupervisor] Failed to send response_generating_start: {e}")
+
         # 팀 결과 집계
         aggregated = {}
         team_results = state.get("team_results", {})
@@ -918,6 +1017,19 @@ class TeamBasedSupervisor:
         logger.info("[TeamSupervisor] === Generating response ===")
 
         state["current_phase"] = "response_generation"
+
+        # WebSocket: 응답 생성 진행 알림 (response_generation 단계)
+        session_id = state.get("session_id")
+        progress_callback = self._progress_callbacks.get(session_id) if session_id else None
+        if progress_callback:
+            try:
+                await progress_callback("response_generating_progress", {
+                    "message": "최종 답변을 생성하고 있습니다...",
+                    "phase": "response_generation"
+                })
+                logger.info("[TeamSupervisor] Sent response_generating_progress (response_generation) via WebSocket")
+            except Exception as e:
+                logger.error(f"[TeamSupervisor] Failed to send response_generating_progress: {e}")
 
         # 기능 외 질문 체크
         planning_state = state.get("planning_state", {})
