@@ -12,6 +12,7 @@ export interface ProgressContainerProps {
   plan?: ExecutionPlan
   steps?: ExecutionStep[]
   responsePhase?: "aggregation" | "response_generation"
+  reusedTeams?: string[]  // 🆕 Option A: 재사용된 팀 리스트
 }
 
 // Stage 설정
@@ -42,15 +43,67 @@ export function ProgressContainer({
   stage,
   plan,
   steps = [],
-  responsePhase = "aggregation"
+  responsePhase = "aggregation",
+  reusedTeams = []  // 🆕 Option A: 재사용된 팀 리스트
 }: ProgressContainerProps) {
   const currentStage = STAGE_CONFIG[stage]
   const allStages = Object.values(STAGE_CONFIG)
+
+  // 전체 프로세스 진행률 계산
+  const calculateOverallProgress = (): number => {
+    switch (stage) {
+      case "dispatch":
+        return 10  // 출동 중: 10%
+
+      case "analysis":
+        // 분석 중: 25-40%
+        if (plan && !plan.isLoading && plan.execution_steps && plan.execution_steps.length > 0) {
+          return 40  // plan_ready 완료
+        }
+        return 25  // 분석 시작
+
+      case "executing":
+        // 실행 중: 40-75%
+        const totalSteps = steps.length
+        const completedSteps = steps.filter(s => s.status === "completed").length
+        if (totalSteps > 0) {
+          const executionProgress = (completedSteps / totalSteps) * 35  // 35% 범위
+          return 40 + executionProgress
+        }
+        return 40
+
+      case "generating":
+        // 답변 작성 중: 75-95%
+        if (responsePhase === "response_generation") {
+          return 90  // 최종 답변 생성 중
+        }
+        return 80  // 정보 정리 중
+
+      default:
+        return 0
+    }
+  }
+
+  const overallProgress = calculateOverallProgress()
 
   return (
     <div className="flex justify-start mb-2">
       <div className="flex items-start gap-3 max-w-5xl w-full">
         <Card className="p-3 bg-card border flex-1">
+          {/* 전체 프로세스 진행률 */}
+          <div className="mb-3 p-2 bg-primary/5 rounded-lg border border-primary/20">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-xs font-semibold text-primary">전체 진행률</span>
+              <span className="text-xs font-bold text-primary">{Math.round(overallProgress)}%</span>
+            </div>
+            <ProgressBar
+              value={overallProgress}
+              size="md"
+              variant="default"
+              showLabel={false}
+            />
+          </div>
+
           {/* 상단: 4-Stage Spinner Bar */}
           <div className="grid grid-cols-4 mb-2">
             {allStages.map((s, idx) => (
@@ -95,7 +148,7 @@ export function ProgressContainer({
           <div className="min-h-[120px]">
             {stage === "dispatch" && <DispatchContent />}
             {stage === "analysis" && <AnalysisContent plan={plan} />}
-            {stage === "executing" && <ExecutingContent steps={steps} />}
+            {stage === "executing" && <ExecutingContent steps={steps} reusedTeams={reusedTeams} />}
             {stage === "generating" && <GeneratingContent phase={responsePhase} />}
           </div>
         </Card>
@@ -182,32 +235,46 @@ function AnalysisContent({ plan }: { plan?: ExecutionPlan }) {
 // ============================================================================
 // Stage 3: Executing Content
 // ============================================================================
-function ExecutingContent({ steps }: { steps: ExecutionStep[] }) {
-  const totalSteps = steps.length
-  const completedSteps = steps.filter((s) => s.status === "completed").length
-  const failedSteps = steps.filter((s) => s.status === "failed").length
+function ExecutingContent({ steps, reusedTeams = [] }: { steps: ExecutionStep[]; reusedTeams?: string[] }) {
+  // 🆕 Option A: 재사용된 팀을 가상 Step으로 변환
+  const reusedSteps: ExecutionStep[] = reusedTeams.map((teamName, idx) => ({
+    step_id: `reused-${teamName}-${idx}`,
+    task: `${teamName.charAt(0).toUpperCase() + teamName.slice(1)} Team`,
+    description: `${teamName} 데이터 재사용`,
+    status: "completed" as const,
+    agent: teamName,
+    isReused: true  // 🆕 재사용 플래그
+  }))
+
+  // 🆕 실제 실행 steps와 재사용 steps를 병합
+  const allSteps = [...reusedSteps, ...steps]
+
+  const totalSteps = allSteps.length
+  const completedSteps = allSteps.filter((s) => s.status === "completed").length
+  const failedSteps = allSteps.filter((s) => s.status === "failed").length
   const overallProgress = totalSteps > 0 ? (completedSteps / totalSteps) * 100 : 0
 
   return (
     <div className="space-y-3">
       {/* 전체 진행률 */}
-      <div>
+      <div className="p-3 bg-secondary/20 rounded-lg border border-border">
         <div className="flex items-center justify-between mb-2">
-          <span className="font-medium">전체 진행률</span>
-          <span className="text-sm text-muted-foreground">
+          <span className="font-semibold text-base">전체 작업 진행률</span>
+          <span className="text-sm font-medium text-primary">
             {completedSteps}/{totalSteps} 완료
           </span>
         </div>
         <ProgressBar
           value={overallProgress}
-          size="md"
+          size="lg"
           variant={failedSteps > 0 ? "warning" : "default"}
+          showLabel={true}
         />
       </div>
 
       {/* 에이전트 카드들 (동적 1~N개) */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-        {steps.map((step) => (
+        {allSteps.map((step) => (
           <AgentCard key={step.step_id} step={step} />
         ))}
       </div>
@@ -266,10 +333,29 @@ function AgentCard({ step }: { step: ExecutionStep }) {
       <div className="flex items-center gap-2 mb-2">
         <span className={`text-xl ${config.color}`}>{config.icon}</span>
         <span className="font-medium text-sm">{step.task}</span>
+        {/* 🆕 Option A: 재사용 배지 */}
+        {step.isReused && (
+          <span className="ml-auto px-2 py-0.5 text-xs font-semibold rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800">
+            ♻️ 재사용
+          </span>
+        )}
       </div>
-      <div className="text-xs text-muted-foreground">{step.description}</div>
-      {step.status === "in_progress" && (
-        <ProgressBar value={step.progress || 0} size="sm" className="mt-2" />
+      <div className="text-xs text-muted-foreground mb-2">{step.description}</div>
+
+      {/* 진행 중일 때 진행률 BAR 표시 */}
+      {step.status === "in_progress" && step.progress !== undefined && (
+        <div className="space-y-1">
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-muted-foreground">진행률</span>
+            <span className="font-medium text-primary">{Math.round(step.progress)}%</span>
+          </div>
+          <ProgressBar
+            value={step.progress}
+            size="md"
+            variant="default"
+            showLabel={false}
+          />
+        </div>
       )}
     </div>
   )

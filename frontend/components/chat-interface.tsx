@@ -48,6 +48,7 @@ interface Message {
     plan?: ExecutionPlan
     steps?: ExecutionStep[]
     responsePhase?: "aggregation" | "response_generation"
+    reusedTeams?: string[]  // 🆕 Option A: 재사용된 팀 리스트
   }
   // Old: Legacy fields (kept for reference, not used)
   executionPlan?: ExecutionPlan
@@ -302,6 +303,26 @@ export function ChatInterface({ onSplitView: _onSplitView, currentSessionId }: C
           agentType: null,
           message: ""
         })
+        break
+
+      case 'data_reuse_notification':
+        // 🆕 Option A: 재사용된 팀 정보 저장
+        if (message.reused_teams && Array.isArray(message.reused_teams)) {
+          console.log('[ChatInterface] data_reuse_notification received:', message.reused_teams)
+          setMessages((prev) =>
+            prev.map(m =>
+              m.type === "progress" && m.progressData
+                ? {
+                    ...m,
+                    progressData: {
+                      ...m.progressData,
+                      reusedTeams: message.reused_teams
+                    }
+                  }
+                : m
+            )
+          )
+        }
         break
 
       case 'error':
@@ -578,6 +599,7 @@ export function ChatInterface({ onSplitView: _onSplitView, currentSessionId }: C
                   plan={message.progressData.plan}
                   steps={message.progressData.steps}
                   responsePhase={message.progressData.responsePhase}
+                  reusedTeams={message.progressData.reusedTeams}
                 />
               )}
               {message.type === "guidance" && message.guidanceData && (

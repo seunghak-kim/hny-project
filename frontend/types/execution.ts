@@ -15,9 +15,9 @@ export type StepType = "planning" | "search" | "document" | "analysis"
 export interface ExecutionStep {
   // 식별 정보 (4개)
   step_id: string
-  step_type: StepType
-  agent_name: string
-  team: string
+  step_type?: StepType
+  agent_name?: string
+  team?: string
 
   // 작업 정보 (2개)
   task: string
@@ -25,15 +25,20 @@ export interface ExecutionStep {
 
   // 상태 추적 (2개)
   status: StepStatus
-  progress_percentage: number
+  progress_percentage?: number
 
   // 타이밍 (2개)
-  started_at: string | null
-  completed_at: string | null
+  started_at?: string | null
+  completed_at?: string | null
 
   // 결과/에러 (2개)
-  result: Record<string, any> | null
-  error: string | null
+  result?: Record<string, any> | null
+  error?: string | null
+
+  // 🆕 Option A: 재사용 플래그
+  isReused?: boolean
+  agent?: string  // Legacy field for compatibility
+  progress?: number  // Legacy field for compatibility
 }
 
 export interface ExecutionPlan {

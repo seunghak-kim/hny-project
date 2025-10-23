@@ -257,17 +257,6 @@ class TeamBasedSupervisor:
                 state["data_reused"] = True
                 state["reused_from_index"] = data_message_index
 
-                # 사용자에게 알림 (WebSocket)
-                if progress_callback:
-                    try:
-                        await progress_callback("data_reuse_notification", {
-                            "message": "이전 대화의 정보를 활용하여 분석 중입니다",
-                            "reused_from": f"{data_message_index}개 메시지 전"
-                        })
-                        logger.info("[TeamSupervisor] Sent data_reuse_notification via WebSocket")
-                    except Exception as e:
-                        logger.error(f"[TeamSupervisor] Failed to send data_reuse_notification: {e}")
-
                 # 이전 검색 결과를 team_results에 미리 저장
                 # (나중에 AnalysisTeam이 사용할 수 있도록)
                 for msg in recent_messages:
@@ -294,6 +283,27 @@ class TeamBasedSupervisor:
             ]
             logger.info(f"[TeamSupervisor] Removed search_team from suggested_agents due to data reuse")
             logger.info(f"[TeamSupervisor] Original agents: {original_agents} -> Modified: {intent_result.suggested_agents}")
+
+            # 🆕 재사용된 팀 리스트 생성 (Option A: 정확한 팀 정보)
+            reused_teams_list = []
+            if "search_team" in original_agents and "search_team" not in intent_result.suggested_agents:
+                reused_teams_list.append("search")
+
+            # 🆕 WebSocket: data_reuse_notification 전송 (Option A: 이동됨)
+            if reused_teams_list:
+                session_id = state.get("session_id")
+                progress_callback = self._progress_callbacks.get(session_id) if session_id else None
+                if progress_callback:
+                    try:
+                        await progress_callback("data_reuse_notification", {
+                            "message": f"{', '.join(reused_teams_list)} 데이터를 재사용합니다",
+                            "reused_teams": reused_teams_list,
+                            "reused_from_message": state.get("reused_from_index"),
+                            "timestamp": datetime.now().isoformat()
+                        })
+                        logger.info(f"[TeamSupervisor] Sent data_reuse_notification with teams: {reused_teams_list}")
+                    except Exception as e:
+                        logger.error(f"[TeamSupervisor] Failed to send data_reuse_notification: {e}")
 
         # ============================================================================
         # Long-term Memory 로딩 (조기 단계 - 모든 쿼리)
