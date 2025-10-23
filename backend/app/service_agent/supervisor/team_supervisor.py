@@ -206,6 +206,17 @@ class TeamBasedSupervisor:
         # Context 생성
         context = {"chat_history": chat_history} if chat_history else None
 
+        # WebSocket: 분석 시작 알림 (Stage 2: Analysis)
+        if progress_callback:
+            try:
+                await progress_callback("analysis_start", {
+                    "message": "질문을 분석하고 있습니다...",
+                    "stage": "analysis"
+                })
+                logger.debug("[TeamSupervisor] Sent analysis_start via WebSocket")
+            except Exception as e:
+                logger.error(f"[TeamSupervisor] Failed to send analysis_start: {e}")
+
         # Intent 분석 (context 전달)
         intent_result = await self.planning_agent.analyze_intent(query, context)
 
@@ -225,15 +236,14 @@ class TeamBasedSupervisor:
             message_limit = settings.DATA_REUSE_MESSAGE_LIMIT
             recent_messages = chat_history[-message_limit * 2:] if message_limit > 0 else []  # user + assistant 쌍
 
-            # SearchTeam 결과가 있는지 확인
+            # SearchTeam 결과가 있는지 확인 (스마트 감지)
             has_search_data = False
             data_message_index = -1
 
             for i, msg in enumerate(recent_messages):
                 if msg["role"] == "assistant":
-                    # 검색 결과 키워드 체크
-                    search_keywords = ["시세", "매물", "대출", "법률", "조회", "검색 결과", "정보"]
-                    if any(keyword in msg["content"] for keyword in search_keywords):
+                    # 스마트 데이터 감지 함수 호출
+                    if self._has_reusable_data(msg):
                         has_search_data = True
                         data_message_index = len(recent_messages) - i
                         logger.info(f"[TeamSupervisor] Found search data in message {data_message_index} messages ago")
@@ -261,7 +271,7 @@ class TeamBasedSupervisor:
                 # 이전 검색 결과를 team_results에 미리 저장
                 # (나중에 AnalysisTeam이 사용할 수 있도록)
                 for msg in recent_messages:
-                    if msg["role"] == "assistant" and any(kw in msg.get("content", "") for kw in search_keywords):
+                    if msg["role"] == "assistant" and self._has_reusable_data(msg):
                         state["team_results"]["search"] = {
                             "data": msg["content"],
                             "reused": True,
@@ -501,6 +511,56 @@ class TeamBasedSupervisor:
                 logger.error(f"[TeamSupervisor] Failed to send plan_ready: {e}")
 
         return state
+
+    def _has_reusable_data(self, msg: Dict[str, str]) -> bool:
+        """
+        향상된 데이터 감지 - 다중 전략 사용
+
+        Args:
+            msg: 메시지 딕셔너리 {"role": "assistant", "content": "..."}
+
+        Returns:
+            데이터가 재사용 가능한지 여부
+        """
+        content = msg.get("content", "")
+
+        # 전략 1: 구조적 패턴 (가장 신뢰성 높음)
+        structural_patterns = ["##", "**", "•", "→", "📋", "===", "---", "***", "결과:", "정보:", "분석:"]
+        if any(pattern in content for pattern in structural_patterns):
+            logger.debug("[TeamSupervisor] Data detected via structural patterns")
+            return True
+
+        # 전략 2: 길이 휴리스틱 (실질적 응답 > 500자)
+        if len(content) > 500:
+            logger.debug(f"[TeamSupervisor] Data detected via length heuristic ({len(content)} chars)")
+            return True
+
+        # 전략 3: 확장된 키워드
+        keywords = [
+            # 법률 도메인 (9개)
+            "법률", "법적", "규정", "금지", "의무", "권리", "계약", "임대", "임차",
+            # 시장 데이터 (8개)
+            "시세", "매매", "전세", "월세", "가격", "시장", "동향", "거래",
+            # 부동산 정보 (8개)
+            "매물", "아파트", "빌라", "주택", "부동산", "물건", "평형", "면적",
+            # 분석 용어 (8개)
+            "분석", "평가", "전망", "추천", "비교", "조회", "검색 결과", "정보"
+        ]
+        if any(kw in content for kw in keywords):
+            logger.debug("[TeamSupervisor] Data detected via keywords")
+            return True
+
+        # 전략 4: JSON/딕셔너리 형태
+        if "{" in content and "}" in content:
+            logger.debug("[TeamSupervisor] Data detected via JSON pattern")
+            return True
+
+        # 전략 5: 테이블/리스트 형태
+        if "|" in content or "1." in content or "- " in content:
+            logger.debug("[TeamSupervisor] Data detected via table/list pattern")
+            return True
+
+        return False
 
     def _get_team_for_agent(self, agent_name: str) -> str:
         """Agent가 속한 팀 찾기"""

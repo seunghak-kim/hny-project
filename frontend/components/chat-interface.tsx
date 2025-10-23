@@ -9,9 +9,7 @@ import type { PageType } from "@/app/page"
 import { useSession } from "@/hooks/use-session"
 import { ChatWSClient, createWSClient, type WSMessage } from "@/lib/ws"
 import type { ExecutionStepState } from "@/lib/types"
-import { ExecutionPlanPage } from "@/components/execution-plan-page"
-import { ExecutionProgressPage } from "@/components/execution-progress-page"
-import { ResponseGeneratingPage } from "@/components/response-generating-page"
+import { ProgressContainer, type ProgressStage } from "@/components/progress-container"
 import { AnswerDisplay } from "@/components/answer-display"
 import { GuidancePage } from "@/components/guidance-page"
 import type { ProcessState, AgentType } from "@/types/process"
@@ -41,9 +39,17 @@ interface GuidanceData {
 
 interface Message {
   id: string
-  type: "user" | "bot" | "execution-plan" | "execution-progress" | "response-generating" | "guidance"
+  type: "user" | "bot" | "progress" | "guidance"
   content: string
   timestamp: Date
+  // New: Unified Progress Data (4-stage)
+  progressData?: {
+    stage: ProgressStage
+    plan?: ExecutionPlan
+    steps?: ExecutionStep[]
+    responsePhase?: "aggregation" | "response_generation"
+  }
+  // Old: Legacy fields (kept for reference, not used)
   executionPlan?: ExecutionPlan
   executionSteps?: ExecutionStep[]
   responseGenerating?: {
@@ -101,68 +107,83 @@ export function ChatInterface({ onSplitView: _onSplitView, currentSessionId }: C
         // 연결 확인 - 아무것도 하지 않음
         break
 
-      // ❌ planning_start는 제거 - 질문 입력 시 즉시 ExecutionPlanPage 표시
-
-      case 'plan_ready':
-        // 실행 계획 수신 - 기존 로딩 중인 ExecutionPlanPage 업데이트
-        // Backend 전송 형식: { intent, confidence, execution_steps, execution_strategy, estimated_total_time, keywords }
-        if (message.intent && message.execution_steps && message.execution_steps.length > 0) {
-          // ✅ 정상 케이스: execution_steps가 있는 경우만 업데이트
+      case 'analysis_start':
+        // Stage 1 → 2: Dispatch → Analysis (0.5초 딜레이 추가)
+        setTimeout(() => {
           setMessages((prev) =>
             prev.map(m =>
-              m.type === "execution-plan" && m.executionPlan?.isLoading
+              m.type === "progress" && m.progressData?.stage === "dispatch"
                 ? {
                     ...m,
-                    executionPlan: {
-                      intent: message.intent,
-                      confidence: message.confidence || 0,
-                      execution_steps: message.execution_steps,
-                      execution_strategy: message.execution_strategy || "sequential",
-                      estimated_total_time: message.estimated_total_time || 5,
-                      keywords: message.keywords,
-                      isLoading: false  // 로딩 완료
+                    progressData: {
+                      ...m.progressData,
+                      stage: "analysis" as const
+                    }
+                  }
+                : m
+            )
+          )
+        }, 500)  // 0.5초 딜레이
+        break
+
+      case 'plan_ready':
+        // Stage 2: Analysis - plan 데이터 추가
+        if (message.execution_steps?.length > 0) {
+          setMessages((prev) =>
+            prev.map(m =>
+              m.type === "progress" && m.progressData?.stage === "analysis"
+                ? {
+                    ...m,
+                    progressData: {
+                      ...m.progressData,
+                      plan: {
+                        intent: message.intent,
+                        confidence: message.confidence || 0,
+                        execution_steps: message.execution_steps,
+                        execution_strategy: message.execution_strategy || "sequential",
+                        estimated_total_time: message.estimated_total_time || 5,
+                        keywords: message.keywords,
+                        isLoading: false
+                      }
                     }
                   }
                 : m
             )
           )
           setTodos(message.execution_steps)
-
-          // ExecutionProgressPage는 execution_start에서 생성됨
         } else {
-          // ✅ IRRELEVANT/UNCLEAR: execution_steps가 빈 배열이므로 ExecutionPlanPage 제거
-          setMessages((prev) => prev.filter(m => m.type !== "execution-plan"))
+          // IRRELEVANT/UNCLEAR: progress 제거
+          setMessages((prev) => prev.filter(m => m.type !== "progress"))
         }
         break
 
       case 'execution_start':
-        // 실행 시작 - ExecutionProgressPage 생성
-        // Backend 전송 형식: { message, execution_steps, intent, confidence, execution_strategy, estimated_total_time, keywords }
+        // Stage 2 → 3: Analysis → Executing
         if (message.execution_steps) {
-          const progressMessage: Message = {
-            id: `execution-progress-${Date.now()}`,
-            type: "execution-progress",
-            content: "",
-            timestamp: new Date(),
-            // ✅ Use complete ExecutionPlan data from Backend (no dependency on Plan message)
-            executionPlan: {
-              intent: message.intent,
-              confidence: message.confidence,
-              execution_steps: message.execution_steps,
-              execution_strategy: message.execution_strategy,
-              estimated_total_time: message.estimated_total_time,
-              keywords: message.keywords
-            },
-            executionSteps: message.execution_steps.map((step: ExecutionStep) => ({
-              ...step,
-              status: step.status || "pending"
-            }))
-          }
-
-          // ✅ Remove ExecutionPlanPage and add ExecutionProgressPage
-          setMessages((prev) => prev
-            .filter(m => m.type !== "execution-plan")
-            .concat(progressMessage)
+          setMessages((prev) =>
+            prev.map(m =>
+              m.type === "progress"
+                ? {
+                    ...m,
+                    progressData: {
+                      stage: "executing" as const,
+                      plan: {
+                        intent: message.intent,
+                        confidence: message.confidence,
+                        execution_steps: message.execution_steps,
+                        execution_strategy: message.execution_strategy,
+                        estimated_total_time: message.estimated_total_time,
+                        keywords: message.keywords,
+                        isLoading: false
+                      },
+                      steps: message.execution_steps.map((step: ExecutionStep) => ({
+                        ...step,
+                        status: step.status || "pending"
+                      }))
+                    }
+                  }
+                : m
+            )
           )
 
           setProcessState({
@@ -175,23 +196,23 @@ export function ChatInterface({ onSplitView: _onSplitView, currentSessionId }: C
 
       case 'todo_created':
       case 'todo_updated':
-        // TODO 리스트 업데이트
-        // Backend 전송 형식: { execution_steps }
+        // Stage 3: Executing - steps 업데이트
         if (message.execution_steps) {
           setTodos(message.execution_steps)
 
-          // ExecutionProgressPage 메시지 찾아서 steps 업데이트
-          setMessages((prev) => {
-            return prev.map(msg => {
-              if (msg.type === "execution-progress") {
-                return {
-                  ...msg,
-                  executionSteps: message.execution_steps
-                }
-              }
-              return msg
-            })
-          })
+          setMessages((prev) =>
+            prev.map(msg =>
+              msg.type === "progress" && msg.progressData?.stage === "executing"
+                ? {
+                    ...msg,
+                    progressData: {
+                      ...msg.progressData,
+                      steps: message.execution_steps
+                    }
+                  }
+                : msg
+            )
+          )
         }
         break
 
@@ -204,23 +225,20 @@ export function ChatInterface({ onSplitView: _onSplitView, currentSessionId }: C
         break
 
       case 'response_generating_start':
-        // 응답 생성 시작 - ResponseGeneratingPage 생성
-        // Backend 전송 형식: { message, phase }
-        const responseGenMessage: Message = {
-          id: `response-generating-${Date.now()}`,
-          type: "response-generating",
-          content: "",
-          timestamp: new Date(),
-          responseGenerating: {
-            message: message.message || "답변을 생성하고 있습니다...",
-            phase: message.phase || "aggregation"
-          }
-        }
-
-        // ExecutionProgressPage 제거하고 ResponseGeneratingPage 추가
-        setMessages((prev) => prev
-          .filter(m => m.type !== "execution-progress")
-          .concat(responseGenMessage)
+        // Stage 3 → 4: Executing → Generating
+        setMessages((prev) =>
+          prev.map(m =>
+            m.type === "progress"
+              ? {
+                  ...m,
+                  progressData: {
+                    ...m.progressData,
+                    stage: "generating" as const,
+                    responsePhase: message.phase || "aggregation"
+                  }
+                }
+              : m
+          )
         )
 
         setProcessState({
@@ -231,16 +249,15 @@ export function ChatInterface({ onSplitView: _onSplitView, currentSessionId }: C
         break
 
       case 'response_generating_progress':
-        // 응답 생성 진행 - ResponseGeneratingPage 업데이트
-        // Backend 전송 형식: { message, phase }
+        // Stage 4: Generating - responsePhase 업데이트
         setMessages((prev) =>
           prev.map(m =>
-            m.type === "response-generating"
+            m.type === "progress" && m.progressData?.stage === "generating"
               ? {
                   ...m,
-                  responseGenerating: {
-                    message: message.message || "최종 답변을 생성하고 있습니다...",
-                    phase: message.phase || "response_generation"
+                  progressData: {
+                    ...m.progressData,
+                    responsePhase: message.phase || "response_generation"
                   }
                 }
               : m
@@ -249,13 +266,8 @@ export function ChatInterface({ onSplitView: _onSplitView, currentSessionId }: C
         break
 
       case 'final_response':
-        // 최종 응답 수신
-        // ✅ ExecutionPlan, Progress, ResponseGenerating 모두 제거
-        setMessages((prev) => prev.filter(m =>
-          m.type !== "execution-progress" &&
-          m.type !== "execution-plan" &&
-          m.type !== "response-generating"
-        ))
+        // 최종 응답 수신 - Progress 제거
+        setMessages((prev) => prev.filter(m => m.type !== "progress"))
 
         // ✅ Guidance 응답 체크
         if (message.response?.type === "guidance") {
@@ -463,24 +475,27 @@ export function ChatInterface({ onSplitView: _onSplitView, currentSessionId }: C
       timestamp: new Date(),
     }
 
-    // ✅ 즉시 ExecutionPlanPage 추가 (로딩 상태)
-    const planMessage: Message = {
-      id: `execution-plan-${Date.now()}`,
-      type: "execution-plan",
+    // ✅ Stage 1: Dispatch 즉시 표시
+    const progressMessage: Message = {
+      id: `progress-${Date.now()}`,
+      type: "progress",
       content: "",
       timestamp: new Date(),
-      executionPlan: {
-        intent: "분석 중...",
-        confidence: 0,
-        execution_steps: [],
-        execution_strategy: "sequential",
-        estimated_total_time: 0,
-        keywords: [],
-        isLoading: true  // 로딩 상태
+      progressData: {
+        stage: "dispatch",
+        plan: {
+          intent: "분석 중...",
+          confidence: 0,
+          execution_steps: [],
+          execution_strategy: "sequential",
+          estimated_total_time: 0,
+          keywords: [],
+          isLoading: true
+        }
       }
     }
 
-    setMessages((prev) => [...prev, userMessage, planMessage])
+    setMessages((prev) => [...prev, userMessage, progressMessage])
     setInputValue("")
 
     // Detect agent type for loading animation
@@ -553,23 +568,16 @@ export function ChatInterface({ onSplitView: _onSplitView, currentSessionId }: C
 
   return (
     <div className="flex flex-col h-full bg-background">
-      <div ref={scrollAreaRef} className="flex-1 p-4 overflow-y-auto">
-        <div className="space-y-4 max-w-3xl mx-auto">
+      <div ref={scrollAreaRef} className="flex-1 px-4 py-1.5 overflow-y-auto">
+        <div className="space-y-2 max-w-3xl mx-auto">
           {messages.map((message) => (
             <div key={message.id} className="space-y-2">
-              {message.type === "execution-plan" && message.executionPlan && (
-                <ExecutionPlanPage plan={message.executionPlan} />
-              )}
-              {message.type === "execution-progress" && message.executionSteps && message.executionPlan && (
-                <ExecutionProgressPage
-                  steps={message.executionSteps}
-                  plan={message.executionPlan}
-                />
-              )}
-              {message.type === "response-generating" && message.responseGenerating && (
-                <ResponseGeneratingPage
-                  message={message.responseGenerating.message}
-                  phase={message.responseGenerating.phase}
+              {message.type === "progress" && message.progressData && (
+                <ProgressContainer
+                  stage={message.progressData.stage}
+                  plan={message.progressData.plan}
+                  steps={message.progressData.steps}
+                  responsePhase={message.progressData.responsePhase}
                 />
               )}
               {message.type === "guidance" && message.guidanceData && (
@@ -600,16 +608,16 @@ export function ChatInterface({ onSplitView: _onSplitView, currentSessionId }: C
       </div>
 
       {/* Example Questions */}
-      <div className="border-t border-border p-4">
-        <p className="text-sm text-muted-foreground mb-3">예시 질문:</p>
-        <div className="flex flex-wrap gap-2 mb-4">
+      <div className="border-t border-border px-3 py-1.5">
+        <p className="text-xs text-muted-foreground mb-1">예시 질문:</p>
+        <div className="flex flex-wrap gap-1.5 mb-1.5">
           {exampleQuestions.map((question, index) => (
             <Button
               key={index}
               variant="outline"
               size="sm"
               onClick={() => handleExampleClick(question)}
-              className="text-xs"
+              className="text-xs h-7"
               disabled={processState.step !== "idle"}
             >
               {question}
