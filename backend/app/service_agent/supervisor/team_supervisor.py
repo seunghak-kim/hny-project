@@ -34,6 +34,9 @@ from app.service_agent.foundation.agent_registry import AgentRegistry
 from app.service_agent.foundation.agent_adapter import initialize_agent_system
 from app.service_agent.foundation.checkpointer import create_checkpointer
 
+# ✅ LangGraph 0.6 HITL Pattern - Import Document Team workflow
+from app.service_agent.execution_agents.document_executor import build_document_workflow
+
 logger = logging.getLogger(__name__)
 
 
@@ -70,11 +73,11 @@ class TeamBasedSupervisor:
         # Planning Agent
         self.planning_agent = PlanningAgent(llm_context=llm_context)
 
-        # 팀 초기화
+        # 팀 초기화 (progress_callback은 실행 시점에 설정됨)
         self.teams = {
-            "search": SearchExecutor(llm_context=llm_context),
-            "document": DocumentExecutor(llm_context=llm_context),
-            "analysis": AnalysisExecutor(llm_context=llm_context)
+            "search": SearchExecutor(llm_context=llm_context, progress_callback=None),
+            "document": DocumentExecutor(llm_context=llm_context, progress_callback=None),
+            "analysis": AnalysisExecutor(llm_context=llm_context, progress_callback=None)
         }
 
         # 워크플로우 구성 (checkpointer는 나중에 초기화)
@@ -128,7 +131,7 @@ class TeamBasedSupervisor:
         logger.info("Team-based workflow graph built successfully")
 
     def _route_after_planning(self, state: MainSupervisorState) -> str:
-        """계획 후 라우팅"""
+        """계획 후 라우팅 (without checkpointer - backward compatibility)"""
         planning_state = state.get("planning_state")
 
         # 기능 외 질문 필터링
@@ -154,6 +157,55 @@ class TeamBasedSupervisor:
         logger.info("[TeamSupervisor] No execution steps found, routing to respond")
         return "respond"
 
+    def _route_after_planning_with_hitl(self, state: MainSupervisorState) -> str:
+        """
+        계획 후 라우팅 (with HITL support)
+
+        ✅ LangGraph 0.6 HITL Pattern:
+        - Document team requests → "document" (HITL-enabled subgraph)
+        - Search/Analysis requests → "execute" (legacy executors)
+        - Out-of-scope queries → "respond"
+        """
+        planning_state = state.get("planning_state")
+
+        # 기능 외 질문 필터링
+        if planning_state:
+            analyzed_intent = planning_state.get("analyzed_intent", {})
+            intent_type = analyzed_intent.get("intent_type", "")
+            confidence = analyzed_intent.get("confidence", 0.0)
+
+            # IRRELEVANT 또는 낮은 confidence의 UNCLEAR는 바로 응답
+            if intent_type == "irrelevant":
+                logger.info("[TeamSupervisor] Detected IRRELEVANT query, routing to respond with guidance")
+                return "respond"
+
+            if intent_type == "unclear" and confidence < 0.3:
+                logger.info(f"[TeamSupervisor] Low confidence UNCLEAR query ({confidence:.2f}), routing to respond")
+                return "respond"
+
+        # 실행 계획 확인
+        if not planning_state or not planning_state.get("execution_steps"):
+            logger.info("[TeamSupervisor] No execution steps found, routing to respond")
+            return "respond"
+
+        # ✅ Check if document team is needed
+        active_teams = state.get("active_teams", [])
+
+        # Document team only → route to document_team (HITL-enabled)
+        if active_teams == ["document"]:
+            logger.info("[TeamSupervisor] Routing to document_team (HITL-enabled)")
+            return "document"
+
+        # Document team + others → route to execute_teams for now (TODO: parallel execution)
+        # For Phase 3, we'll handle document team separately in future iterations
+        if "document" in active_teams and len(active_teams) > 1:
+            logger.info(f"[TeamSupervisor] Document team with others {active_teams}, routing to execute_teams (TODO: handle separately)")
+            return "execute"
+
+        # No document team → route to execute_teams (Search + Analysis)
+        logger.info(f"[TeamSupervisor] Routing to execute_teams - {len(planning_state['execution_steps'])} steps, teams: {active_teams}")
+        return "execute"
+
     async def initialize_node(self, state: MainSupervisorState) -> MainSupervisorState:
         """
         초기화 노드
@@ -169,6 +221,20 @@ class TeamBasedSupervisor:
         state["team_results"] = {}
         state["error_log"] = []
 
+        # 🆕 Layer 1: Supervisor Phase Change (dispatching)
+        session_id = state.get("session_id")
+        progress_callback = self._progress_callbacks.get(session_id) if session_id else None
+        if progress_callback:
+            try:
+                await progress_callback("supervisor_phase_change", {
+                    "supervisorPhase": "dispatching",
+                    "supervisorProgress": 5,
+                    "message": "질문을 접수하고 있습니다"
+                })
+                logger.debug("[TeamSupervisor] Sent supervisor_phase_change: dispatching")
+            except Exception as e:
+                logger.error(f"[TeamSupervisor] Failed to send supervisor_phase_change: {e}")
+
         return state
 
     async def planning_node(self, state: MainSupervisorState) -> MainSupervisorState:
@@ -181,9 +247,21 @@ class TeamBasedSupervisor:
 
         state["current_phase"] = "planning"
 
-        # WebSocket: Planning 시작 알림
+        # 🆕 Layer 1: Supervisor Phase Change (analyzing)
         session_id = state.get("session_id")
         progress_callback = self._progress_callbacks.get(session_id) if session_id else None
+        if progress_callback:
+            try:
+                await progress_callback("supervisor_phase_change", {
+                    "supervisorPhase": "analyzing",
+                    "supervisorProgress": 10,
+                    "message": "질문을 분석하고 계획을 수립하고 있습니다"
+                })
+                logger.debug("[TeamSupervisor] Sent supervisor_phase_change: analyzing")
+            except Exception as e:
+                logger.error(f"[TeamSupervisor] Failed to send supervisor_phase_change: {e}")
+
+        # WebSocket: Planning 시작 알림 (Legacy)
         if progress_callback:
             try:
                 await progress_callback("planning_start", {
@@ -503,7 +581,7 @@ class TeamBasedSupervisor:
         if not planning_state["execution_steps"]:
             logger.warning("[TeamSupervisor] WARNING: No execution steps created in planning phase!")
 
-        # WebSocket: 계획 완료 알림
+        # WebSocket: 계획 완료 알림 (Legacy)
         session_id = state.get("session_id")
         progress_callback = self._progress_callbacks.get(session_id) if session_id else None
         if progress_callback:
@@ -520,7 +598,172 @@ class TeamBasedSupervisor:
             except Exception as e:
                 logger.error(f"[TeamSupervisor] Failed to send plan_ready: {e}")
 
+        # 🆕 Layer 2: Agent Steps Initialized (for each active team)
+        if progress_callback and active_teams:
+            try:
+                for team_name in active_teams:
+                    agent_steps = self._get_agent_steps_definition(team_name)
+                    await progress_callback("agent_steps_initialized", {
+                        "agentName": team_name,
+                        "agentType": team_name,
+                        "steps": agent_steps,
+                        "currentStepIndex": 0,
+                        "totalSteps": len(agent_steps),
+                        "overallProgress": 0,
+                        "status": "idle"
+                    })
+                    logger.debug(f"[TeamSupervisor] Sent agent_steps_initialized for {team_name}")
+            except Exception as e:
+                logger.error(f"[TeamSupervisor] Failed to send agent_steps_initialized: {e}")
+
         return state
+
+    def _get_agent_steps_definition(self, agent_type: str) -> List[Dict[str, Any]]:
+        """
+        🆕 Layer 2: Agent별 Step 정의 반환
+
+        각 Agent가 실행할 세부 단계들을 정의합니다.
+        Frontend의 AgentStepsCard에 표시될 내용입니다.
+
+        Args:
+            agent_type: Agent 타입 ("search", "document", "analysis")
+
+        Returns:
+            Agent step 정의 리스트
+        """
+        # SearchTeam Steps (4 steps)
+        if agent_type == "search":
+            return [
+                {
+                    "id": f"{agent_type}_step_1",
+                    "name": "쿼리 생성",
+                    "status": "pending",
+                    "isHitl": False,
+                    "estimatedTime": 2
+                },
+                {
+                    "id": f"{agent_type}_step_2",
+                    "name": "데이터 검색",
+                    "status": "pending",
+                    "isHitl": False,
+                    "estimatedTime": 5
+                },
+                {
+                    "id": f"{agent_type}_step_3",
+                    "name": "결과 필터링",
+                    "status": "pending",
+                    "isHitl": False,
+                    "estimatedTime": 2
+                },
+                {
+                    "id": f"{agent_type}_step_4",
+                    "name": "결과 정리",
+                    "status": "pending",
+                    "isHitl": False,
+                    "estimatedTime": 1
+                }
+            ]
+
+        # DocumentTeam Steps (6 steps with 2 HITL points)
+        elif agent_type == "document":
+            return [
+                {
+                    "id": f"{agent_type}_step_1",
+                    "name": "계획 수립",
+                    "status": "pending",
+                    "isHitl": False,
+                    "estimatedTime": 2
+                },
+                {
+                    "id": f"{agent_type}_step_2",
+                    "name": "정보 검증",
+                    "status": "pending",
+                    "isHitl": False,
+                    "estimatedTime": 3
+                },
+                {
+                    "id": f"{agent_type}_step_3",
+                    "name": "정보 입력",
+                    "status": "pending",
+                    "isHitl": True,
+                    "hitlType": "form_validation",
+                    "estimatedTime": 60  # User input time
+                },
+                {
+                    "id": f"{agent_type}_step_4",
+                    "name": "법률 검토",
+                    "status": "pending",
+                    "isHitl": False,
+                    "estimatedTime": 5
+                },
+                {
+                    "id": f"{agent_type}_step_5",
+                    "name": "문서 생성",
+                    "status": "pending",
+                    "isHitl": False,
+                    "estimatedTime": 3
+                },
+                {
+                    "id": f"{agent_type}_step_6",
+                    "name": "최종 검토",
+                    "status": "pending",
+                    "isHitl": True,
+                    "hitlType": "approval",
+                    "estimatedTime": 30  # User review time
+                }
+            ]
+
+        # AnalysisTeam Steps (5 steps)
+        elif agent_type == "analysis":
+            return [
+                {
+                    "id": f"{agent_type}_step_1",
+                    "name": "데이터 수집",
+                    "status": "pending",
+                    "isHitl": False,
+                    "estimatedTime": 2
+                },
+                {
+                    "id": f"{agent_type}_step_2",
+                    "name": "데이터 분석",
+                    "status": "pending",
+                    "isHitl": False,
+                    "estimatedTime": 5
+                },
+                {
+                    "id": f"{agent_type}_step_3",
+                    "name": "패턴 인식",
+                    "status": "pending",
+                    "isHitl": False,
+                    "estimatedTime": 3
+                },
+                {
+                    "id": f"{agent_type}_step_4",
+                    "name": "인사이트 생성",
+                    "status": "pending",
+                    "isHitl": False,
+                    "estimatedTime": 3
+                },
+                {
+                    "id": f"{agent_type}_step_5",
+                    "name": "리포트 작성",
+                    "status": "pending",
+                    "isHitl": False,
+                    "estimatedTime": 2
+                }
+            ]
+
+        # Default (unknown agent)
+        else:
+            return [
+                {
+                    "id": f"{agent_type}_step_1",
+                    "name": "작업 실행",
+                    "status": "pending",
+                    "isHitl": False,
+                    "estimatedTime": 5
+                }
+            ]
 
     def _has_reusable_data(self, msg: Dict[str, str]) -> bool:
         """
@@ -729,9 +972,21 @@ class TeamBasedSupervisor:
 
         state["current_phase"] = "executing"
 
-        # WebSocket: 실행 시작 알림
+        # 🆕 Layer 1: Supervisor Phase Change (executing)
         session_id = state.get("session_id")
         progress_callback = self._progress_callbacks.get(session_id) if session_id else None
+        if progress_callback:
+            try:
+                await progress_callback("supervisor_phase_change", {
+                    "supervisorPhase": "executing",
+                    "supervisorProgress": 30,
+                    "message": "작업을 실행하고 있습니다"
+                })
+                logger.debug("[TeamSupervisor] Sent supervisor_phase_change: executing")
+            except Exception as e:
+                logger.error(f"[TeamSupervisor] Failed to send supervisor_phase_change: {e}")
+
+        # WebSocket: 실행 시작 알림 (Legacy)
         planning_state = state.get("planning_state")
         if progress_callback and planning_state:
             try:
@@ -982,6 +1237,13 @@ class TeamBasedSupervisor:
         """단일 팀 실행"""
         team = self.teams[team_name]
 
+        # 🆕 Set progress_callback for real-time step progress updates
+        session_id = main_state.get("session_id")
+        progress_callback = self._progress_callbacks.get(session_id) if session_id else None
+        if progress_callback:
+            team.progress_callback = progress_callback
+            logger.debug(f"[TeamSupervisor] Set progress_callback for team '{team_name}'")
+
         if team_name == "search":
             return await team.execute(shared_state)
 
@@ -1044,18 +1306,19 @@ class TeamBasedSupervisor:
 
         state["current_phase"] = "aggregation"
 
-        # WebSocket: 응답 생성 시작 알림 (aggregation 단계)
+        # 🆕 Layer 1: Supervisor Phase Change (finalizing)
         session_id = state.get("session_id")
         progress_callback = self._progress_callbacks.get(session_id) if session_id else None
         if progress_callback:
             try:
-                await progress_callback("response_generating_start", {
-                    "message": "수집된 정보를 정리하고 있습니다...",
-                    "phase": "aggregation"
+                await progress_callback("supervisor_phase_change", {
+                    "supervisorPhase": "finalizing",
+                    "supervisorProgress": 75,
+                    "message": "결과를 정리하고 있습니다"
                 })
-                logger.info("[TeamSupervisor] Sent response_generating_start (aggregation) via WebSocket")
+                logger.info("[TeamSupervisor] Sent supervisor_phase_change: finalizing")  # debug → info
             except Exception as e:
-                logger.error(f"[TeamSupervisor] Failed to send response_generating_start: {e}")
+                logger.error(f"[TeamSupervisor] Failed to send supervisor_phase_change: {e}")
 
         # 팀 결과 집계
         aggregated = {}
@@ -1072,12 +1335,13 @@ class TeamBasedSupervisor:
 
         state["aggregated_results"] = aggregated
 
-        # 실행 통계
+        # ✅ 실행 통계 - aggregated_results 기반으로 정확하게 계산
+        # (execute_teams_node를 거치지 않는 document_team도 정확히 집계)
         total_teams = len(state.get("active_teams", []))
-        completed_teams = len(state.get("completed_teams", []))
-        failed_teams = len(state.get("failed_teams", []))
+        succeeded_teams = len([name for name, data in aggregated.items() if data.get("status") == "success"])
+        failed_teams = len([name for name, data in aggregated.items() if data.get("status") == "failed"])
 
-        logger.info(f"[TeamSupervisor] === Aggregation complete: {completed_teams}/{total_teams} teams succeeded, {failed_teams} failed ===")
+        logger.info(f"[TeamSupervisor] === Aggregation complete: {succeeded_teams}/{total_teams} teams succeeded, {failed_teams} failed ===")
         return state
 
     async def generate_response_node(self, state: MainSupervisorState) -> MainSupervisorState:
@@ -1088,18 +1352,19 @@ class TeamBasedSupervisor:
 
         state["current_phase"] = "response_generation"
 
-        # WebSocket: 응답 생성 진행 알림 (response_generation 단계)
+        # 🆕 Layer 1: Supervisor Phase Change (finalizing - 답변 생성 시작)
         session_id = state.get("session_id")
         progress_callback = self._progress_callbacks.get(session_id) if session_id else None
         if progress_callback:
             try:
-                await progress_callback("response_generating_progress", {
-                    "message": "최종 답변을 생성하고 있습니다...",
-                    "phase": "response_generation"
+                await progress_callback("supervisor_phase_change", {
+                    "supervisorPhase": "finalizing",
+                    "supervisorProgress": 85,
+                    "message": "최종 답변을 생성하고 있습니다"
                 })
-                logger.info("[TeamSupervisor] Sent response_generating_progress (response_generation) via WebSocket")
+                logger.info("[TeamSupervisor] Sent supervisor_phase_change: finalizing (85% - LLM start)")
             except Exception as e:
-                logger.error(f"[TeamSupervisor] Failed to send response_generating_progress: {e}")
+                logger.error(f"[TeamSupervisor] Failed to send supervisor_phase_change: {e}")
 
         # 기능 외 질문 체크
         planning_state = state.get("planning_state", {})
@@ -1126,6 +1391,19 @@ class TeamBasedSupervisor:
                 response = self._generate_simple_response(state)
 
         logger.info(f"[TeamSupervisor] Response type: {response.get('type', 'unknown')}")
+
+        # 🆕 Layer 1: Supervisor Phase Change (finalizing - 답변 생성 완료)
+        if progress_callback:
+            try:
+                await progress_callback("supervisor_phase_change", {
+                    "supervisorPhase": "finalizing",
+                    "supervisorProgress": 95,
+                    "message": "답변 생성 완료"
+                })
+                logger.info("[TeamSupervisor] Sent supervisor_phase_change: finalizing (95% - LLM complete)")
+            except Exception as e:
+                logger.error(f"[TeamSupervisor] Failed to send supervisor_phase_change: {e}")
+
         state["final_response"] = response
         state["status"] = "completed"
 
@@ -1379,36 +1657,52 @@ class TeamBasedSupervisor:
                 self.enable_checkpointing = False
 
     def _build_graph_with_checkpointer(self):
-        """Checkpointer와 함께 workflow graph 재구성"""
+        """
+        Checkpointer와 함께 workflow graph 재구성
+
+        ✅ LangGraph 0.6 HITL Pattern:
+        - Document Team을 compiled subgraph로 추가
+        - Checkpointer auto-propagation (parent → subgraph)
+        """
         workflow = StateGraph(MainSupervisorState)
 
-        # 노드 추가 (기존과 동일)
+        # ✅ Build Document Team workflow as compiled subgraph
+        logger.info("Building Document Team workflow with HITL support...")
+        document_workflow = build_document_workflow(checkpointer=self.checkpointer)
+        logger.info("Document Team workflow compiled successfully")
+
+        # 노드 추가
         workflow.add_node("initialize", self.initialize_node)
         workflow.add_node("planning", self.planning_node)
-        workflow.add_node("execute_teams", self.execute_teams_node)
+        workflow.add_node("execute_teams", self.execute_teams_node)  # Search + Analysis teams
+        workflow.add_node("document_team", document_workflow)  # ✅ Compiled subgraph as direct node
         workflow.add_node("aggregate", self.aggregate_results_node)
         workflow.add_node("generate_response", self.generate_response_node)
 
-        # 엣지 구성 (기존과 동일)
+        # 엣지 구성
         workflow.add_edge(START, "initialize")
         workflow.add_edge("initialize", "planning")
 
+        # ✅ Updated routing: document_team OR execute_teams OR respond
         workflow.add_conditional_edges(
             "planning",
-            self._route_after_planning,
+            self._route_after_planning_with_hitl,
             {
-                "execute": "execute_teams",
+                "document": "document_team",  # ✅ HITL-enabled document team
+                "execute": "execute_teams",   # Search + Analysis teams
                 "respond": "generate_response"
             }
         )
 
+        # Both document_team and execute_teams lead to aggregate
+        workflow.add_edge("document_team", "aggregate")
         workflow.add_edge("execute_teams", "aggregate")
         workflow.add_edge("aggregate", "generate_response")
         workflow.add_edge("generate_response", END)
 
         # Checkpointer와 함께 compile
         self.app = workflow.compile(checkpointer=self.checkpointer)
-        logger.info("Team-based workflow graph built with checkpointer")
+        logger.info("Team-based workflow graph built with checkpointer + HITL")
 
     async def process_query_streaming(
         self,

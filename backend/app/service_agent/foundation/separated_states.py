@@ -304,6 +304,23 @@ class MainSupervisorState(TypedDict, total=False):
     document_team_state: Optional[Dict[str, Any]]
     analysis_team_state: Optional[Dict[str, Any]]
 
+    # ============================================================================
+    # Document Team Fields (for HITL workflow)
+    # ============================================================================
+    planning_result: Optional[Dict[str, Any]]  # Document planning result
+    search_results: Optional[List[Dict[str, Any]]]  # Search results from document team
+    aggregated_content: Optional[str]  # Aggregated content before HITL
+    final_document: Optional[str]  # Final generated document
+    collaboration_result: Optional[Dict[str, Any]]  # HITL resume value (user feedback)
+
+    # ============================================================================
+    # HITL (Human-in-the-Loop) Fields
+    # ============================================================================
+    workflow_status: Optional[str]  # "running" | "interrupted" | "completed" | "failed"
+    interrupted_by: Optional[str]  # Node name that triggered interrupt
+    interrupt_type: Optional[str]  # "approval" | "review" | "feedback"
+    interrupt_data: Optional[Dict[str, Any]]  # Data to present to user during interrupt
+
     # Execution tracking
     current_phase: str
     active_teams: List[str]

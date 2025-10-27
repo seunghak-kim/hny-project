@@ -12,9 +12,11 @@ import type { ExecutionStepState } from "@/lib/types"
 import { ProgressContainer, type ProgressStage } from "@/components/progress-container"
 import { AnswerDisplay } from "@/components/answer-display"
 import { GuidancePage } from "@/components/guidance-page"
+import { LeaseContractPage } from "@/components/lease_contract/lease_contract_page"
 import type { ProcessState, AgentType } from "@/types/process"
 import type { ExecutionPlan, ExecutionStep } from "@/types/execution"
 import { STEP_MESSAGES } from "@/types/process"
+import type { ThreeLayerProgressData, AgentProgress, SupervisorPhase } from "@/types/progress"
 
 interface AnswerSection {
   title: string
@@ -69,6 +71,49 @@ interface ChatInterfaceProps {
   currentSessionId?: string | null
 }
 
+// ============================================================================
+// Helper Functions
+// ============================================================================
+
+/**
+ * Get default steps for a reused agent
+ * Returns completed steps for display purposes
+ */
+function getDefaultStepsForAgent(agentType: string) {
+  const stepTemplates: Record<string, Array<{ id: string; name: string }>> = {
+    search: [
+      { id: "search_step_1", name: "쿼리 생성" },
+      { id: "search_step_2", name: "데이터 검색" },
+      { id: "search_step_3", name: "결과 필터링" },
+      { id: "search_step_4", name: "결과 정리" }
+    ],
+    document: [
+      { id: "document_step_1", name: "문서 계획" },
+      { id: "document_step_2", name: "검색 결과 검증" },
+      { id: "document_step_3", name: "정보 입력 (HITL)" },
+      { id: "document_step_4", name: "내용 검토 (HITL)" },
+      { id: "document_step_5", name: "문서 생성" },
+      { id: "document_step_6", name: "최종 확인" }
+    ],
+    analysis: [
+      { id: "analysis_step_1", name: "데이터 수집" },
+      { id: "analysis_step_2", name: "데이터 분석" },
+      { id: "analysis_step_3", name: "패턴 인식" },
+      { id: "analysis_step_4", name: "인사이트 생성" },
+      { id: "analysis_step_5", name: "리포트 작성" }
+    ]
+  }
+
+  const template = stepTemplates[agentType] || stepTemplates["search"]
+
+  return template.map((step) => ({
+    id: step.id,
+    name: step.name,
+    status: "completed" as const,
+    progress: 100
+  }))
+}
+
 export function ChatInterface({ onSplitView: _onSplitView, currentSessionId }: ChatInterfaceProps) {
   const { sessionId, isLoading: sessionLoading, error: sessionError } = useSession()
   const [messages, setMessages] = useState<Message[]>([
@@ -90,6 +135,16 @@ export function ChatInterface({ onSplitView: _onSplitView, currentSessionId }: C
   const scrollAreaRef = useRef<HTMLDivElement>(null)
   const wsClientRef = useRef<ChatWSClient | null>(null)
   const prevSessionIdRef = useRef<string | null>(null)  // 이전 세션 ID 추적
+
+  // ✅ HITL: 임대차 계약서 페이지 상태
+  const [showLeaseContract, setShowLeaseContract] = useState(false)
+  const [leaseContractData, setLeaseContractData] = useState<any>(null)
+
+  // 🆕 3-Layer Progress System State
+  const [threeLayerProgress, setThreeLayerProgress] = useState<ThreeLayerProgressData | null>(null)
+
+  // 🆕 Animated supervisor progress for smooth visual flow
+  const [animatedSupervisorProgress, setAnimatedSupervisorProgress] = useState(0)
 
   const exampleQuestions = [
     "공인중개사가 할 수 없는 금지행위에는 어떤 것들이 있나요?",
@@ -297,6 +352,9 @@ export function ChatInterface({ onSplitView: _onSplitView, currentSessionId }: C
         }
         setTodos([])
 
+        // 🆕 Reset 3-Layer Progress System
+        setThreeLayerProgress(null)
+
         // 프로세스 완료 - idle 상태로 전환하여 입력 활성화
         setProcessState({
           step: "idle",
@@ -306,9 +364,11 @@ export function ChatInterface({ onSplitView: _onSplitView, currentSessionId }: C
         break
 
       case 'data_reuse_notification':
-        // 🆕 Option A: 재사용된 팀 정보 저장
+        // 🆕 재사용된 팀 정보를 Legacy 및 3-Layer Progress에 모두 추가
         if (message.reused_teams && Array.isArray(message.reused_teams)) {
           console.log('[ChatInterface] data_reuse_notification received:', message.reused_teams)
+
+          // Legacy progress 업데이트
           setMessages((prev) =>
             prev.map(m =>
               m.type === "progress" && m.progressData
@@ -322,7 +382,121 @@ export function ChatInterface({ onSplitView: _onSplitView, currentSessionId }: C
                 : m
             )
           )
+
+          // 🆕 3-Layer Progress에 재사용 Agent 추가
+          setThreeLayerProgress((prev) => {
+            if (!prev) return prev
+
+            const reusedAgents: AgentProgress[] = message.reused_teams.map((teamName: string) => ({
+              agentName: teamName,
+              agentType: teamName,
+              steps: getDefaultStepsForAgent(teamName),
+              currentStepIndex: 0,
+              totalSteps: getDefaultStepsForAgent(teamName).length,
+              overallProgress: 100,
+              status: "completed" as const,
+              isReused: true
+            }))
+
+            return {
+              ...prev,
+              activeAgents: [...prev.activeAgents, ...reusedAgents]
+            }
+          })
         }
+        break
+
+      case 'workflow_interrupted':
+        // ✅ HITL: 워크플로우 중단 - 임대차 계약서 페이지 표시
+        console.log('[ChatInterface] Workflow interrupted:', message)
+        setLeaseContractData({
+          interrupt_data: message.interrupt_data,
+          interrupted_by: message.interrupted_by,
+          interrupt_type: message.interrupt_type,
+          message: message.message
+        })
+        setShowLeaseContract(true)
+
+        // Progress 상태는 유지 (사용자가 페이지를 닫을 때까지)
+        setProcessState({
+          step: "idle",
+          agentType: null,
+          message: ""
+        })
+        break
+
+      case 'supervisor_phase_change':
+        // 🆕 Layer 1: Supervisor Phase Update
+        setThreeLayerProgress((prev) => ({
+          supervisorPhase: message.supervisorPhase as SupervisorPhase,
+          supervisorProgress: message.supervisorProgress || 0,
+          activeAgents: prev?.activeAgents || []
+        }))
+        break
+
+      case 'agent_steps_initialized':
+        // 🆕 Layer 2: Agent Steps Initialized
+        if (message.agentName && message.steps) {
+          const newAgent: AgentProgress = {
+            agentName: message.agentName,
+            agentType: message.agentType || message.agentName,
+            steps: message.steps,
+            currentStepIndex: message.currentStepIndex || 0,
+            totalSteps: message.totalSteps || message.steps.length,
+            overallProgress: message.overallProgress || 0,
+            status: message.status || "idle"
+          }
+
+          setThreeLayerProgress((prev) => ({
+            supervisorPhase: prev?.supervisorPhase || "dispatching",
+            supervisorProgress: prev?.supervisorProgress || 0,
+            activeAgents: [...(prev?.activeAgents || []), newAgent]
+          }))
+        }
+        break
+
+      case 'agent_step_progress':
+        // 🆕 Layer 2: Real-time Step Progress Update
+        setThreeLayerProgress((prev) => {
+          if (!prev) return prev  // No active progress
+
+          return {
+            ...prev,
+            activeAgents: prev.activeAgents.map(agent => {
+              // Find matching agent
+              if (agent.agentName !== message.agentName) {
+                return agent  // Not this agent, skip
+              }
+
+              // Update matching agent's steps
+              const updatedSteps = agent.steps.map((step, idx) => {
+                if (idx === message.stepIndex) {
+                  return {
+                    ...step,
+                    status: message.status as "pending" | "in_progress" | "completed" | "failed",
+                    progress: message.progress || step.progress || 0
+                  }
+                }
+                return step
+              })
+
+              // Calculate overall progress (average of all steps)
+              const completedSteps = updatedSteps.filter(s => s.status === "completed").length
+              const inProgressSteps = updatedSteps.filter(s => s.status === "in_progress").length
+              const overallProgress = Math.round(
+                ((completedSteps * 100) + (inProgressSteps * 50)) / updatedSteps.length
+              )
+
+              return {
+                ...agent,
+                steps: updatedSteps,
+                currentStepIndex: message.stepIndex,
+                overallProgress: overallProgress,
+                status: message.status === "failed" ? ("failed" as const) : ("running" as const)
+              }
+            })
+          }
+        })
         break
 
       case 'error':
@@ -376,6 +550,46 @@ export function ChatInterface({ onSplitView: _onSplitView, currentSessionId }: C
       wsClientRef.current = null
     }
   }, [currentSessionId, sessionId, handleWSMessage])  // ✅ currentSessionId 추가
+
+  // 🆕 Smooth supervisor progress animation
+  useEffect(() => {
+    if (!threeLayerProgress) {
+      setAnimatedSupervisorProgress(0)
+      return
+    }
+
+    const targetProgress = threeLayerProgress.supervisorProgress
+    const currentProgress = animatedSupervisorProgress
+
+    // If already at target, do nothing
+    if (currentProgress === targetProgress) return
+
+    // If target is 100 (completed), jump immediately
+    if (targetProgress === 100) {
+      setAnimatedSupervisorProgress(100)
+      return
+    }
+
+    // Smooth animation from current to target
+    const duration = 200 // ms per increment
+    const increment = targetProgress > currentProgress ? 1 : -1
+
+    const interval = setInterval(() => {
+      setAnimatedSupervisorProgress((prev) => {
+        if (increment > 0 && prev >= targetProgress) {
+          clearInterval(interval)
+          return targetProgress
+        }
+        if (increment < 0 && prev <= targetProgress) {
+          clearInterval(interval)
+          return targetProgress
+        }
+        return prev + increment
+      })
+    }, duration)
+
+    return () => clearInterval(interval)
+  }, [threeLayerProgress?.supervisorProgress])
 
   // DB에서 메시지 로드 (WebSocket 연결 후) - 초기 로드용
   useEffect(() => {
@@ -519,6 +733,13 @@ export function ChatInterface({ onSplitView: _onSplitView, currentSessionId }: C
     setMessages((prev) => [...prev, userMessage, progressMessage])
     setInputValue("")
 
+    // 🆕 Initialize 3-Layer Progress System
+    setThreeLayerProgress({
+      supervisorPhase: "dispatching",
+      supervisorProgress: 0,
+      activeAgents: []
+    })
+
     // Detect agent type for loading animation
     const agentType = detectAgentType(content) as AgentType | null
 
@@ -588,85 +809,142 @@ export function ChatInterface({ onSplitView: _onSplitView, currentSessionId }: C
   }
 
   return (
-    <div className="flex flex-col h-full bg-background">
-      <div ref={scrollAreaRef} className="flex-1 px-4 py-1.5 overflow-y-auto">
-        <div className="space-y-2 max-w-3xl mx-auto">
-          {messages.map((message) => (
-            <div key={message.id} className="space-y-2">
-              {message.type === "progress" && message.progressData && (
-                <ProgressContainer
-                  stage={message.progressData.stage}
-                  plan={message.progressData.plan}
-                  steps={message.progressData.steps}
-                  responsePhase={message.progressData.responsePhase}
-                  reusedTeams={message.progressData.reusedTeams}
-                />
-              )}
-              {message.type === "guidance" && message.guidanceData && (
-                <GuidancePage guidance={message.guidanceData} />
-              )}
-              {(message.type === "user" || message.type === "bot") && (
-                <div className={`flex ${message.type === "user" ? "justify-end" : "justify-start"}`}>
-                  <div className={`flex gap-2 max-w-[80%] ${message.type === "user" ? "flex-row-reverse" : ""}`}>
-                    <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${message.type === "user" ? "bg-primary" : "bg-secondary"}`}>
-                      {message.type === "user" ? <User className="h-4 w-4 text-primary-foreground" /> : <Bot className="h-4 w-4" />}
+    <>
+      <div className="flex flex-col h-full bg-background">
+        <div ref={scrollAreaRef} className="flex-1 px-4 py-1.5 overflow-y-auto">
+          <div className="space-y-2 max-w-3xl mx-auto">
+            {messages.map((message) => (
+              <div key={message.id} className="space-y-2">
+                {message.type === "progress" && (
+                  threeLayerProgress ? (
+                    <ProgressContainer
+                      mode="three-layer"
+                      progressData={{
+                        ...threeLayerProgress,
+                        supervisorProgress: animatedSupervisorProgress
+                      }}
+                    />
+                  ) : message.progressData ? (
+                    <ProgressContainer
+                      mode="legacy"
+                      stage={message.progressData.stage}
+                      plan={message.progressData.plan}
+                      steps={message.progressData.steps}
+                      responsePhase={message.progressData.responsePhase}
+                      reusedTeams={message.progressData.reusedTeams}
+                    />
+                  ) : null
+                )}
+                {message.type === "guidance" && message.guidanceData && (
+                  <GuidancePage guidance={message.guidanceData} />
+                )}
+                {(message.type === "user" || message.type === "bot") && (
+                  <div className={`flex ${message.type === "user" ? "justify-end" : "justify-start"}`}>
+                    <div className={`flex gap-2 max-w-[80%] ${message.type === "user" ? "flex-row-reverse" : ""}`}>
+                      <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${message.type === "user" ? "bg-primary" : "bg-secondary"}`}>
+                        {message.type === "user" ? <User className="h-4 w-4 text-primary-foreground" /> : <Bot className="h-4 w-4" />}
+                      </div>
+                      {message.type === "bot" && message.structuredData ? (
+                        <AnswerDisplay
+                          sections={message.structuredData.sections}
+                          metadata={message.structuredData.metadata}
+                        />
+                      ) : (
+                        <Card className={`p-3 ${message.type === "user" ? "bg-primary text-primary-foreground" : ""}`}>
+                          <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                        </Card>
+                      )}
                     </div>
-                    {message.type === "bot" && message.structuredData ? (
-                      <AnswerDisplay
-                        sections={message.structuredData.sections}
-                        metadata={message.structuredData.metadata}
-                      />
-                    ) : (
-                      <Card className={`p-3 ${message.type === "user" ? "bg-primary text-primary-foreground" : ""}`}>
-                        <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-                      </Card>
-                    )}
                   </div>
-                </div>
-              )}
-            </div>
-          ))}
+                )}
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
 
-      {/* Example Questions */}
-      <div className="border-t border-border px-3 py-1.5">
-        <p className="text-xs text-muted-foreground mb-1">예시 질문:</p>
-        <div className="flex flex-wrap gap-1.5 mb-1.5">
-          {exampleQuestions.map((question, index) => (
-            <Button
-              key={index}
-              variant="outline"
-              size="sm"
-              onClick={() => handleExampleClick(question)}
-              className="text-xs h-7"
+        {/* Example Questions */}
+        <div className="border-t border-border px-3 py-1.5">
+          <p className="text-xs text-muted-foreground mb-1">예시 질문:</p>
+          <div className="flex flex-wrap gap-1.5 mb-1.5">
+            {exampleQuestions.map((question, index) => (
+              <Button
+                key={index}
+                variant="outline"
+                size="sm"
+                onClick={() => handleExampleClick(question)}
+                className="text-xs h-7"
+                disabled={processState.step !== "idle"}
+              >
+                {question}
+              </Button>
+            ))}
+          </div>
+
+          {/* Input */}
+          <div className="flex gap-2">
+            <Input
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              placeholder="메시지를 입력하세요..."
+              onKeyPress={(e) => e.key === "Enter" && handleSendMessage(inputValue)}
               disabled={processState.step !== "idle"}
+              className="flex-1"
+            />
+            <Button
+              onClick={() => handleSendMessage(inputValue)}
+              disabled={processState.step !== "idle" || !inputValue.trim()}
+              size="icon"
             >
-              {question}
+              <Send className="h-4 w-4" />
             </Button>
-          ))}
-        </div>
-
-        {/* Input */}
-        <div className="flex gap-2">
-          <Input
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            placeholder="메시지를 입력하세요..."
-            onKeyPress={(e) => e.key === "Enter" && handleSendMessage(inputValue)}
-            disabled={processState.step !== "idle"}
-            className="flex-1"
-          />
-          <Button
-            onClick={() => handleSendMessage(inputValue)}
-            disabled={processState.step !== "idle" || !inputValue.trim()}
-            size="icon"
-          >
-            <Send className="h-4 w-4" />
-          </Button>
+          </div>
         </div>
       </div>
-    </div>
+
+      {/* ✅ HITL: 임대차 계약서 페이지 */}
+      {showLeaseContract && (
+        <LeaseContractPage
+          interruptData={leaseContractData?.interrupt_data}
+          onApprove={() => {
+            if (wsClientRef.current) {
+              console.log('[ChatInterface] Sending approve response')
+              wsClientRef.current.send({
+                type: "interrupt_response",
+                action: "approve",
+                feedback: null
+              })
+            }
+          }}
+          onModify={(modifications: string) => {
+            if (wsClientRef.current) {
+              console.log('[ChatInterface] Sending modify response:', modifications)
+              wsClientRef.current.send({
+                type: "interrupt_response",
+                action: "modify",
+                feedback: modifications,
+                modifications: modifications
+              })
+            }
+          }}
+          onReject={() => {
+            if (wsClientRef.current) {
+              console.log('[ChatInterface] Sending reject response')
+              wsClientRef.current.send({
+                type: "interrupt_response",
+                action: "reject",
+                feedback: null
+              })
+            }
+          }}
+          onClose={() => {
+            setShowLeaseContract(false)
+            setLeaseContractData(null)
+            // Progress 메시지 제거
+            setMessages((prev) => prev.filter(m => m.type !== "progress"))
+          }}
+        />
+      )}
+    </>
   )
 }
 // DEPRECATED CODE REMOVED - WebSocket으로 완전 전환됨

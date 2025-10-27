@@ -31,14 +31,16 @@ class SearchExecutor:
     법률, 부동산, 대출 검색 작업을 실행
     """
 
-    def __init__(self, llm_context=None):
+    def __init__(self, llm_context=None, progress_callback=None):
         """
         초기화
 
         Args:
             llm_context: LLM 컨텍스트
+            progress_callback: Optional callback for real-time progress updates
         """
         self.llm_context = llm_context
+        self.progress_callback = progress_callback  # 🆕 Store parent's WebSocket callback
 
         # LLMService 초기화 (에러 발생 시 fallback)
         try:
@@ -154,6 +156,9 @@ class SearchExecutor:
         """
         logger.info("[SearchTeam] Preparing search")
 
+        # 🆕 Step Progress: Step 0 (쿼리 생성) - Start
+        await self._update_step_progress(state, step_index=0, status="in_progress", progress=0)
+
         # 초기화
         state["team_name"] = self.team_name
         state["status"] = "in_progress"
@@ -170,6 +175,10 @@ class SearchExecutor:
             state["search_scope"] = self._determine_search_scope(state["keywords"])
 
         logger.info(f"[SearchTeam] Search scope: {state['search_scope']}")
+
+        # 🆕 Step Progress: Step 0 (쿼리 생성) - Complete
+        await self._update_step_progress(state, step_index=0, status="completed", progress=100)
+
         return state
 
     def _extract_keywords(self, query: str) -> SearchKeywords:
@@ -456,6 +465,9 @@ class SearchExecutor:
         실제 검색 Agent 호출 + 하이브리드 법률 검색
         """
         logger.info("[SearchTeam] Executing searches")
+
+        # 🆕 Step Progress: Step 1 (데이터 검색) - Start
+        await self._update_step_progress(state, step_index=1, status="in_progress", progress=0)
 
         import time
         start_time = time.time()
@@ -774,6 +786,9 @@ class SearchExecutor:
             except Exception as e:
                 logger.warning(f"Failed to log execution results: {e}")
 
+        # 🆕 Step Progress: Step 1 (데이터 검색) - Complete
+        await self._update_step_progress(state, step_index=1, status="completed", progress=100)
+
         return state
 
     def _flatten_keywords(self, keywords: SearchKeywords) -> List[str]:
@@ -792,6 +807,9 @@ class SearchExecutor:
         여러 검색 결과를 통합
         """
         logger.info("[SearchTeam] Aggregating results")
+
+        # 🆕 Step Progress: Step 2 (결과 필터링) - Start
+        await self._update_step_progress(state, step_index=2, status="in_progress", progress=0)
 
         # 결과 집계
         total_results = 0
@@ -830,6 +848,10 @@ class SearchExecutor:
         }
 
         logger.info(f"[SearchTeam] Aggregated {total_results} results from {len(sources)} sources")
+
+        # 🆕 Step Progress: Step 2 (결과 필터링) - Complete
+        await self._update_step_progress(state, step_index=2, status="completed", progress=100)
+
         return state
 
     async def finalize_node(self, state: SearchTeamState) -> SearchTeamState:
@@ -838,6 +860,9 @@ class SearchExecutor:
         상태 정리 및 완료 처리
         """
         logger.info("[SearchTeam] Finalizing")
+
+        # 🆕 Step Progress: Step 3 (결과 정리) - Start
+        await self._update_step_progress(state, step_index=3, status="in_progress", progress=0)
 
         state["end_time"] = datetime.now()
 
@@ -854,7 +879,55 @@ class SearchExecutor:
             state["status"] = "completed"  # 결과가 없어도 완료로 처리
 
         logger.info(f"[SearchTeam] Completed with status: {state['status']}")
+
+        # 🆕 Step Progress: Step 3 (결과 정리) - Complete
+        await self._update_step_progress(state, step_index=3, status="completed", progress=100)
+
         return state
+
+    async def _update_step_progress(
+        self,
+        state: SearchTeamState,
+        step_index: int,
+        status: str,
+        progress: int = 0
+    ) -> None:
+        """
+        🆕 Update agent step progress in state AND forward to WebSocket.
+
+        This method writes step progress updates to the state and forwards
+        them to the parent graph via WebSocket callback for real-time UI updates.
+
+        Args:
+            state: SearchTeamState
+            step_index: Step index (0-3 for search agent's 4 steps)
+            status: Step status ("pending", "in_progress", "completed", "failed")
+            progress: Progress percentage (0-100)
+        """
+        # Initialize search_step_progress if not exists
+        if "search_step_progress" not in state:
+            state["search_step_progress"] = {}
+
+        # Update step progress in state
+        state["search_step_progress"][f"step_{step_index}"] = {
+            "index": step_index,
+            "status": status,
+            "progress": progress
+        }
+
+        logger.debug(f"[SearchExecutor] Step {step_index} progress: {status} ({progress}%)")
+
+        # 🆕 Forward to WebSocket via parent callback for real-time UI updates
+        if self.progress_callback:
+            await self.progress_callback("agent_step_progress", {
+                "agentName": "search",
+                "agentType": "search",
+                "stepId": f"search_step_{step_index + 1}",  # 1-indexed for frontend
+                "stepIndex": step_index,
+                "status": status,
+                "progress": progress
+            })
+            logger.debug(f"[SearchExecutor] Forwarded step {step_index} progress to WebSocket")
 
     async def execute(
         self,

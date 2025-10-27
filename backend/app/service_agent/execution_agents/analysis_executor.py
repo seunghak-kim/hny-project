@@ -45,10 +45,11 @@ class AnalysisExecutor:
     데이터 분석 및 보고서 생성 작업을 실행
     """
 
-    def __init__(self, llm_context=None):
+    def __init__(self, llm_context=None, progress_callback=None):
         """초기화"""
         self.llm_context = llm_context
         self.llm_service = LLMService(llm_context=llm_context) if llm_context else None
+        self.progress_callback = progress_callback  # 🆕 Store parent's WebSocket callback
         self.team_name = "analysis"
 
         # 분석 도구 초기화
@@ -293,6 +294,9 @@ class AnalysisExecutor:
         """분석 준비 노드"""
         logger.info("[AnalysisTeam] Preparing analysis")
 
+        # 🆕 Step Progress: Step 0 (데이터 수집) - Start
+        await self._update_step_progress(state, step_index=0, status="in_progress", progress=0)
+
         state["team_name"] = self.team_name
         state["status"] = "in_progress"
         state["start_time"] = datetime.now()
@@ -303,11 +307,18 @@ class AnalysisExecutor:
             state["analysis_type"] = "comprehensive"
 
         logger.info(f"[AnalysisTeam] Analysis type: {state['analysis_type']}")
+
+        # 🆕 Step Progress: Step 0 (데이터 수집) - Complete
+        await self._update_step_progress(state, step_index=0, status="completed", progress=100)
+
         return state
 
     async def preprocess_data_node(self, state: AnalysisTeamState) -> AnalysisTeamState:
         """데이터 전처리 노드"""
         logger.info("[AnalysisTeam] Preprocessing data")
+
+        # 🆕 Step Progress: Step 1 (데이터 분석) - Start
+        await self._update_step_progress(state, step_index=1, status="in_progress", progress=0)
 
         state["preprocessing_status"] = "in_progress"
         state["analysis_progress"] = {"current": "preprocess", "percent": 0.1}
@@ -321,6 +332,9 @@ class AnalysisExecutor:
         state["preprocessing_status"] = "completed"
         state["analysis_progress"] = {"current": "preprocess", "percent": 0.2}
 
+        # 🆕 Step Progress: Step 1 (데이터 분석) - Complete
+        await self._update_step_progress(state, step_index=1, status="completed", progress=100)
+
         return state
 
     async def analyze_data_node(self, state: AnalysisTeamState) -> AnalysisTeamState:
@@ -329,6 +343,9 @@ class AnalysisExecutor:
         새로운 analysis tools를 사용하여 실제 분석 수행
         """
         logger.info("[AnalysisTeam] Analyzing data with new analysis tools")
+
+        # 🆕 Step Progress: Step 2 (패턴 인식) - Start
+        await self._update_step_progress(state, step_index=2, status="in_progress", progress=0)
 
         import time
         start_time = time.time()
@@ -521,6 +538,9 @@ class AnalysisExecutor:
             state["analysis_status"] = "failed"
             state["error"] = str(e)
 
+        # 🆕 Step Progress: Step 2 (패턴 인식) - Complete
+        await self._update_step_progress(state, step_index=2, status="completed", progress=100)
+
         return state
 
     def _extract_property_data(self, data: Dict, query: str) -> Dict:
@@ -629,6 +649,9 @@ class AnalysisExecutor:
         """인사이트 생성 노드"""
         logger.info("[AnalysisTeam] Generating insights")
 
+        # 🆕 Step Progress: Step 3 (인사이트 생성) - Start
+        await self._update_step_progress(state, step_index=3, status="in_progress", progress=0)
+
         state["analysis_progress"] = {"current": "insights", "percent": 0.7}
 
         # LLM 사용 가능 시 LLM 기반 인사이트 생성
@@ -652,6 +675,9 @@ class AnalysisExecutor:
         state["insights"] = insights
         state["analysis_progress"] = {"current": "insights", "percent": 0.8}
         state["confidence_score"] = self._calculate_confidence(state)
+
+        # 🆕 Step Progress: Step 3 (인사이트 생성) - Complete
+        await self._update_step_progress(state, step_index=3, status="completed", progress=100)
 
         return state
 
@@ -855,6 +881,9 @@ class AnalysisExecutor:
         """보고서 생성 노드"""
         logger.info("[AnalysisTeam] Creating report")
 
+        # 🆕 Step Progress: Step 4 (리포트 작성) - Start
+        await self._update_step_progress(state, step_index=4, status="in_progress", progress=0)
+
         state["analysis_progress"] = {"current": "report", "percent": 0.9}
 
         report = AnalysisReport(
@@ -870,6 +899,9 @@ class AnalysisExecutor:
 
         state["report"] = report
         state["analysis_progress"] = {"current": "report", "percent": 1.0}
+
+        # 🆕 Step Progress: Step 4 (리포트 작성) - Complete
+        await self._update_step_progress(state, step_index=4, status="completed", progress=100)
 
         return state
 
@@ -923,6 +955,50 @@ class AnalysisExecutor:
 
         logger.info(f"[AnalysisTeam] Completed with status: {state['status']}")
         return state
+
+    async def _update_step_progress(
+        self,
+        state: AnalysisTeamState,
+        step_index: int,
+        status: str,
+        progress: int = 0
+    ) -> None:
+        """
+        🆕 Update agent step progress in state AND forward to WebSocket.
+
+        This method writes step progress updates to the state and forwards
+        them to the parent graph via WebSocket callback for real-time UI updates.
+
+        Args:
+            state: AnalysisTeamState
+            step_index: Step index (0-4 for analysis agent's 5 steps)
+            status: Step status ("pending", "in_progress", "completed", "failed")
+            progress: Progress percentage (0-100)
+        """
+        # Initialize analysis_step_progress if not exists
+        if "analysis_step_progress" not in state:
+            state["analysis_step_progress"] = {}
+
+        # Update step progress in state
+        state["analysis_step_progress"][f"step_{step_index}"] = {
+            "index": step_index,
+            "status": status,
+            "progress": progress
+        }
+
+        logger.debug(f"[AnalysisExecutor] Step {step_index} progress: {status} ({progress}%)")
+
+        # 🆕 Forward to WebSocket via parent callback for real-time UI updates
+        if self.progress_callback:
+            await self.progress_callback("agent_step_progress", {
+                "agentName": "analysis",
+                "agentType": "analysis",
+                "stepId": f"analysis_step_{step_index + 1}",  # 1-indexed for frontend
+                "stepIndex": step_index,
+                "status": status,
+                "progress": progress
+            })
+            logger.debug(f"[AnalysisExecutor] Forwarded step {step_index} progress to WebSocket")
 
     async def execute(
         self,

@@ -1,3 +1,5 @@
+import sys
+import asyncio
 import logging
 import logging.handlers
 from pathlib import Path
@@ -7,6 +9,21 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.service_agent.foundation.config import Config
+
+
+# ============================================================================
+# ✅ Windows Compatibility Fix (CRITICAL for AsyncPostgresSaver)
+# ============================================================================
+# AsyncPostgresSaver (langgraph.checkpoint.postgres.aio) requires psycopg async driver
+# which is incompatible with ProactorEventLoop (Windows default)
+# Must use WindowsSelectorEventLoopPolicy on Windows
+#
+# Reference: https://github.com/langchain-ai/langgraph/issues/XXX
+# Without this fix: "NotImplementedError: add_reader is not supported"
+# ============================================================================
+if sys.platform == "win32":
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+    logging.info("✅ Windows Compatibility: Set WindowsSelectorEventLoopPolicy for AsyncPostgresSaver")
 
 
 # ============ Logging Configuration ============

@@ -2,6 +2,10 @@
 Chat API Router
 FastAPI WebSocket endpoints for real-time chat with service_agent integration
 user_id = 1 (임시 하드코딩)
+
+✅ LangGraph 0.6 HITL Support:
+- Interrupt detection for human-in-the-loop workflows
+- Resume endpoint with Command API
 """
 
 from fastapi import APIRouter, HTTPException, Depends, WebSocket, WebSocketDisconnect, Query
@@ -10,6 +14,7 @@ import logging
 import asyncio
 import json
 from sqlalchemy import func, text
+from typing import Dict, Any, Optional
 
 from app.api.schemas import (
     SessionStartRequest, SessionStartResponse,
@@ -69,6 +74,12 @@ async def _save_message_to_db(session_id: str, role: str, content: str, structur
 
 _supervisor_instance = None
 _supervisor_lock = asyncio.Lock()
+
+# ✅ HITL State Management
+# Stores interrupted workflows awaiting user feedback
+# Format: {session_id: {"config": {...}, "interrupt_data": {...}, "timestamp": ...}}
+_interrupted_sessions: Dict[str, Dict[str, Any]] = {}
+_interrupted_sessions_lock = asyncio.Lock()
 
 
 async def get_supervisor(enable_checkpointing: bool = True) -> TeamBasedSupervisor:
@@ -696,14 +707,49 @@ async def websocket_chat(
                         )
                     )
 
-                # === Interrupt Response (계획 승인/수정) ===
+                # ===  ✅ HITL: Interrupt Response (사용자 피드백으로 워크플로우 재개) ===
                 elif message_type == "interrupt_response":
-                    # TODO: LangGraph interrupt 처리 (추후 구현)
-                    action = data.get("action")  # "approve" or "modify"
-                    modified_todos = data.get("modified_todos", [])
+                    action = data.get("action")  # "approve", "modify", or "reject"
+                    feedback = data.get("feedback", {})  # User modifications/feedback
 
-                    logger.info(f"Interrupt response: {action}")
-                    # 현재는 로그만, 추후 LangGraph Command로 전달
+                    logger.info(f"📥 Interrupt response received: {action}")
+
+                    # Check if this session has an interrupted workflow
+                    async with _interrupted_sessions_lock:
+                        if session_id not in _interrupted_sessions:
+                            await conn_mgr.send_message(session_id, {
+                                "type": "error",
+                                "error": "No interrupted workflow found for this session",
+                                "timestamp": datetime.now().isoformat()
+                            })
+                            continue
+
+                        interrupt_info = _interrupted_sessions.pop(session_id)
+
+                    # Prepare user feedback for resume
+                    user_feedback = {
+                        "action": action,
+                        "feedback": feedback,
+                        "timestamp": datetime.now().isoformat()
+                    }
+
+                    if action == "modify":
+                        user_feedback["modifications"] = data.get("modifications", "")
+
+                    # ✅ Resume workflow with Command API
+                    logger.info(f"▶️  Resuming workflow for {session_id} with action: {action}")
+
+                    # Create background task to resume workflow
+                    asyncio.create_task(
+                        _resume_workflow_async(
+                            supervisor=supervisor,
+                            session_id=session_id,
+                            config=interrupt_info["config"],
+                            user_feedback=user_feedback,
+                            progress_callback=progress_callback,
+                            conn_mgr=conn_mgr
+                        )
+                    )
 
                 # === Todo Skip (실행 중 작업 건너뛰기) ===
                 elif message_type == "todo_skip":
@@ -743,6 +789,85 @@ async def websocket_chat(
         logger.info(f"WebSocket closed: {session_id}")
 
 
+async def _resume_workflow_async(
+    supervisor: TeamBasedSupervisor,
+    session_id: str,
+    config: Dict[str, Any],
+    user_feedback: Dict[str, Any],
+    progress_callback,
+    conn_mgr: ConnectionManager
+):
+    """
+    Resume interrupted workflow with user feedback
+
+    ✅ LangGraph 0.6 HITL Pattern:
+    - Uses Command API to resume from interrupt point
+    - Passes user feedback to interrupt() function
+    - Continues workflow execution until completion
+
+    Args:
+        supervisor: TeamBasedSupervisor instance
+        session_id: Session ID
+        config: LangGraph config with thread_id
+        user_feedback: User's feedback/decision
+        progress_callback: Progress callback function
+        conn_mgr: ConnectionManager
+    """
+    try:
+        logger.info(f"🔄 Resuming workflow for {session_id}")
+
+        # Import Command API
+        from langgraph.types import Command
+
+        # ✅ Resume workflow with Command(resume=user_feedback)
+        # This will pass user_feedback to the interrupt() call in aggregate_node
+        result = await supervisor.app.ainvoke(
+            Command(resume=user_feedback),  # ✅ Pass Command as input, not kwarg
+            config=config
+        )
+
+        logger.info(f"✅ Workflow resumed successfully for {session_id}")
+
+        # Send final response
+        final_response = result.get("final_response") if result else None
+
+        # Handle None response (workflow may have re-interrupted)
+        if final_response is None:
+            logger.warning(f"Workflow resumed but final_response is None for {session_id}")
+            final_response = {}
+
+        await conn_mgr.send_message(session_id, {
+            "type": "final_response",
+            "response": final_response,
+            "resumed": True,
+            "timestamp": datetime.now().isoformat()
+        })
+
+        # 💾 Save AI response to database
+        response_content = (
+            final_response.get("answer", "") or
+            final_response.get("content", "") or
+            final_response.get("message", "") or
+            ""
+        )
+        structured_data = final_response.get("structured_data")
+
+        if response_content:
+            await _save_message_to_db(session_id, "assistant", response_content, structured_data)
+
+        logger.info(f"Workflow completed for {session_id} after resume")
+
+    except Exception as e:
+        logger.error(f"Failed to resume workflow for {session_id}: {e}", exc_info=True)
+
+        await conn_mgr.send_message(session_id, {
+            "type": "error",
+            "error": "Failed to resume workflow",
+            "details": {"error": str(e)},
+            "timestamp": datetime.now().isoformat()
+        })
+
+
 async def _process_query_async(
     supervisor: TeamBasedSupervisor,
     query: str,
@@ -754,6 +879,11 @@ async def _process_query_async(
 ):
     """
     비동기로 쿼리 처리 (백그라운드 태스크)
+
+    ✅ HITL Support:
+    - Detects workflow interrupts (interrupt() calls)
+    - Sends interrupt notification to client
+    - Stores state for later resume
 
     Args:
         supervisor: TeamBasedSupervisor 인스턴스
@@ -786,9 +916,97 @@ async def _process_query_async(
             progress_callback=progress_callback
         )
 
-        # 최종 응답 전송
-        # final_response만 추출 (result에는 datetime 필드가 있어 JSON 직렬화 불가)
-        final_response = result.get("final_response", {})
+        # ✅ HITL: Check if workflow was interrupted
+        workflow_status = result.get("workflow_status")
+        final_response = result.get("final_response")
+
+        # Detect interrupt: workflow_status == "interrupted" OR final_response is None
+        if workflow_status == "interrupted" or final_response is None:
+            logger.info(f"⏸️  Workflow interrupted for session {session_id}")
+
+            # ✅ Use get_state() API to get interrupt details from checkpoint
+            config = {
+                "configurable": {
+                    "thread_id": session_id
+                }
+            }
+
+            try:
+                state_snapshot = await supervisor.app.aget_state(config)
+                logger.info(f"Retrieved state snapshot: next={state_snapshot.next}, tasks={len(state_snapshot.tasks) if state_snapshot.tasks else 0}")
+
+                # ✅ Extract interrupt value from tasks
+                # LangGraph stores interrupt(value) in state_snapshot.tasks[0].interrupts[0]
+                interrupt_data = {}
+                interrupted_by = "unknown"
+                interrupt_type = "approval"
+
+                if state_snapshot.tasks and len(state_snapshot.tasks) > 0:
+                    first_task = state_snapshot.tasks[0]
+
+                    # Check if task has interrupts
+                    if hasattr(first_task, 'interrupts') and first_task.interrupts:
+                        interrupt_value = first_task.interrupts[0].value
+                        logger.info(f"Interrupt value type: {type(interrupt_value)}")
+
+                        # Extract metadata if present
+                        if isinstance(interrupt_value, dict):
+                            interrupt_data = interrupt_value.copy()
+
+                            # Extract metadata
+                            metadata = interrupt_data.pop("_metadata", {})
+                            interrupted_by = metadata.get("interrupted_by", "unknown")
+                            interrupt_type = metadata.get("interrupt_type", "approval")
+
+                            logger.info(f"✅ Extracted from interrupt value: interrupted_by={interrupted_by}, type={interrupt_type}")
+                        else:
+                            # interrupt_value is not a dict (shouldn't happen)
+                            interrupt_data = {"value": str(interrupt_value)}
+                            logger.warning(f"Interrupt value is not a dict: {type(interrupt_value)}")
+                    else:
+                        logger.warning("Task has no interrupts")
+                else:
+                    logger.warning("No tasks in state snapshot")
+
+                logger.info(f"Final interrupt details: interrupted_by={interrupted_by}, type={interrupt_type}, data_keys={list(interrupt_data.keys())}")
+
+            except Exception as e:
+                logger.error(f"Failed to get state snapshot: {e}")
+                # Fallback to result
+                interrupt_data = result.get("interrupt_data", {})
+                interrupted_by = result.get("interrupted_by", "unknown")
+                interrupt_type = result.get("interrupt_type", "approval")
+                config = {
+                    "configurable": {
+                        "thread_id": session_id
+                    }
+                }
+
+            # Store interrupted session for resume
+            async with _interrupted_sessions_lock:
+                _interrupted_sessions[session_id] = {
+                    "config": config,
+                    "interrupt_data": interrupt_data,
+                    "interrupted_by": interrupted_by,
+                    "interrupt_type": interrupt_type,
+                    "timestamp": datetime.now().isoformat()
+                }
+
+            # Send interrupt notification to client
+            await conn_mgr.send_message(session_id, {
+                "type": "workflow_interrupted",
+                "interrupted_by": interrupted_by,
+                "interrupt_type": interrupt_type,
+                "interrupt_data": interrupt_data,
+                "message": "워크플로우가 사용자 승인을 기다리고 있습니다.",
+                "timestamp": datetime.now().isoformat()
+            })
+
+            logger.info(f"Interrupt notification sent to {session_id}")
+            return  # Don't send final_response yet
+
+        # 최종 응답 전송 (정상 완료된 경우)
+        # final_response는 이미 위에서 가져왔으므로 None이 아님
 
         await conn_mgr.send_message(session_id, {
             "type": "final_response",
