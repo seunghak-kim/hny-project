@@ -603,16 +603,36 @@ class TeamBasedSupervisor:
             try:
                 for team_name in active_teams:
                     agent_steps = self._get_agent_steps_definition(team_name)
+
+                    # 🆕 v1.3: Check if this team is reused
+                    is_reused = state.get("data_reused") and team_name == "search"
+
                     await progress_callback("agent_steps_initialized", {
                         "agentName": team_name,
                         "agentType": team_name,
                         "steps": agent_steps,
-                        "currentStepIndex": 0,
+                        "currentStepIndex": 0,  # Always start from step 0
                         "totalSteps": len(agent_steps),
                         "overallProgress": 0,
-                        "status": "idle"
+                        "status": "idle",
+                        "isReused": is_reused  # 🆕 Frontend에 재사용 표시
                     })
-                    logger.debug(f"[TeamSupervisor] Sent agent_steps_initialized for {team_name}")
+                    logger.debug(f"[TeamSupervisor] Sent agent_steps_initialized for {team_name} (reused={is_reused})")
+
+                    # 🆕 v1.3: If reused, send sequential progress updates (1 → 2 → 3 → 4)
+                    if is_reused:
+                        import asyncio
+                        for step_index in range(len(agent_steps)):
+                            await asyncio.sleep(0.1)  # Small delay for visual effect
+                            await progress_callback("agent_step_progress", {
+                                "agentName": team_name,
+                                "agentType": team_name,
+                                "stepId": f"{team_name}_step_{step_index + 1}",
+                                "stepIndex": step_index,
+                                "status": "completed",
+                                "progress": 100
+                            })
+                            logger.debug(f"[TeamSupervisor] Sent reused step progress {step_index + 1}/{len(agent_steps)} for {team_name}")
             except Exception as e:
                 logger.error(f"[TeamSupervisor] Failed to send agent_steps_initialized: {e}")
 
@@ -1383,6 +1403,18 @@ class TeamBasedSupervisor:
             aggregated_results = state.get("aggregated_results", {})
             logger.info(f"[TeamSupervisor] Aggregated results available: {list(aggregated_results.keys())}")
 
+            # 🆕 Layer 1: Supervisor Phase Change (finalizing - 답변 내용 작성 시작)
+            if progress_callback:
+                try:
+                    await progress_callback("supervisor_phase_change", {
+                        "supervisorPhase": "finalizing",
+                        "supervisorProgress": 87,
+                        "message": "답변 내용을 작성하고 있습니다"
+                    })
+                    logger.info("[TeamSupervisor] Sent supervisor_phase_change: finalizing (87% - content writing)")
+                except Exception as e:
+                    logger.error(f"[TeamSupervisor] Failed to send supervisor_phase_change: {e}")
+
             if self.planning_agent.llm_service:
                 logger.info("[TeamSupervisor] Using LLM for response generation")
                 response = await self._generate_llm_response(state)
@@ -1391,6 +1423,18 @@ class TeamBasedSupervisor:
                 response = self._generate_simple_response(state)
 
         logger.info(f"[TeamSupervisor] Response type: {response.get('type', 'unknown')}")
+
+        # 🆕 Layer 1: Supervisor Phase Change (finalizing - 답변 검증)
+        if progress_callback:
+            try:
+                await progress_callback("supervisor_phase_change", {
+                    "supervisorPhase": "finalizing",
+                    "supervisorProgress": 90,
+                    "message": "답변을 검증하고 있습니다"
+                })
+                logger.info("[TeamSupervisor] Sent supervisor_phase_change: finalizing (90% - validation)")
+            except Exception as e:
+                logger.error(f"[TeamSupervisor] Failed to send supervisor_phase_change: {e}")
 
         # 🆕 Layer 1: Supervisor Phase Change (finalizing - 답변 생성 완료)
         if progress_callback:
@@ -1418,6 +1462,18 @@ class TeamBasedSupervisor:
         # ============================================================================
         user_id = state.get("user_id")
         if user_id and intent_type not in ["irrelevant", "unclear"]:
+            # 🆕 Layer 1: Supervisor Phase Change (finalizing - 대화 저장 시작)
+            if progress_callback:
+                try:
+                    await progress_callback("supervisor_phase_change", {
+                        "supervisorPhase": "finalizing",
+                        "supervisorProgress": 92,
+                        "message": "대화를 저장하고 있습니다"
+                    })
+                    logger.info("[TeamSupervisor] Sent supervisor_phase_change: finalizing (92% - memory saving)")
+                except Exception as e:
+                    logger.error(f"[TeamSupervisor] Failed to send supervisor_phase_change: {e}")
+
             try:
                 logger.info(f"[TeamSupervisor] Saving conversation to Long-term Memory for user {user_id}")
 

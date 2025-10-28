@@ -218,9 +218,9 @@ export const AGENT_ICONS: Record<string, string> = {
  * Agent Display Names
  */
 export const AGENT_DISPLAY_NAMES: Record<string, string> = {
-  search: "검색 에이전트",
-  document: "문서 에이전트",
-  analysis: "분석 에이전트",
+  search: "정보 수집",
+  document: "문서 작성",
+  analysis: "분석 중",
   contract_review: "계약서 검토",
   legal_consult: "법률 자문",
   property_inspect: "매물 조사",

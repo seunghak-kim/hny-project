@@ -24,8 +24,10 @@ interface LeaseContractPageProps {
   onModify: (modifications: string) => void
   /** 거부 핸들러 */
   onReject: () => void
-  /** 페이지 닫기 핸들러 (X 버튼용) */
+  /** 페이지 닫기 핸들러 (X 버튼용 - Progress 삭제) */
   onClose: () => void
+  /** 팝업만 닫기 핸들러 (승인/수정/거부 후 - Progress 유지) */
+  onClosePopup: () => void
 }
 
 /**
@@ -41,14 +43,16 @@ export function LeaseContractPage({
   onApprove,
   onModify,
   onReject,
-  onClose
+  onClose,
+  onClosePopup
 }: LeaseContractPageProps) {
   const [showModifyInput, setShowModifyInput] = useState(false)
   const [modifications, setModifications] = useState("")
 
   const handleApprove = () => {
+    console.log('[LeaseContractPage] Approve - keeping progress visible')
     onApprove()
-    onClose()
+    onClosePopup()  // ✅ Progress 유지하면서 팝업만 닫기
   }
 
   const handleModify = () => {
@@ -58,14 +62,16 @@ export function LeaseContractPage({
     }
 
     if (modifications.trim()) {
+      console.log('[LeaseContractPage] Modify - keeping progress visible')
       onModify(modifications)
-      onClose()
+      onClosePopup()  // ✅ Progress 유지하면서 팝업만 닫기
     }
   }
 
   const handleReject = () => {
+    console.log('[LeaseContractPage] Reject - keeping progress visible')
     onReject()
-    onClose()
+    onClosePopup()  // ✅ Progress 유지하면서 팝업만 닫기
   }
 
   return (

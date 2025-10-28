@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 import { Send, Bot, User } from "lucide-react"
+import Image from "next/image"
 import type { PageType } from "@/app/page"
 import { useSession } from "@/hooks/use-session"
 import { ChatWSClient, createWSClient, type WSMessage } from "@/lib/ws"
@@ -812,28 +813,47 @@ export function ChatInterface({ onSplitView: _onSplitView, currentSessionId }: C
     <>
       <div className="flex flex-col h-full bg-background">
         <div ref={scrollAreaRef} className="flex-1 px-4 py-1.5 overflow-y-auto">
-          <div className="space-y-2 max-w-3xl mx-auto">
+          <div className="space-y-2 max-w-full mx-auto">
             {messages.map((message) => (
               <div key={message.id} className="space-y-2">
                 {message.type === "progress" && (
-                  threeLayerProgress ? (
-                    <ProgressContainer
-                      mode="three-layer"
-                      progressData={{
-                        ...threeLayerProgress,
-                        supervisorProgress: animatedSupervisorProgress
-                      }}
-                    />
-                  ) : message.progressData ? (
-                    <ProgressContainer
-                      mode="legacy"
-                      stage={message.progressData.stage}
-                      plan={message.progressData.plan}
-                      steps={message.progressData.steps}
-                      responsePhase={message.progressData.responsePhase}
-                      reusedTeams={message.progressData.reusedTeams}
-                    />
-                  ) : null
+                  <div className="flex justify-start w-full">
+                    <div className="flex gap-2 w-[80%]">
+                      {/* 챗봇 아이콘 */}
+                      <div className="flex-shrink-0 w-24 h-24">
+                        <Image
+                          src="/images/holmesnyangz.png"
+                          alt="Holmes Nyangz"
+                          width={128}
+                          height={128}
+                          className="rounded-full object-cover"
+                          priority
+                        />
+                      </div>
+
+                      {/* Progress Container */}
+                      <div className="flex-1">
+                        {threeLayerProgress ? (
+                          <ProgressContainer
+                            mode="three-layer"
+                            progressData={{
+                              ...threeLayerProgress,
+                              supervisorProgress: animatedSupervisorProgress
+                            }}
+                          />
+                        ) : message.progressData ? (
+                          <ProgressContainer
+                            mode="legacy"
+                            stage={message.progressData.stage}
+                            plan={message.progressData.plan}
+                            steps={message.progressData.steps}
+                            responsePhase={message.progressData.responsePhase}
+                            reusedTeams={message.progressData.reusedTeams}
+                          />
+                        ) : null}
+                      </div>
+                    </div>
+                  </div>
                 )}
                 {message.type === "guidance" && message.guidanceData && (
                   <GuidancePage guidance={message.guidanceData} />
@@ -841,9 +861,22 @@ export function ChatInterface({ onSplitView: _onSplitView, currentSessionId }: C
                 {(message.type === "user" || message.type === "bot") && (
                   <div className={`flex ${message.type === "user" ? "justify-end" : "justify-start"}`}>
                     <div className={`flex gap-2 max-w-[80%] ${message.type === "user" ? "flex-row-reverse" : ""}`}>
-                      <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${message.type === "user" ? "bg-primary" : "bg-secondary"}`}>
-                        {message.type === "user" ? <User className="h-4 w-4 text-primary-foreground" /> : <Bot className="h-4 w-4" />}
-                      </div>
+                      {message.type === "user" ? (
+                        <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center bg-primary">
+                          <User className="h-4 w-4 text-primary-foreground" />
+                        </div>
+                      ) : (
+                        <div className="flex-shrink-0 w-24 h-24">
+                          <Image
+                            src="/images/holmesnyangz.png"
+                            alt="Holmes Nyangz"
+                            width={128}
+                            height={128}
+                            className="rounded-full object-cover"
+                            priority
+                          />
+                        </div>
+                      )}
                       {message.type === "bot" && message.structuredData ? (
                         <AnswerDisplay
                           sections={message.structuredData.sections}
@@ -936,10 +969,19 @@ export function ChatInterface({ onSplitView: _onSplitView, currentSessionId }: C
               })
             }
           }}
-          onClose={() => {
+          onClosePopup={() => {
+            // ✅ 승인/수정/거부 후: 팝업만 닫기 (Progress 유지)
+            console.log('[ChatInterface] Closing popup only (keeping progress visible)')
             setShowLeaseContract(false)
             setLeaseContractData(null)
-            // Progress 메시지 제거
+            // Progress는 삭제하지 않음! final_response 수신 시 자동 제거됨
+          }}
+          onClose={() => {
+            // ❌ X 버튼으로 강제 종료: 팝업 닫기 + Progress 제거
+            console.log('[ChatInterface] Force closing popup (removing progress)')
+            setShowLeaseContract(false)
+            setLeaseContractData(null)
+            // X 버튼으로 닫을 때만 Progress 제거
             setMessages((prev) => prev.filter(m => m.type !== "progress"))
           }}
         />

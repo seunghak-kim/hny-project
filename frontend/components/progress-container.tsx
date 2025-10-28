@@ -133,28 +133,26 @@ function ThreeLayerProgress({ progressData }: { progressData: ThreeLayerProgress
   } = progressData
 
   return (
-    <div className="flex justify-start mb-2">
-      <div className="flex items-start gap-3 max-w-5xl w-full">
-        <Card className="p-3 bg-card border flex-1">
-          {/* Layer 1: Supervisor Progress Bar */}
-          <SupervisorProgressBar
-            phase={supervisorPhase}
-            progress={supervisorProgress}
-          />
+    <div className="w-full max-w-3xl">
+      <Card className="p-3 bg-card border">
+        {/* Layer 1: Supervisor Progress Bar */}
+        <SupervisorProgressBar
+          phase={supervisorPhase}
+          progress={supervisorProgress}
+        />
 
-          {/* Layer 2: Agent Steps */}
-          {activeAgents && activeAgents.length > 0 && (
-            <div className="mt-3 space-y-2">
-              {activeAgents.map(agent => (
-                <AgentStepsCard
-                  key={agent.agentName}
-                  agentProgress={agent}
-                />
-              ))}
-            </div>
-          )}
-        </Card>
-      </div>
+        {/* Layer 2: Agent Steps */}
+        {activeAgents && activeAgents.length > 0 && (
+          <div className="mt-3 space-y-2">
+            {activeAgents.map(agent => (
+              <AgentStepsCard
+                key={agent.agentName}
+                agentProgress={agent}
+              />
+            ))}
+          </div>
+        )}
+      </Card>
     </div>
   )
 }
@@ -398,10 +396,9 @@ function LegacyProgress(props: LegacyProgressProps) {
   const overallProgress = calculateOverallProgress()
 
   return (
-    <div className="flex justify-start mb-2">
-      <div className="flex items-start gap-3 max-w-5xl w-full">
-        <Card className="p-3 bg-card border flex-1">
-          {/* 전체 프로세스 진행률 */}
+    <div className="w-full max-w-3xl">
+      <Card className="p-3 bg-card border">
+        {/* 전체 프로세스 진행률 */}
           <div className="mb-3 p-2 bg-primary/5 rounded-lg border border-primary/20">
             <div className="flex items-center justify-between mb-1.5">
               <span className="text-xs font-semibold text-primary">전체 진행률</span>
@@ -460,7 +457,6 @@ function LegacyProgress(props: LegacyProgressProps) {
             {stage === "generating" && <GeneratingContent phase={responsePhase} />}
           </div>
         </Card>
-      </div>
     </div>
   )
 }
