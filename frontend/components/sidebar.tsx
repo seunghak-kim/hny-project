@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { MessageCircle, Map, FileText, Shield, Users, Home, ChevronLeft, ChevronRight, Plus } from "lucide-react"
+import { MessageCircle, Map, FileText, Shield, Users, Home, ChevronLeft, ChevronRight, Plus, Brain, Activity } from "lucide-react"
 import { SessionList } from "@/components/session-list"
 import type { PageType } from "@/app/page"
 import type { SessionListItem } from "@/hooks/use-chat-sessions"
@@ -34,6 +34,8 @@ export function Sidebar({
     { id: "analysis" as PageType, label: "분석 에이전트", icon: FileText },
     { id: "verification" as PageType, label: "검증 에이전트", icon: Shield },
     { id: "consultation" as PageType, label: "상담 에이전트", icon: Users },
+    { id: "cognitive_dashboard" as PageType, label: "Cognitive 대시보드", icon: Brain },
+    { id: "execution_dashboard" as PageType, label: "Execution 대시보드", icon: Activity },
   ]
 
   return (

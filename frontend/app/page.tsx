@@ -7,11 +7,13 @@ import { MapInterface } from "@/components/map-interface"
 import { AnalysisAgent } from "@/components/agents/analysis-agent"
 import { VerificationAgent } from "@/components/agents/verification-agent"
 import { ConsultationAgent } from "@/components/agents/consultation-agent"
+import { CognitiveDashboard } from "@/components/dashboards/cognitive-dashboard"
+import { ExecutionDashboard } from "@/components/dashboards/execution-dashboard"
 import { Button } from "@/components/ui/button"
 import { Menu, X } from "lucide-react"
 import { useChatSessions } from "@/hooks/use-chat-sessions"
 
-export type PageType = "chat" | "map" | "analysis" | "verification" | "consultation"
+export type PageType = "chat" | "map" | "analysis" | "verification" | "consultation" | "cognitive_dashboard" | "execution_dashboard"
 
 export default function HomePage() {
   const [currentPage, setCurrentPage] = useState<PageType>("chat")
@@ -57,6 +59,10 @@ export default function HomePage() {
         return <VerificationAgent />
       case "consultation":
         return <ConsultationAgent />
+      case "cognitive_dashboard":
+        return <CognitiveDashboard />
+      case "execution_dashboard":
+        return <ExecutionDashboard />
       default:
         return <ChatInterface onSplitView={handleSplitView} currentSessionId={currentSessionId} />
     }
