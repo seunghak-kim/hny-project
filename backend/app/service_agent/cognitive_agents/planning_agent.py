@@ -459,21 +459,26 @@ class PlanningAgent:
         available_agents = {
             "search_team": {
                 "name": "search_team",
-                "capabilities": "법률 검색, 부동산 시세 조회, 개별 매물 검색, 대출 상품 검색",
-                "tools": ["legal_search", "market_data", "real_estate_search", "loan_data"],
-                "use_cases": ["법률 상담", "시세 조회", "매물 검색", "대출 정보"]
+                "capabilities": "법률 검색, 용어 설명, 부동산 시세 조회, 개별 매물 검색, 대출 상품 검색, 건축물대장 조회, 정부 정책 조회",
+                "tools": ["realestate_terminology", "legal_search", "market_data", "real_estate_search", "loan_data", "building_registry", "policy_matcher"],
+                "use_cases": [
+                    "용어설명", "법률해설", "대출상품검색", "건축물대장조회", "정부정책조회", "매물검색"
+                ]
             },
             "analysis_team": {
                 "name": "analysis_team",
-                "capabilities": "데이터 분석, 리스크 평가, 인사이트 생성, 추천",
-                "tools": ["data_analyzer", "risk_evaluator"],
-                "use_cases": ["시장 분석", "리스크 평가", "투자 분석"]
+                "capabilities": "데이터 분석, 가격 평가, 인프라 분석, 투자 수익률 계산, 리스크 평가, 추천",
+                "tools": ["contract_analysis", "market_analysis", "roi_calculator", "infrastructure", "loan_simulator"],
+                "use_cases": [
+                    "대출조건비교", "매물인프라분석", "가격평가", "매물검색",
+                    "맞춤추천", "투자수익률계산", "종합분석"
+                ]
             },
             "document_team": {
                 "name": "document_team",
                 "capabilities": "계약서 작성, 문서 생성, 문서 검토",
-                "tools": ["document_generator", "contract_reviewer"],
-                "use_cases": ["계약서 작성", "문서 검토"]
+                "tools": ["lease_contract_generator"],
+                "use_cases": ["계약서생성"]
             }
         }
 
