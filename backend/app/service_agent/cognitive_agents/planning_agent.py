@@ -30,16 +30,23 @@ logger = logging.getLogger(__name__)
 
 
 class IntentType(Enum):
-    """의도 타입 정의"""
-    LEGAL_CONSULT = "법률상담"
-    MARKET_INQUIRY = "시세조회"
-    LOAN_CONSULT = "대출상담"
-    CONTRACT_CREATION = "계약서작성"
-    CONTRACT_REVIEW = "계약서검토"
+    """의도 타입 정의 (15개 카테고리)"""
+    TERM_DEFINITION = "용어설명"
+    LEGAL_INQUIRY = "법률해설"
+    LOAN_SEARCH = "대출상품검색"
+    LOAN_COMPARISON = "대출조건비교"
+    BUILDING_REGISTRY = "건축물대장조회"
+    PROPERTY_INFRA_ANALYSIS = "매물인프라분석"
+    PRICE_EVALUATION = "가격평가"
+    PROPERTY_SEARCH = "매물검색"
+    PROPERTY_RECOMMENDATION = "맞춤추천"
+    ROI_CALCULATION = "투자수익률계산"
+    POLICY_INQUIRY = "정부정책조회"
+    CONTRACT_CREATION = "계약서생성"
+    MARKET_INQUIRY = "시세트렌드분석"
     COMPREHENSIVE = "종합분석"
-    RISK_ANALYSIS = "리스크분석"
+    IRRELEVANT = "무관"
     UNCLEAR = "unclear"
-    IRRELEVANT = "irrelevant"
     ERROR = "error"
 
 
@@ -106,45 +113,64 @@ class PlanningAgent:
         self.query_decomposer = QueryDecomposer(self.llm_service)
 
     def _initialize_intent_patterns(self) -> Dict[IntentType, List[str]]:
-        """의도 패턴 초기화 - 자연스러운 표현 추가"""
+        """의도 패턴 초기화 - 15개 카테고리"""
         return {
-            IntentType.LEGAL_CONSULT: [
-                # 기존 키워드
-                "법", "전세", "임대", "보증금", "계약", "권리", "의무", "갱신",
-                # 자연스러운 표현 추가
+            IntentType.TERM_DEFINITION: [
+                "뭐야", "무엇", "의미", "설명", "개념", "정의", "차이", "란",
+                "LTV", "대항력", "분양권", "입주권", "재건축", "재개발", "DSR"
+            ],
+            IntentType.LEGAL_INQUIRY: [
+                "법", "전세", "임대", "보증금", "계약", "권리", "의무", "갱신", "가능한가요",
                 "살다", "거주", "세입자", "집주인", "임차인", "임대인", "해지", "계약서",
-                "대항력", "확정일자", "우선변제", "임차권"
+                "주택임대차보호법", "확정일자", "대항력", "인상", "계약금", "위약금", "등기", "청약", "당첨"
             ],
-            IntentType.MARKET_INQUIRY: [
-                "시세", "가격", "매매가", "전세가", "시장", "동향", "평균",
-                # 자연스러운 표현 추가
-                "얼마", "비싸", "싸", "오르다", "내리다", "올랐", "떨어졌",
-                "시장", "매물", "호가"
+            IntentType.LOAN_SEARCH: [
+                "대출", "상품", "찾다", "어떤 게", "주택담보대출", "전세자금대출",
+                "신생아 특례", "청년", "은행"
             ],
-            IntentType.LOAN_CONSULT: [
-                "대출", "금리", "한도", "조건", "상환", "LTV", "DTI",
-                # 자연스러운 표현 추가
-                "DSR", "담보대출", "전세자금", "빌리다", "대출받다", "이자"
+            IntentType.LOAN_COMPARISON: [
+                "비교", "금리", "한도", "조건", "유리", "어느", "은행별",
+                "DSR", "LTV", "DTI"
+            ],
+            IntentType.BUILDING_REGISTRY: [
+                "건축물대장", "건물정보", "준공", "용도", "면적", "조회",
+                "불법 증축", "주차장", "세대수"
+            ],
+            IntentType.PROPERTY_INFRA_ANALYSIS: [
+                "지하철", "마트", "병원", "약국", "초등학교", "중학교", "고등학교",
+                "학군", "인프라", "근처", "주변", "도보권", "거리", "교통", "편의시설"
+            ],
+            IntentType.PRICE_EVALUATION: [
+                "적정가", "가격 평가", "괜찮아", "비싸", "저렴", "유사 매물",
+                "적정한가요", "합리적", "평가"
+            ],
+            IntentType.PROPERTY_SEARCH: [
+                "찾다", "검색", "구하다", "원하다", "방", "아파트", "오피스텔", "빌라",
+                "원룸", "매물", "리스트"
+            ],
+            IntentType.PROPERTY_RECOMMENDATION: [
+                "추천", "제안", "적합", "좋은", "맞춤", "어디",
+                "나한테 맞는", "신혼부부", "학군", "투자"
+            ],
+            IntentType.ROI_CALCULATION: [
+                "투자", "수익률", "ROI", "계산", "유리", "손익",
+                "월세", "매매", "전세"
+            ],
+            IntentType.POLICY_INQUIRY: [
+                "특별공급", "생애최초", "신혼부부", "청년", "지원", "정책", "혜택",
+                "다자녀", "세제", "감면"
             ],
             IntentType.CONTRACT_CREATION: [
-                "작성", "만들", "생성", "초안",
-                # 자연스러운 표현 추가
-                "써줘", "만들어줘", "작성해줘", "계약서"
+                "작성", "만들", "생성", "초안", "계약서",
+                "써줘", "만들어줘", "작성해줘", "양식"
             ],
-            IntentType.CONTRACT_REVIEW: [
-                "검토", "확인", "점검", "리뷰", "분석해",
-                # 자연스러운 표현 추가
-                "봐줘", "살펴봐", "체크", "괜찮", "문제"
+            IntentType.MARKET_INQUIRY: [
+                "시세", "추이", "트렌드", "거래 동향", "올랐나요", "떨어졌나요",
+                "변화", "상승", "하락", "시장", "분위기", "전월 대비", "작년 대비"
             ],
             IntentType.COMPREHENSIVE: [
-                "종합", "전체", "모든", "분석", "평가",
-                # 자연스러운 표현 추가
-                "어떻게", "방법", "해결", "대처", "도움", "조언", "추천"
-            ],
-            IntentType.RISK_ANALYSIS: [
-                "위험", "리스크", "주의", "문제점",
-                # 자연스러운 표현 추가
-                "조심", "걱정", "우려", "안전", "피해"
+                "종합", "전체", "모든", "복합적", "다각도", "어떻게 해야", "고민",
+                "분석", "추천", "해결", "대처", "도움", "조언"
             ]
         }
 
@@ -282,13 +308,20 @@ class PlanningAgent:
         # Agent 선택 (패턴 매칭 - fallback에서는 기본 Agent 사용)
         # Note: This is sync function now, so we provide basic agent selection
         intent_to_agent = {
-            IntentType.LEGAL_CONSULT: ["search_team"],
-            IntentType.MARKET_INQUIRY: ["search_team"],
-            IntentType.LOAN_CONSULT: ["search_team"],
+            IntentType.TERM_DEFINITION: ["search_team"],
+            IntentType.LEGAL_INQUIRY: ["search_team"],
+            IntentType.LOAN_SEARCH: ["search_team"],
+            IntentType.LOAN_COMPARISON: ["search_team", "analysis_team"],
+            IntentType.BUILDING_REGISTRY: ["search_team"],
+            IntentType.PROPERTY_INFRA_ANALYSIS: ["search_team", "analysis_team"],
+            IntentType.PRICE_EVALUATION: ["search_team", "analysis_team"],
+            IntentType.PROPERTY_SEARCH: ["search_team", "analysis_team"],
+            IntentType.PROPERTY_RECOMMENDATION: ["search_team", "analysis_team"],
+            IntentType.ROI_CALCULATION: ["analysis_team"],
+            IntentType.POLICY_INQUIRY: ["search_team", "analysis_team"],
             IntentType.CONTRACT_CREATION: ["document_team"],
-            IntentType.CONTRACT_REVIEW: ["search_team", "analysis_team"],
+            IntentType.MARKET_INQUIRY: ["search_team", "analysis_team"],
             IntentType.COMPREHENSIVE: ["search_team", "analysis_team"],
-            IntentType.RISK_ANALYSIS: ["analysis_team"],
             IntentType.UNCLEAR: ["search_team"],
         }
         suggested_agents = intent_to_agent.get(intent_type, ["search_team"])
@@ -378,17 +411,24 @@ class PlanningAgent:
         # === 3차: Safe default agents (모든 작업 처리 가능한 조합) ===
         logger.error("⚠️ All LLM attempts failed, using safe default agents")
 
-        # Intent에 따른 안전한 기본값
+        # Intent에 따른 안전한 기본값 (15개 카테고리)
         safe_defaults = {
-            IntentType.LEGAL_CONSULT: ["search_team"],
-            IntentType.MARKET_INQUIRY: ["search_team", "analysis_team"],
-            IntentType.LOAN_CONSULT: ["search_team", "analysis_team"],
+            IntentType.TERM_DEFINITION: ["search_team"],
+            IntentType.LEGAL_INQUIRY: ["search_team"],
+            IntentType.LOAN_SEARCH: ["search_team"],
+            IntentType.LOAN_COMPARISON: ["search_team", "analysis_team"],
+            IntentType.BUILDING_REGISTRY: ["search_team"],
+            IntentType.PROPERTY_INFRA_ANALYSIS: ["search_team", "analysis_team"],
+            IntentType.PRICE_EVALUATION: ["search_team", "analysis_team"],
+            IntentType.PROPERTY_SEARCH: ["search_team", "analysis_team"],
+            IntentType.PROPERTY_RECOMMENDATION: ["search_team", "analysis_team"],
+            IntentType.ROI_CALCULATION: ["analysis_team"],
+            IntentType.POLICY_INQUIRY: ["search_team", "analysis_team"],
             IntentType.CONTRACT_CREATION: ["document_team"],
-            IntentType.CONTRACT_REVIEW: ["search_team", "analysis_team"],
+            IntentType.MARKET_INQUIRY: ["search_team", "analysis_team"],
             IntentType.COMPREHENSIVE: ["search_team", "analysis_team"],
-            IntentType.RISK_ANALYSIS: ["search_team", "analysis_team"],
-            IntentType.UNCLEAR: ["search_team", "analysis_team"],  # 포괄적 대응
             IntentType.IRRELEVANT: ["search_team"],
+            IntentType.UNCLEAR: ["search_team", "analysis_team"],  # 포괄적 대응
             IntentType.ERROR: ["search_team", "analysis_team"]
         }
 
@@ -735,16 +775,38 @@ class PlanningAgent:
         if has_dependencies:
             return ExecutionStrategy.SEQUENTIAL
 
-        # 복합 분석이나 리스크 분석은 병렬 처리
-        if intent.intent_type in [IntentType.COMPREHENSIVE, IntentType.RISK_ANALYSIS]:
-            if len(steps) > 1:
-                return ExecutionStrategy.PARALLEL
+        # 병렬 처리: 여러 독립적인 데이터 소스 조회가 필요한 경우
+        parallel_intents = [
+            IntentType.COMPREHENSIVE,              # 종합분석 - 여러 관점에서 동시 분석
+            IntentType.LOAN_COMPARISON,            # 대출비교 - 여러 은행 상품 동시 조회
+            IntentType.PROPERTY_RECOMMENDATION,    # 맞춤추천 - 시세/인프라/법률 동시 분석
+            IntentType.PROPERTY_INFRA_ANALYSIS,    # 매물인프라분석 - 지하철/마트/병원/학교 동시 조회
+        ]
+        if intent.intent_type in parallel_intents and len(steps) > 1:
+            return ExecutionStrategy.PARALLEL
 
-        # 문서 생성-검토는 파이프라인
+        # 파이프라인 처리: 순차적이지만 스트리밍 방식으로 처리 가능한 경우
+        pipeline_intents = [
+            IntentType.CONTRACT_CREATION,       # 계약서생성 - 생성 → 검토 파이프라인
+            IntentType.ROI_CALCULATION,         # 투자수익률 - 데이터수집 → 계산 → 시뮬레이션
+        ]
         agent_names = [step.agent_name for step in steps]
+        if intent.intent_type in pipeline_intents:
+            return ExecutionStrategy.PIPELINE
+        # 레거시: document_agent + review_agent 조합도 파이프라인
         if "document_agent" in agent_names and "review_agent" in agent_names:
             return ExecutionStrategy.PIPELINE
 
+        # 조건부 처리: 이전 결과에 따라 다음 단계가 달라지는 경우
+        conditional_intents = [
+            IntentType.PRICE_EVALUATION,        # 가격평가 - 시세 확인 후 추가 분석 필요 여부 판단
+            IntentType.PROPERTY_SEARCH,         # 매물검색 - 검색 결과에 따라 추가 필터링 여부 결정
+        ]
+        if intent.intent_type in conditional_intents and len(steps) > 1:
+            return ExecutionStrategy.CONDITIONAL
+
+        # 순차 처리: 기본값 및 단순 조회
+        # TERM_DEFINITION, LEGAL_INQUIRY, LOAN_SEARCH, BUILDING_REGISTRY, POLICY_INQUIRY 등
         return ExecutionStrategy.SEQUENTIAL
 
     def _create_parallel_groups(self, steps: List[ExecutionStep]) -> List[List[str]]:

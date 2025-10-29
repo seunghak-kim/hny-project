@@ -20,8 +20,8 @@
   * 부동산 시세 조회 (매매가, 전세가, 월세, 실거래가)
   * 대출 상품 정보 검색 (금리, 한도, 조건)
   * 지역 정보 및 인프라 조회
-- **도구**: legal_search, market_data, loan_data
-- **적합한 작업**: 정보 조회, 데이터 수집, 법률 확인, 시세 파악
+- **도구**: realestate_terminology, legal_search_tool, market_data_tool, real_estate_search_tool, loan_data_tool, building_registry_tool, policy_matcher_tool
+- **적합한 작업**: 정보 조회, 데이터 수집, 법률 확인, 시세 파악, 용어 해설, 매물 검색
 - **예시**:
   * "전세금 5% 인상 가능한가요?"
   * "강남구 아파트 전세 시세"
@@ -35,8 +35,8 @@
   * 투자수익률(ROI) 계산 및 현금흐름 분석
   * 대출 한도 및 금리 시뮬레이션 (LTV, DTI, DSR)
   * 정부 지원 정책 매칭 및 혜택 분석
-- **도구**: contract_analysis_tool, market_analysis_tool, roi_calculator_tool, loan_simulator_tool, policy_matcher_tool
-- **적합한 작업**: 계약서 검토, 시장 분석, 투자 평가, 대출 시뮬레이션, 정책 추천
+- **도구**: contract_analysis_tool, market_analysis_tool, roi_calculator_tool, loan_simulator_tool, infrastructure_tool
+- **적합한 작업**: 매물 검색, 매물 추천, 시장 분석, 투자 평가, 대출 비교, 인프라 분석, 종합 분석
 - **의존성**: 보통 search_team의 데이터가 필요 (또는 자체 검색 가능)
 - **예시**:
   * "이 지역 투자 가치 분석해줘"
@@ -52,7 +52,7 @@
   * 특약사항 생성
   * 계약서 수정안 작성
   * 법률 문서 검토
-- **도구**: document_generator, contract_template, contract_reviewer
+- **도구**: lease_contract_generator_tool
 - **적합한 작업**: 문서 작성, 계약서 생성, 문서 수정, 검토
 - **예시**:
   * "임대차계약서 작성해줘"
@@ -93,14 +93,23 @@
 
 | 의도 (Intent) | 기본 조합 | 상황별 조정 |
 |--------------|-----------|-------------|
-| LEGAL_CONSULT | ["search_team"] | 해결책 요청시 → + analysis_team |
-| MARKET_INQUIRY | ["search_team"] | 비교/평가시 → + analysis_team |
-| LOAN_CONSULT | ["search_team", "analysis_team"] | 계산 필수 |
-| CONTRACT_CREATION | ["document_team"] | 검토 후 작성 → search + document |
-| CONTRACT_REVIEW | ["search_team", "analysis_team"] | 법률 검토 + 리스크 분석 |
+| TERM_DEFINITION | ["search_team"] | 용어 검색만으로 충분 |
+| LEGAL_INQUIRY | ["search_team"] | 해결책 요청시 → + analysis_team |
+| LOAN_SEARCH | ["search_team"] | 단순 조회만 필요 |
+| LOAN_COMPARISON | ["search_team", "analysis_team"] | 비교/분석 필수 |
+| BUILDING_REGISTRY | ["search_team"] | 등기부 조회만 필요 |
+| PROPERTY_INFRA_ANALYSIS | ["search_team", "analysis_team"] | 인프라 조회 + 분석 |
+| PRICE_EVALUATION | ["search_team", "analysis_team"] | 시세 조회 + 평가 |
+| PROPERTY_SEARCH | ["search_team", "analysis_team"] | 매물 검색 + 필터링 |
+| PROPERTY_RECOMMENDATION | ["search_team", "analysis_team"] | 검색 + 추천 로직 |
+| ROI_CALCULATION | ["analysis_team"] | 계산 전문, 필요시 search 추가 |
+| POLICY_INQUIRY | ["search_team", "analysis_team"] | 정책 검색 + 매칭 분석 |
+| CONTRACT_CREATION | ["document_team"] | 문서 생성 전문, 검토시 search 추가 |
+| MARKET_INQUIRY | ["search_team", "analysis_team"] | 시세 조회 + 트렌드 분석 |
 | COMPREHENSIVE | ["search_team", "analysis_team"] | **항상 분석 포함** |
-| RISK_ANALYSIS | ["analysis_team"] | 법률 근거 필요시 → search + analysis |
+| IRRELEVANT | ["search_team"] | 최소한의 대응 |
 | UNCLEAR | ["search_team", "analysis_team"] | 포괄적 대응 |
+| ERROR | ["search_team", "analysis_team"] | 안전한 폴백 |
 
 **중요**: 위 매핑은 **기본 가이드**일 뿐입니다.
 실제 질문의 내용(CoT 분석 결과)에 따라 조정하세요!
