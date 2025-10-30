@@ -330,40 +330,53 @@ class DecisionLogger:
             conn = sqlite3.connect(str(self.db_path))
             cursor = conn.cursor()
 
-            # 조건 설정
-            where_clause = ""
-            params = []
+            # SQL Injection 방지: where_clause를 안전하게 구성
+            # agent_type이 있으면 parameterized query 사용
             if agent_type:
-                where_clause = "WHERE agent_type = ?"
-                params.append(agent_type)
+                # 전체 결정 수
+                cursor.execute("""
+                    SELECT COUNT(*) FROM tool_decisions WHERE agent_type = ?
+                """, (agent_type,))
+                total_decisions = cursor.fetchone()[0]
 
-            # 전체 결정 수
-            cursor.execute(f"""
-                SELECT COUNT(*) FROM tool_decisions {where_clause}
-            """, params)
-            total_decisions = cursor.fetchone()[0]
+                # 도구별 빈도
+                cursor.execute("""
+                    SELECT selected_tools FROM tool_decisions WHERE agent_type = ?
+                """, (agent_type,))
+                tool_frequency = {}
+                for row in cursor.fetchall():
+                    tools = json.loads(row[0])
+                    for tool in tools:
+                        tool_frequency[tool] = tool_frequency.get(tool, 0) + 1
 
-            # 도구별 빈도
-            cursor.execute(f"""
-                SELECT selected_tools FROM tool_decisions {where_clause}
-            """, params)
-            tool_frequency = {}
-            for row in cursor.fetchall():
-                tools = json.loads(row[0])
-                for tool in tools:
-                    tool_frequency[tool] = tool_frequency.get(tool, 0) + 1
+                # 평균 confidence
+                cursor.execute("""
+                    SELECT AVG(confidence) FROM tool_decisions WHERE agent_type = ?
+                """, (agent_type,))
+                avg_confidence = cursor.fetchone()[0] or 0.0
 
-            # 평균 confidence
-            cursor.execute(f"""
-                SELECT AVG(confidence) FROM tool_decisions {where_clause}
-            """, params)
-            avg_confidence = cursor.fetchone()[0] or 0.0
+                # 성공률
+                cursor.execute("""
+                    SELECT AVG(success) FROM tool_decisions WHERE agent_type = ?
+                """, (agent_type,))
+                success_rate = cursor.fetchone()[0] or 0.0
+            else:
+                # agent_type이 없으면 전체 조회
+                cursor.execute("SELECT COUNT(*) FROM tool_decisions")
+                total_decisions = cursor.fetchone()[0]
 
-            # 성공률
-            cursor.execute(f"""
-                SELECT AVG(success) FROM tool_decisions {where_clause}
-            """, params)
-            success_rate = cursor.fetchone()[0] or 0.0
+                cursor.execute("SELECT selected_tools FROM tool_decisions")
+                tool_frequency = {}
+                for row in cursor.fetchall():
+                    tools = json.loads(row[0])
+                    for tool in tools:
+                        tool_frequency[tool] = tool_frequency.get(tool, 0) + 1
+
+                cursor.execute("SELECT AVG(confidence) FROM tool_decisions")
+                avg_confidence = cursor.fetchone()[0] or 0.0
+
+                cursor.execute("SELECT AVG(success) FROM tool_decisions")
+                success_rate = cursor.fetchone()[0] or 0.0
 
             conn.close()
 

@@ -80,6 +80,7 @@ class RealEstateSearchTool:
         params = params or {}
 
         # 파라미터 추출
+        property_name = params.get('property_name')  # 부동산 이름 직접 지정
         region = params.get('region') or self._extract_region(query)
         property_type = params.get('property_type')
         min_area = params.get('min_area')
@@ -94,7 +95,7 @@ class RealEstateSearchTool:
         include_agent = params.get('include_agent', False)
 
         logger.info(
-            f"Real estate search - region: {region}, type: {property_type}, "
+            f"Real estate search - name: {property_name}, region: {region}, type: {property_type}, "
             f"price: {min_price}-{max_price}, area: {min_area}-{max_area}, "
             f"limit: {limit}, offset: {offset}"
         )
@@ -103,7 +104,7 @@ class RealEstateSearchTool:
         try:
             # DB 쿼리 실행
             results = self._query_real_estates(
-                db, region, property_type, min_area, max_area,
+                db, property_name, region, property_type, min_area, max_area,
                 min_price, max_price, completion_year,
                 limit, offset, include_nearby, include_transactions, include_agent
             )
@@ -145,6 +146,7 @@ class RealEstateSearchTool:
     def _query_real_estates(
         self,
         db: Session,
+        property_name: Optional[str],  # 부동산 이름 추가
         region: Optional[str],
         property_type: Optional[str],
         min_area: Optional[float],
@@ -165,6 +167,9 @@ class RealEstateSearchTool:
         - 가격 필터 시 min_sale_price 사용 (sale_price 아님!)
         - Transaction 조인 시 거래 타입 고려
         - Enum 변환 시 예외 처리
+
+        ⚠️ Phase 2 개선:
+        - 부동산 이름으로 검색 (다중 전략: 정확 매칭, 부분 매칭, 유사도 매칭)
         """
         # 기본 쿼리
         query = db.query(self.RealEstate).join(self.Region)
@@ -173,13 +178,11 @@ class RealEstateSearchTool:
         if include_transactions:
             query = query.options(
                 joinedload(self.RealEstate.region),
-                joinedload(self.RealEstate.transactions),
-                joinedload(self.RealEstate.trust_scores)  # trust_score 항상 포함
+                joinedload(self.RealEstate.transactions)
             )
         else:
             query = query.options(
-                joinedload(self.RealEstate.region),
-                joinedload(self.RealEstate.trust_scores)  # trust_score 항상 포함
+                joinedload(self.RealEstate.region)
             )
 
         # 중개사 정보 조건부 로딩
@@ -192,6 +195,57 @@ class RealEstateSearchTool:
         #     query = query.options(joinedload(self.RealEstate.nearby_facility))
 
         # 필터 적용
+        # 부동산 이름으로 검색 (다중 전략)
+        if property_name:
+            # 공백 제거한 버전도 준비
+            property_name_no_space = property_name.replace(' ', '')
+
+            # 전략 1: 정확 매칭 (띄어쓰기 무시)
+            exact_match = query.filter(
+                self.RealEstate.name.replace(' ', '') == property_name_no_space
+            ).first()
+
+            if exact_match:
+                logger.info(f"✅ [Exact match] Found: {exact_match.name}")
+                # 정확 매칭된 결과만 반환
+                query = query.filter(self.RealEstate.id == exact_match.id)
+            else:
+                # 전략 2: 부분 매칭 (LIKE)
+                # "현대맨션" 검색 시 "현대맨션1차", "현대맨션2차" 모두 매칭
+                logger.info(f"⚠️ [Exact match failed] Trying partial match for: {property_name}")
+
+                # 띄어쓰기 있는 버전과 없는 버전 모두 시도
+                from sqlalchemy import or_, func
+
+                query = query.filter(
+                    or_(
+                        self.RealEstate.name.contains(property_name),  # 원본 그대로
+                        func.replace(self.RealEstate.name, ' ', '').contains(property_name_no_space)  # 공백 제거 버전
+                    )
+                )
+
+                # 결과가 있는지 확인
+                results_count = query.count()
+                if results_count > 0:
+                    logger.info(f"✅ [Partial match] Found {results_count} results")
+                else:
+                    # 전략 3: 유사도 검색 (PostgreSQL similarity)
+                    logger.info(f"⚠️ [Partial match failed] Trying similarity search")
+
+                    # PostgreSQL pg_trgm extension 사용 (설치되어 있다면)
+                    try:
+                        from sqlalchemy import text
+                        # Trigram similarity 사용
+                        query = db.query(self.RealEstate).join(self.Region).filter(
+                            text(f"similarity(name, :pname) > 0.3")
+                        ).params(pname=property_name)
+
+                        results_count = query.count()
+                        logger.info(f"✅ [Similarity search] Found {results_count} results")
+                    except Exception as e:
+                        logger.warning(f"❌ Similarity search not available: {e}")
+                        # Fallback: 원래 쿼리 유지 (빈 결과)
+
         if region:
             query = query.filter(self.Region.name.contains(region))
 
@@ -253,10 +307,15 @@ class RealEstateSearchTool:
                 "max_exclusive_area": float(estate.max_exclusive_area) if estate.max_exclusive_area else None,
                 "representative_area": float(estate.representative_area) if estate.representative_area else None,
                 "building_description": estate.building_description,
-                "tags": estate.tag_list,
-                # 신뢰도 점수 (Q3: 항상 포함, 없으면 None)
-                "trust_score": float(estate.trust_scores[0].score) if estate.trust_scores else None
+                "tags": estate.tag_list
             }
+
+            # 신뢰도 점수 별도 조회 (relationship 없음)
+            trust_score = db.query(self.TrustScore).filter(
+                self.TrustScore.real_estate_id == estate.id
+            ).first()
+            if trust_score:
+                estate_data["trust_score"] = float(trust_score.score)
 
             # 최근 거래 내역 (최대 5개)
             if include_transactions and hasattr(estate, 'transactions') and estate.transactions:

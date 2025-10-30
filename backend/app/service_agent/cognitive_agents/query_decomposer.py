@@ -291,9 +291,9 @@ class QueryDecomposer:
         intent = intent_result.get("intent", "UNCLEAR") if intent_result else "UNCLEAR"
 
         team_mapping = {
-            "LEGAL_CONSULT": "search_team",
+            "LEGAL_INQUIRY": "search_team",
             "MARKET_INQUIRY": "search_team",
-            "LOAN_CONSULT": "search_team",
+            "LOAN_SEARCH": "search_team",
             "CONTRACT_CREATION": "document_team",
             "CONTRACT_REVIEW": "analysis_team",
             "COMPREHENSIVE": "analysis_team",

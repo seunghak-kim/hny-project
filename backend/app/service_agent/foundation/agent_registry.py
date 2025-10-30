@@ -364,4 +364,6 @@ if __name__ == "__main__":
     agent = AgentRegistry.create_agent("test_agent", config={"test": True})
     if agent:
         result = agent.execute({"query": "test"})
-        print(f"Execution result: {result}")
+        # JSON 직렬화하여 출력 (object object 방지)
+        import json
+        print(f"Execution result: {json.dumps(result, ensure_ascii=False, indent=2)}")

@@ -238,7 +238,8 @@ class PlanningAgent:
                 max_tokens=500    # 불필요하게 긴 reasoning 방지
             )
 
-            logger.info(f"LLM Intent Analysis Result: {result}")
+            # JSON 직렬화하여 로깅 (object object 출력 방지)
+            logger.info(f"LLM Intent Analysis Result: {json.dumps(result, ensure_ascii=False)}")
 
             # Intent 타입 파싱
             intent_str = result.get("intent", "UNCLEAR").upper()
@@ -353,8 +354,8 @@ class PlanningAgent:
             추천 Agent 목록
         """
         # === 0차: 키워드 기반 필터 (경계 케이스 해결) ===
-        # LEGAL_CONSULT: 단순 질문은 search만, 복잡한 질문은 search + analysis
-        if intent_type == IntentType.LEGAL_CONSULT:
+        # LEGAL_INQUIRY: 단순 질문은 search만, 복잡한 질문은 search + analysis
+        if intent_type == IntentType.LEGAL_INQUIRY:
             # 분석이 필요한 키워드
             analysis_keywords = [
                 "비교", "분석", "계산", "평가", "추천", "검토",
@@ -365,10 +366,10 @@ class PlanningAgent:
             needs_analysis = any(kw in query for kw in analysis_keywords)
 
             if not needs_analysis:
-                logger.info(f"✅ LEGAL_CONSULT without analysis keywords → search_team only")
+                logger.info(f"✅ LEGAL_INQUIRY without analysis keywords → search_team only")
                 return ["search_team"]
             else:
-                logger.info(f"✅ LEGAL_CONSULT with analysis keywords → search + analysis")
+                logger.info(f"✅ LEGAL_INQUIRY with analysis keywords → search + analysis")
                 return ["search_team", "analysis_team"]
 
         # MARKET_INQUIRY: 비교/분석 키워드 체크

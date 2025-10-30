@@ -59,6 +59,15 @@ class AnalysisExecutor:
         self.loan_tool = LoanSimulatorTool()
         self.policy_tool = PolicyMatcherTool()
 
+        # LegalSearch tool 초기화 (Execute 병합)
+        try:
+            from app.service_agent.tools import LegalSearch
+            self.legal_search_tool = LegalSearch()
+            logger.info("LegalSearch initialized successfully in AnalysisExecutor")
+        except Exception as e:
+            logger.warning(f"LegalSearch initialization failed in AnalysisExecutor: {e}")
+            self.legal_search_tool = None
+
         # Decision Logger 초기화
         try:
             self.decision_logger = DecisionLogger()
@@ -150,6 +159,20 @@ class AnalysisExecutor:
                     "신혼부부 정책 매칭",
                     "자격 조건 확인",
                     "혜택 금액 계산"
+                ],
+                "available": True
+            }
+
+        # LegalSearch tool (Execute 병합)
+        if self.legal_search_tool:
+            tools["legal_search"] = {
+                "name": "legal_search",
+                "description": "법률 및 시행령 검색, 법률 조항 분석",
+                "capabilities": [
+                    "법률 조문 검색",
+                    "시행령 검색",
+                    "부동산 관련 법률 조회",
+                    "법률 해석 및 적용"
                 ],
                 "available": True
             }

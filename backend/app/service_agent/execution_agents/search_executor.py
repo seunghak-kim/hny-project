@@ -61,6 +61,14 @@ class SearchExecutor:
         self.real_estate_search_tool = None  # ✅ Phase 2 추가
         self.loan_data_tool = None
 
+        # 공공데이터 API 도구 (Execute 병합)
+        self.transaction_price_tool = None
+        self.building_registry_tool = None
+        self.infrastructure_tool = None
+
+        # 부동산 용어 검색 도구 (Execute 병합)
+        self.terminology_tool = None
+
         # Decision Logger 초기화
         try:
             self.decision_logger = DecisionLogger()
@@ -68,12 +76,19 @@ class SearchExecutor:
             logger.warning(f"DecisionLogger initialization failed: {e}")
             self.decision_logger = None
 
+        # LegalSearch 우선 사용, 실패 시 HybridLegalSearch fallback
         try:
-            from app.service_agent.tools.hybrid_legal_search import HybridLegalSearch
-            self.legal_search_tool = HybridLegalSearch()
-            logger.info("HybridLegalSearch initialized successfully")
+            from app.service_agent.tools.legal_search_tool import LegalSearch
+            self.legal_search_tool = LegalSearch()
+            logger.info("LegalSearch initialized successfully")
         except Exception as e:
-            logger.warning(f"HybridLegalSearch initialization failed: {e}")
+            logger.warning(f"LegalSearch initialization failed: {e}, trying HybridLegalSearch fallback")
+            try:
+                from app.service_agent.tools.hybrid_legal_search import HybridLegalSearch
+                self.legal_search_tool = HybridLegalSearch()
+                logger.info("HybridLegalSearch initialized successfully (fallback)")
+            except Exception as e2:
+                logger.warning(f"HybridLegalSearch fallback also failed: {e2}")
 
         try:
             from app.service_agent.tools.market_data_tool import MarketDataTool
@@ -95,6 +110,36 @@ class SearchExecutor:
             logger.info("RealEstateSearchTool initialized successfully (PostgreSQL)")
         except Exception as e:
             logger.warning(f"RealEstateSearchTool initialization failed: {e}")
+
+        # 공공데이터 API 도구 초기화 (Execute 병합)
+        try:
+            from app.service_agent.tools import InfrastructureTool
+            self.infrastructure_tool = InfrastructureTool()
+            logger.info("InfrastructureTool initialized successfully")
+        except Exception as e:
+            logger.warning(f"InfrastructureTool initialization failed: {e}")
+
+        try:
+            from app.service_agent.tools import TransactionPriceTool
+            self.transaction_price_tool = TransactionPriceTool()
+            logger.info("TransactionPriceTool initialized successfully")
+        except Exception as e:
+            logger.warning(f"TransactionPriceTool initialization failed: {e}")
+
+        try:
+            from app.service_agent.tools import BuildingRegistryTool
+            self.building_registry_tool = BuildingRegistryTool()
+            logger.info("BuildingRegistryTool initialized successfully")
+        except Exception as e:
+            logger.warning(f"BuildingRegistryTool initialization failed: {e}")
+
+        # 부동산 용어 검색 도구 초기화 (Execute 병합)
+        try:
+            from app.service_agent.tools import RealEstateTerminologyTool
+            self.terminology_tool = RealEstateTerminologyTool()
+            logger.info("RealEstateTerminologyTool initialized successfully")
+        except Exception as e:
+            logger.warning(f"RealEstateTerminologyTool initialization failed: {e}")
 
         # 서브그래프 구성
         self.app = None
@@ -309,6 +354,64 @@ class SearchExecutor:
                     "주택담보대출",
                     "금리 정보",
                     "대출 한도"
+                ],
+                "available": True
+            }
+
+        # 공공데이터 API 도구 (Execute 병합)
+        if self.infrastructure_tool:
+            tools["infrastructure"] = {
+                "name": "infrastructure",
+                "description": "부동산 주변 인프라 정보 검색 (지하철, 학교, 편의시설)",
+                "capabilities": [
+                    "주변 지하철역 검색",
+                    "초/중/고등학교 검색",
+                    "대형마트 검색 ",
+                    "종합 인프라 정보",
+                    "거리 및 도보시간 제공"
+                ],
+                "available": True
+            }
+
+        if self.transaction_price_tool:
+            tools["transaction_price"] = {
+                "name": "transaction_price",
+                "description": "국토부 실거래가 정보 (아파트, 오피스텔, 연립, 단독)",
+                "capabilities": [
+                    "아파트 매매/전월세 실거래가",
+                    "오피스텔 실거래가",
+                    "연립/다세대 실거래가",
+                    "단독/다가구 실거래가",
+                    "기간별 실거래가 조회"
+                ],
+                "available": True
+            }
+
+        if self.building_registry_tool:
+            tools["building_registry"] = {
+                "name": "building_registry",
+                "description": "건축물대장 정보 (건축물 상세 스펙) - 주소 기반 검색 지원",
+                "capabilities": [
+                    "주소로 건축물 검색 (예: 서울시 강남구 역삼동 123-45)",
+                    "건축물 면적 정보 (연면적)",
+                    "층수 정보 (지상/지하)",
+                    "준공년도",
+                    "건물 구조 및 용도",
+                    "사용승인일/허가일"
+                ],
+                "available": True
+            }
+
+        if self.terminology_tool:
+            tools["realestate_terminology"] = {
+                "name": "realestate_terminology",
+                "description": "부동산 용어 정의 검색 (용어의 의미와 설명)",
+                "capabilities": [
+                    "부동산 용어 정의 (예: DSR, LTV, DTI)",
+                    "대출 관련 용어 설명",
+                    "매매/임대차 용어 검색",
+                    "법률 용어 의미 조회",
+                    "용어별 카테고리 정보"
                 ],
                 "available": True
             }

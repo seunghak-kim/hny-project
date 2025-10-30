@@ -117,6 +117,7 @@ protobuf==6.32.1
 psutil==7.1.0
 psycopg==3.2.10
 psycopg-pool==3.2.6
+PublicDataReader
 pyasn1==0.6.1
 pyasn1_modules==0.4.2
 pybase64==1.4.2

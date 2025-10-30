@@ -93,6 +93,8 @@ class SearchTeamState(TypedDict):
     real_estate_results: List[Dict[str, Any]]
     loan_results: List[Dict[str, Any]]
     property_search_results: List[Dict[str, Any]]  # 개별 매물 검색 결과 (RealEstateSearchTool)
+    infrastructure_results: Optional[Dict[str, Any]]  # 주변 인프라 검색 결과 (InfrastructureTool) - Execute 병합
+    building_registry_results: List[Dict[str, Any]]  # 건축물 대장 검색 결과 (BuildingRegistryTool) - Execute 병합
     aggregated_results: Dict[str, Any]
 
     # Metadata

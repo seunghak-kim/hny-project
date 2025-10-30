@@ -39,17 +39,17 @@ class InfrastructureTool:
 
         # 쇼핑
         "mart": "MT1",  # 대형마트
-        "convenience_store": "CS2",  # 편의점
+        # "convenience_store": "CS2",  # 편의점
 
-        # 의료
-        "hospital": "HP8",  # 병원
-        "pharmacy": "PM9",  # 약국
+        # # 의료
+        # "hospital": "HP8",  # 병원
+        # "pharmacy": "PM9",  # 약국
 
-        # 문화/여가
-        "cafe": "CE7",  # 카페
+        # # 문화/여가
+        # "cafe": "CE7",  # 카페
 
-        # 공공시설
-        "bank": "BK9",  # 은행
+        # # 공공시설
+        # "bank": "BK9",  # 은행
     }
 
     def __init__(self, kakao_api_key: Optional[str] = None):
@@ -73,6 +73,98 @@ class InfrastructureTool:
     # =========================================================================
     # Tool 메서드들 (에이전트가 호출)
     # =========================================================================
+
+    def geocode_address(self, address: str) -> Optional[Dict[str, float]]:
+        """
+        주소를 위경도 좌표로 변환 (카카오 지도 API)
+
+        Args:
+            address: 검색할 주소 또는 장소명
+
+        Returns:
+            {"latitude": float, "longitude": float} 또는 None
+        """
+        if not self.api_key:
+            logger.warning("KAKAO_API_KEY not configured. Cannot geocode address.")
+            return None
+
+        try:
+            url = f"{self.base_url}/address.json"
+            params = {"query": address}
+
+            logger.info(f"Geocoding address: {address}")
+            response = requests.get(url, headers=self.headers, params=params, timeout=10)
+            response.raise_for_status()
+
+            data = response.json()
+            documents = data.get("documents", [])
+
+            if documents:
+                # 첫 번째 결과 사용
+                first_result = documents[0]
+                latitude = float(first_result.get("y", 0))
+                longitude = float(first_result.get("x", 0))
+
+                logger.info(f"Geocoding success: {address} -> ({latitude}, {longitude})")
+                return {
+                    "latitude": latitude,
+                    "longitude": longitude,
+                    "address": first_result.get("address_name", address)
+                }
+            else:
+                # 주소 검색 실패 시 키워드 검색 시도
+                logger.info(f"Address search failed, trying keyword search for: {address}")
+                return self._geocode_by_keyword(address)
+
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Kakao geocoding API request failed: {e}")
+            return None
+        except Exception as e:
+            logger.error(f"Geocoding failed: {e}")
+            return None
+
+    def _geocode_by_keyword(self, keyword: str) -> Optional[Dict[str, float]]:
+        """
+        키워드로 장소 검색하여 좌표 반환 (주소 검색 실패 시 fallback)
+
+        Args:
+            keyword: 검색할 키워드
+
+        Returns:
+            {"latitude": float, "longitude": float} 또는 None
+        """
+        if not self.api_key:
+            return None
+
+        try:
+            url = f"{self.base_url}/keyword.json"
+            params = {"query": keyword, "size": 1}
+
+            response = requests.get(url, headers=self.headers, params=params, timeout=10)
+            response.raise_for_status()
+
+            data = response.json()
+            documents = data.get("documents", [])
+
+            if documents:
+                first_result = documents[0]
+                latitude = float(first_result.get("y", 0))
+                longitude = float(first_result.get("x", 0))
+
+                logger.info(f"Keyword geocoding success: {keyword} -> ({latitude}, {longitude})")
+                return {
+                    "latitude": latitude,
+                    "longitude": longitude,
+                    "address": first_result.get("address_name", keyword),
+                    "place_name": first_result.get("place_name", keyword)
+                }
+            else:
+                logger.warning(f"Keyword search also failed for: {keyword}")
+                return None
+
+        except Exception as e:
+            logger.error(f"Keyword geocoding failed: {e}")
+            return None
 
     def search(
         self,
@@ -250,17 +342,17 @@ class InfrastructureTool:
         try:
             infrastructure = {
                 "transportation": {
-                    "subway_stations": self.search_subway_stations(latitude, longitude, radius, 5),
+                    "subway_stations": self.search_subway_stations(latitude, longitude, radius * 1, 10),  # 반경 1km, limit 10개로 증가
                 },
                 "education": {
-                    "elementary_schools": self.search_schools(latitude, longitude, "elementary", radius, 3),
-                    "middle_schools": self.search_schools(latitude, longitude, "middle", radius, 3),
-                    "high_schools": self.search_schools(latitude, longitude, "high", radius, 3),
+                    "elementary_schools": self.search_schools(latitude, longitude, "elementary", radius, 5),  # limit 5개로 증가
+                    "middle_schools": self.search_schools(latitude, longitude, "middle", radius, 5),  # limit 5개로 증가
+                    "high_schools": self.search_schools(latitude, longitude, "high", radius, 5),  # limit 5개로 증가
                 },
                 "convenience": {
-                    "marts": self.search_convenience_facilities(latitude, longitude, "mart", 500, 3),
-                    "hospitals": self.search_convenience_facilities(latitude, longitude, "hospital", 1000, 3),
-                    "pharmacies": self.search_convenience_facilities(latitude, longitude, "pharmacy", 500, 3),
+                    "marts": self.search_convenience_facilities(latitude, longitude, "mart", 5000, 5),  # 반경 5000m, limit 5개로 증가
+                    # "hospitals": self.search_convenience_facilities(latitude, longitude, "hospital", 1000, 3),
+                    # "pharmacies": self.search_convenience_facilities(latitude, longitude, "pharmacy", 500, 3),
                 },
             }
 
@@ -412,7 +504,7 @@ class InfrastructureTool:
         all_results = []
 
         # 주요 카테고리만 검색
-        main_categories = ["subway", "elementary_school", "mart", "hospital", "pharmacy"]
+        main_categories = ["subway", "elementary_school", "mart"]
 
         for category in main_categories:
             results = self._search_by_category(category, latitude, longitude, radius, limit)
