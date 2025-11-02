@@ -396,6 +396,18 @@ class LLMService:
 
             logger.info(f"Final response generated successfully for query: {query[:50]}...")
 
+            # ✅ 답변 검증: 거래 타입 일치 여부 확인
+            validation_warnings = self._validate_response_data_consistency(
+                query, response_json, aggregated_results
+            )
+            if validation_warnings:
+                logger.warning(f"Response validation warnings: {validation_warnings}")
+                # 경고가 있으면 답변에 주의사항 추가
+                if response_json.get("additional_info"):
+                    response_json["additional_info"] += f"\n\n⚠️ {'; '.join(validation_warnings)}"
+                else:
+                    response_json["additional_info"] = f"⚠️ {'; '.join(validation_warnings)}"
+
             return {
                 "type": "answer",
                 "answer": response_json.get("answer", ""),
@@ -404,7 +416,8 @@ class LLMService:
                     "metadata": {
                         "confidence": response_json.get("confidence", 0.8),
                         "sources": response_json.get("sources", []),
-                        "intent_type": intent_info.get("intent_type", "unknown")
+                        "intent_type": intent_info.get("intent_type", "unknown"),
+                        "validation_warnings": validation_warnings  # 검증 경고 포함
                     }
                 },
                 "teams_used": list(aggregated_results.keys()),
@@ -532,6 +545,91 @@ class LLMService:
             })
 
         return sections
+
+    def _validate_response_data_consistency(
+        self,
+        query: str,
+        response_json: Dict[str, Any],
+        aggregated_results: Dict[str, Any]
+    ) -> List[str]:
+        """
+        답변과 데이터의 일치성 검증
+
+        사용자가 요청한 거래 타입과 실제 데이터의 거래 타입이 일치하는지 확인합니다.
+
+        Args:
+            query: 사용자 질문
+            response_json: LLM이 생성한 응답
+            aggregated_results: 팀별 수집 결과
+
+        Returns:
+            검증 경고 리스트 (문제가 없으면 빈 리스트)
+        """
+        warnings = []
+
+        # 1. 사용자가 요청한 거래 타입 추출
+        requested_type = None
+        if "매매" in query:
+            requested_type = "sale"
+        elif "전세" in query:
+            requested_type = "jeonse"
+        elif "월세" in query:
+            requested_type = "rent"
+
+        # 거래 타입 요청이 명확하지 않으면 검증 스킵
+        if not requested_type:
+            return warnings
+
+        # 2. 검색 결과에서 실제 거래 타입 확인
+        search_data = aggregated_results.get("search", {}).get("data", {})
+
+        # property_search_results (개별 매물)
+        property_results = search_data.get("property_search_results", [])
+        if property_results:
+            actual_types = set()
+            for prop in property_results:
+                transactions = prop.get("recent_transactions", [])
+                for trans in transactions:
+                    trans_type = trans.get("transaction_type")
+                    if trans_type:
+                        actual_types.add(trans_type)
+
+            # 요청한 타입이 실제 데이터에 없으면 경고
+            if requested_type not in actual_types and actual_types:
+                type_labels = {
+                    "sale": "매매",
+                    "jeonse": "전세",
+                    "rent": "월세"
+                }
+                actual_labels = [type_labels.get(t, t) for t in actual_types]
+                warnings.append(
+                    f"요청하신 {type_labels[requested_type]} 매물이 아닌 "
+                    f"{', '.join(actual_labels)} 매물 정보가 포함되어 있습니다"
+                )
+
+        # real_estate_results (시세 정보)
+        estate_results = search_data.get("real_estate_results", [])
+        if estate_results:
+            actual_types = set()
+            for estate in estate_results:
+                if isinstance(estate, dict):
+                    trans_type = estate.get("transaction_type")
+                    if trans_type:
+                        actual_types.add(trans_type)
+
+            if requested_type not in actual_types and actual_types:
+                type_labels = {
+                    "sale": "매매",
+                    "jeonse": "전세",
+                    "rent": "월세"
+                }
+                actual_labels = [type_labels.get(t, t) for t in actual_types]
+                warnings.append(
+                    f"시세 정보가 {type_labels[requested_type]}가 아닌 "
+                    f"{', '.join(actual_labels)} 정보입니다"
+                )
+
+        return warnings
 
     def _generate_error_response(self, error_message: str) -> Dict[str, Any]:
         """

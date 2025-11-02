@@ -58,7 +58,7 @@ class RealEstateTerminologyTool:
     def search_terminology(
         self,
         query: str,
-        top_k: int = 5,
+        top_k: int = 1,
         category_filter: Optional[str] = None
     ) -> Dict[str, Any]:
         """
@@ -73,6 +73,18 @@ class RealEstateTerminologyTool:
             검색 결과 딕셔너리
         """
         try:
+            # 0. 약어/정확한 용어명 매칭 시도 (예: DSR, LTV)
+            exact_match = self._try_exact_term_match(query)
+            if exact_match:
+                logger.info(f"Found exact term match for: {query}")
+                return {
+                    "success": True,
+                    "query": query,
+                    "total_found": 1,
+                    "results": [exact_match],
+                    "method": "exact_match"
+                }
+
             # 1. FAISS 벡터 검색
             vector_results = self._vector_search(query, top_k * 2)
 
@@ -89,7 +101,8 @@ class RealEstateTerminologyTool:
                 "success": True,
                 "query": query,
                 "total_found": len(final_results),
-                "results": final_results
+                "results": final_results,
+                "method": "vector_search"
             }
 
         except Exception as e:
@@ -244,6 +257,61 @@ class RealEstateTerminologyTool:
             }
 
     # ========== 내부 헬퍼 메서드 ==========
+
+    def _try_exact_term_match(self, query: str) -> Optional[Dict[str, Any]]:
+        """
+        약어나 정확한 용어명으로 매칭 시도
+        예: "DSR", "LTV", "DTI" 등의 약어
+        """
+        try:
+            # 쿼리에서 약어 추출 (대문자 2-5글자)
+            # 한글 앞에 있을 수 있으므로 단어 경계 대신 위치 기반 매칭
+            import re
+            acronym_match = re.search(r'([A-Z]{2,5})(?:[^A-Z]|$)', query)
+            search_term = acronym_match.group(1) if acronym_match else query.strip()
+
+            logger.info(f"Extracted term from query '{query}': '{search_term}'")
+
+            search_term_upper = search_term.upper()
+            cursor = self.db_manager.sqlite_conn.cursor()
+
+            # 1. 용어명에 쿼리가 포함되어 있는지 확인 (대소문자 무시)
+            sql = """
+                SELECT
+                    article_number,
+                    metadata_json,
+                    chunk_ids
+                FROM articles
+                WHERE law_id = ?
+                AND UPPER(json_extract(metadata_json, '$.term_name')) LIKE ?
+                LIMIT 1
+            """
+
+            cursor.execute(sql, [self.terminology_law_id, f'%{search_term_upper}%'])
+            row = cursor.fetchone()
+
+            if not row:
+                return None
+
+            metadata = json.loads(row['metadata_json']) if row['metadata_json'] else {}
+            chunk_ids = json.loads(row['chunk_ids']) if row['chunk_ids'] else []
+
+            # FAISS에서 실제 내용 가져오기
+            content = self._get_content_from_faiss(chunk_ids)
+
+            return {
+                "term_name": metadata.get("term_name"),
+                "term_number": metadata.get("term_number"),
+                "category": metadata.get("term_category"),
+                "section": metadata.get("section"),
+                "definition": content,
+                "is_legal_term": metadata.get("is_legal_term", False),
+                "relevance_score": 1.0  # 정확 매칭이므로 점수 1.0
+            }
+
+        except Exception as e:
+            logger.error(f"Exact term match failed: {e}", exc_info=True)
+            return None
 
     def _vector_search(self, query: str, top_k: int) -> List[Dict[str, Any]]:
         """FAISS 벡터 검색"""

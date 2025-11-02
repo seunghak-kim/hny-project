@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Dict, Any, List, Optional, Tuple
 from dataclasses import dataclass, field
 from enum import Enum
+from langsmith import traceable 
 
 # Path setup
 backend_dir = Path(__file__).parent.parent.parent.parent
@@ -183,6 +184,7 @@ class PlanningAgent:
                 capabilities[agent_name] = agent_caps
         return capabilities
 
+    @traceable(name="의도 분석") # 👈 [2] @traceable 데코레이터를 추가합니다. name으로 LangSmith에 표시될 이름을 지정할 수 있습니다.
     async def analyze_intent(self, query: str, context: Optional[Dict] = None) -> IntentResult:
         """
         사용자 의도 분석

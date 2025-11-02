@@ -2,6 +2,7 @@
 from sqlalchemy import (
     Column,
     Integer,
+    BigInteger,
     String,
     Float,
     Boolean,
@@ -111,17 +112,17 @@ class Transaction(Base):
     transaction_date = Column(TIMESTAMP(timezone=True), index=True, comment="거래일")
 
     # 가격 정보 - 개별 거래 단위
-    sale_price = Column(Integer, default=0, comment="매매가(만원)")
-    deposit = Column(Integer, default=0, comment="보증금(만원)")
-    monthly_rent = Column(Integer, default=0, comment="월세(만원)")
+    sale_price = Column(BigInteger, default=0, comment="매매가(만원)")
+    deposit = Column(BigInteger, default=0, comment="보증금(만원)")
+    monthly_rent = Column(BigInteger, default=0, comment="월세(만원)")
 
     # 가격 범위 정보 - 단지/건물 단위 통계
-    min_sale_price = Column(Integer, default=0, comment="최소 매매가(만원)")
-    max_sale_price = Column(Integer, default=0, comment="최대 매매가(만원)")
-    min_deposit = Column(Integer, default=0, comment="최소 보증금(만원)")
-    max_deposit = Column(Integer, default=0, comment="최대 보증금(만원)")
-    min_monthly_rent = Column(Integer, default=0, comment="최소 월세(만원)")
-    max_monthly_rent = Column(Integer, default=0, comment="최대 월세(만원)")
+    min_sale_price = Column(BigInteger, default=0, comment="최소 매매가(만원)")
+    max_sale_price = Column(BigInteger, default=0, comment="최대 매매가(만원)")
+    min_deposit = Column(BigInteger, default=0, comment="최소 보증금(만원)")
+    max_deposit = Column(BigInteger, default=0, comment="최대 보증금(만원)")
+    min_monthly_rent = Column(BigInteger, default=0, comment="최소 월세(만원)")
+    max_monthly_rent = Column(BigInteger, default=0, comment="최대 월세(만원)")
 
     # 매물 번호 (CSV의 atclNo)
     article_no = Column(String(50), unique=True, index=True, comment="매물번호")

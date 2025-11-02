@@ -329,33 +329,57 @@ class RealEstateSearchTool:
                 )[:5]
 
                 for t in sorted_transactions:
+                    # 거래 타입을 명확하게 표시 (영문 + 한글)
+                    transaction_type_raw = t.transaction_type.value if t.transaction_type else "unknown"
+                    transaction_type_label = {
+                        "sale": "매매",
+                        "jeonse": "전세",
+                        "rent": "월세"
+                    }.get(transaction_type_raw, "알 수 없음")
+
                     transaction_data = {
-                        "transaction_type": t.transaction_type.value if t.transaction_type else None,
+                        "transaction_type": transaction_type_raw,
+                        "transaction_type_label": transaction_type_label,  # 명확한 한글 레이블 추가
                         "transaction_date": t.transaction_date.isoformat() if t.transaction_date else None,
                     }
 
                     # ⚠️ Phase 1 경험: min_sale_price, min_deposit, min_monthly_rent 사용
                     # 단일 필드(sale_price, deposit)는 대부분 0이므로 범위 필드 사용
-                    if t.min_sale_price and t.min_sale_price > 0:
-                        transaction_data["sale_price_range"] = {
-                            "min": t.min_sale_price,
-                            "max": t.max_sale_price or t.min_sale_price,
-                            "unit": "만원"
-                        }
-
-                    if t.min_deposit and t.min_deposit > 0:
-                        transaction_data["deposit_range"] = {
-                            "min": t.min_deposit,
-                            "max": t.max_deposit or t.min_deposit,
-                            "unit": "만원"
-                        }
-
-                    if t.min_monthly_rent and t.min_monthly_rent > 0:
-                        transaction_data["monthly_rent_range"] = {
-                            "min": t.min_monthly_rent,
-                            "max": t.max_monthly_rent or t.min_monthly_rent,
-                            "unit": "만원"
-                        }
+                    # ✅ 거래 타입에 따라 적절한 가격 정보만 포함
+                    if transaction_type_raw == "sale":
+                        # 매매: sale_price_range만 포함
+                        if t.min_sale_price and t.min_sale_price > 0:
+                            transaction_data["sale_price_range"] = {
+                                "min": t.min_sale_price,
+                                "max": t.max_sale_price or t.min_sale_price,
+                                "unit": "만원",
+                                "label": "매매가"
+                            }
+                    elif transaction_type_raw == "jeonse":
+                        # 전세: deposit_range만 포함
+                        if t.min_deposit and t.min_deposit > 0:
+                            transaction_data["deposit_range"] = {
+                                "min": t.min_deposit,
+                                "max": t.max_deposit or t.min_deposit,
+                                "unit": "만원",
+                                "label": "보증금(전세)"
+                            }
+                    elif transaction_type_raw == "rent":
+                        # 월세: deposit + monthly_rent 포함
+                        if t.min_deposit and t.min_deposit > 0:
+                            transaction_data["deposit_range"] = {
+                                "min": t.min_deposit,
+                                "max": t.max_deposit or t.min_deposit,
+                                "unit": "만원",
+                                "label": "보증금(월세)"
+                            }
+                        if t.min_monthly_rent and t.min_monthly_rent > 0:
+                            transaction_data["monthly_rent_range"] = {
+                                "min": t.min_monthly_rent,
+                                "max": t.max_monthly_rent or t.min_monthly_rent,
+                                "unit": "만원",
+                                "label": "월세"
+                            }
 
                     estate_data["recent_transactions"].append(transaction_data)
 

@@ -307,6 +307,32 @@ class TeamBasedSupervisor:
         state["reuse_intent"] = reuse_intent
         logger.info(f"[TeamSupervisor] Data reuse intent from LLM: {reuse_intent}")
 
+        # ✅ 추가 검증: 새로운 검색 키워드가 있으면 재사용 불가
+        if reuse_intent:
+            query_lower = query.lower()
+            # 새로운 검색을 의미하는 키워드
+            new_search_keywords = [
+                "조회", "검색", "찾", "알려줘", "뽑아줘", "가져와", "확인",
+                "보여줘", "정보", "데이터", "내역"
+            ]
+            # 명시적 지시어 (재사용 허용)
+            reuse_keywords = [
+                "그", "위", "방금", "이전", "아까", "그거", "그건", "거기"
+            ]
+
+            has_new_search_keyword = any(kw in query_lower for kw in new_search_keywords)
+            has_reuse_keyword = any(kw in query_lower for kw in reuse_keywords)
+
+            # 새로운 검색 키워드는 있지만 재사용 지시어가 없으면 → 재사용 불가
+            if has_new_search_keyword and not has_reuse_keyword:
+                logger.warning(
+                    f"[TeamSupervisor] ⚠️ Data reuse intent overridden: "
+                    f"Query contains new search keywords without reuse indicators"
+                )
+                logger.warning(f"[TeamSupervisor] Query: '{query}'")
+                reuse_intent = False
+                state["reuse_intent"] = False
+
         if reuse_intent and chat_history:
             logger.info("[TeamSupervisor] Data reuse intent detected, checking for available data")
 
