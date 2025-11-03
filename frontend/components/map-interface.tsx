@@ -28,6 +28,8 @@ interface PropertyData {
   전세_최고가_억원?: string
   월세_최저가_억원?: string
   월세_최고가_억원?: string
+  월세_최저가?: string  // Raw value in 만원 units
+  월세_최고가?: string  // Raw value in 만원 units
   단지요약: string
   총_거래건수: string
   면적요약: string
@@ -125,7 +127,7 @@ export function MapInterface() {
               const obj: any = { type: "residential" }
               
               // Only process essential fields for performance
-              const essentialFields = ['단지명', '구', '동', '위도', '경도', '단지요약', '총_거래건수', '면적요약', '세대수', '동수', '준공년월', '매매_최저가_억원', '매매_최고가_억원', '전세_최저가_억원', '전세_최고가_억원', '월세_최저가_억원', '월세_최고가_억원']
+              const essentialFields = ['단지명', '구', '동', '위도', '경도', '단지요약', '총_거래건수', '면적요약', '세대수', '동수', '준공년월', '매매_최저가_억원', '매매_최고가_억원', '전세_최저가_억원', '전세_최고가_억원', '월세_최저가_억원', '월세_최고가_억원', '월세_최저가', '월세_최고가']
               
               headers.forEach((header, index) => {
                 const cleanHeader = header.replace(/^\uFEFF/, '').trim()
@@ -556,7 +558,7 @@ export function MapInterface() {
           // Get price info and determine transaction type
           const saleHigh = property.매매_최고가_억원;
           const rentHigh = property.전세_최고가_억원;
-          const monthlyHigh = property.월세_최고가_억원;
+          const monthlyHigh = property.월세_최고가; // Use raw value in 만원 units, not formatted _억원
 
           let priceText = '';
           let markerColor = '#3182f6'; // Default blue
@@ -780,12 +782,29 @@ export function MapInterface() {
     }
   }, [map, clusters, transactionFilter])
 
+  // Resize map when sidebar is toggled
+  useEffect(() => {
+    if (map) {
+      // Wait for CSS transition to complete (300ms is typical)
+      setTimeout(() => {
+        try {
+          map.relayout()
+        } catch (error) {
+          console.error('Error relayout map:', error)
+        }
+      }, 350)
+    }
+  }, [sidebarOpen, map])
+
   return (
     <>
     <div className={`${isFullscreen ? "fixed inset-0 z-50" : ""} flex h-full bg-background relative`}>
       {/* Left Panel - Search and Filters */}
-      {sidebarOpen && (
-      <div className="w-80 border-r border-border flex flex-col">
+      <div
+        className={`border-r border-border flex flex-col transition-all duration-300 ease-in-out ${
+          sidebarOpen ? 'w-80' : 'w-0 overflow-hidden'
+        }`}
+      >
         {/* Header */}
         <div className="p-4 border-b border-border bg-primary">
           <div className="flex items-center justify-between">
@@ -890,8 +909,10 @@ export function MapInterface() {
                   } else if (transactionFilter === "전세" && property.전세_최저가_억원) {
                     primaryPrice = `${property.전세_최저가_억원}억`
                     priceType = '전세'
-                  } else if (transactionFilter === "월세" && property.월세_최저가_억원) {
-                    primaryPrice = `${Math.round(parseFloat(property.월세_최저가_억원))}만`
+                  } else if (transactionFilter === "월세" && property.월세_최저가) {
+                    // Use raw value in 만원 units
+                    const price = parseFloat(property.월세_최저가)
+                    primaryPrice = price >= 10000 ? `${(price / 10000).toFixed(1)}억` : `${Math.round(price).toLocaleString()}만`
                     priceType = '월세'
                   } else {
                     // Default priority when filter is "전체"
@@ -901,8 +922,10 @@ export function MapInterface() {
                     } else if (property.전세_최저가_억원) {
                       primaryPrice = `${property.전세_최저가_억원}억`
                       priceType = '전세'
-                    } else if (property.월세_최저가_억원) {
-                      primaryPrice = `${Math.round(parseFloat(property.월세_최저가_억원))}만`
+                    } else if (property.월세_최저가) {
+                      // Use raw value in 만원 units
+                      const price = parseFloat(property.월세_최저가)
+                      primaryPrice = price >= 10000 ? `${(price / 10000).toFixed(1)}억` : `${Math.round(price).toLocaleString()}만`
                       priceType = '월세'
                     } else {
                       primaryPrice = 'N/A'
@@ -1012,16 +1035,22 @@ export function MapInterface() {
                     </div>
                   </div>
                 )}
-                {selectedProperty.월세_최저가_억원 && (
+                {selectedProperty.월세_최저가 && (
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-muted-foreground">월세</span>
                     <div className="text-right">
                       <span className="font-medium text-orange-600">
-                        {selectedProperty.월세_최저가_억원}
+                        {(() => {
+                          const lowPrice = parseFloat(selectedProperty.월세_최저가)
+                          return lowPrice >= 10000 ? `${(lowPrice / 10000).toFixed(1)}억` : `${Math.round(lowPrice).toLocaleString()}만`
+                        })()}
                       </span>
-                      {selectedProperty.월세_최고가_억원 && (
+                      {selectedProperty.월세_최고가 && (
                         <span className="font-medium text-orange-600">
-                          {` ~ ${selectedProperty.월세_최고가_억원}`}
+                          {` ~ ${(() => {
+                            const highPrice = parseFloat(selectedProperty.월세_최고가)
+                            return highPrice >= 10000 ? `${(highPrice / 10000).toFixed(1)}억` : `${Math.round(highPrice).toLocaleString()}만`
+                          })()}`}
                         </span>
                       )}
                     </div>
@@ -1093,7 +1122,6 @@ export function MapInterface() {
           </div>
         )}
       </div>
-      )}
 
       {/* Sidebar Toggle Button */}
       <button

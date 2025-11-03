@@ -334,10 +334,10 @@ export function clusterProperties(properties: any[], zoomLevel: number, transact
         return 0
       }).filter(price => price > 0)
     } else if (transactionFilter === "월세") {
-      // Only calculate from 월세 prices (deposit amount in 억원)
+      // Only calculate from 월세 prices (use raw values in 만원 units)
       prices = cluster.properties.map((property: any) => {
-        const monthlyHigh = parseFloat(property.월세_최고가_억원 || '0')
-        const monthlyLow = parseFloat(property.월세_최저가_억원 || '0')
+        const monthlyHigh = parseFloat(property.월세_최고가 || '0')
+        const monthlyLow = parseFloat(property.월세_최저가 || '0')
         if (monthlyHigh > 0 && monthlyLow > 0) {
           return (monthlyHigh + monthlyLow) / 2
         } else if (monthlyHigh > 0) {
@@ -505,9 +505,10 @@ export function createDetailedMarkerContent(property: any): string {
     const saleLow = property.매매_최저가_억원;
     const rentHigh = property.전세_최고가_억원;
     const rentLow = property.전세_최저가_억원;
-    const monthlyHigh = property.월세_최고가_억원;
-    const monthlyLow = property.월세_최저가_억원;
-    
+    // Use raw 월세 values in 만원 units, not the formatted _억원 strings
+    const monthlyHigh = property.월세_최고가;
+    const monthlyLow = property.월세_최저가;
+
     // Show price ranges when available, prioritize sales > jeonse > monthly
     if (saleHigh && saleHigh !== '' && saleHigh !== '0') {
       primaryPrice = saleLow !== saleHigh ? `${saleLow}~${saleHigh}억` : `${saleHigh}억`;
@@ -516,7 +517,11 @@ export function createDetailedMarkerContent(property: any): string {
       primaryPrice = rentLow !== rentHigh ? `${rentLow}~${rentHigh}억` : `${rentHigh}억`;
       priceType = '전세';
     } else if (monthlyHigh && monthlyHigh !== '' && monthlyHigh !== '0') {
-      primaryPrice = monthlyLow !== monthlyHigh ? `${monthlyLow}~${monthlyHigh}만` : `${monthlyHigh}만`;
+      // Format monthly rent properly from raw 만원 values
+      const highPrice = parseFloat(monthlyHigh);
+      const lowPrice = parseFloat(monthlyLow || monthlyHigh);
+      const formatPrice = (price: number) => price >= 10000 ? `${(price / 10000).toFixed(1)}억` : `${Math.round(price).toLocaleString()}만`;
+      primaryPrice = lowPrice !== highPrice ? `${formatPrice(lowPrice)}~${formatPrice(highPrice)}` : formatPrice(highPrice);
       priceType = '월세';
     } else {
       primaryPrice = '정보없음';
@@ -575,8 +580,9 @@ export function createClusterMarkerContent(cluster: Cluster, style: any, transac
     let avgPriceText = '정보없음';
     if (cluster.averagePrice) {
       if (transactionFilter === "월세") {
-        // 월세는 만원 단위로 표시
-        avgPriceText = `${Math.round(cluster.averagePrice)}만`;
+        // 월세 average is in 만원 units - format appropriately
+        const price = cluster.averagePrice;
+        avgPriceText = price >= 10000 ? `${(price / 10000).toFixed(1)}억` : `${Math.round(price).toLocaleString()}만`;
       } else {
         // 매매, 전세는 억원 단위로 표시
         avgPriceText = `${cluster.averagePrice.toFixed(1)}억`;
