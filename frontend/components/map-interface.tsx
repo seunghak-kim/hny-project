@@ -6,9 +6,11 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Search, MapPin, Maximize2, Minimize2 } from "lucide-react"
+import { Search, Maximize2, Minimize2, X } from "lucide-react"
+import { Slider } from "@/components/ui/slider"
 import { getDistrictCoordinatesNew, getDistrictCenterNew, getAllDistrictNames } from "@/lib/district-coordinates"
 import { clusterProperties, getClusterStyle, createDetailedMarkerContent, createClusterMarkerContent, type Cluster } from "@/lib/clustering"
+import { FloatingChatButton } from "@/components/floating-chat-button"
 
 declare global {
   interface Window {
@@ -43,8 +45,25 @@ export function MapInterface() {
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedProperty, setSelectedProperty] = useState<PropertyData | null>(null)
   const [filterType, setFilterType] = useState<string>("전체")
+  const [transactionFilter, setTransactionFilter] = useState<string>("전체")
+  const [propertyTypeFilter, setPropertyTypeFilter] = useState<string>("전체")
   const [sortBy, setSortBy] = useState<string>("이름순")
   const [isFullscreen, setIsFullscreen] = useState(false)
+
+  // Filter dialogs state
+  const [priceFilterOpen, setPriceFilterOpen] = useState(false)
+  const [areaFilterOpen, setAreaFilterOpen] = useState(false)
+
+  // Price filter ranges (in 억원)
+  const [salePriceRange, setSalePriceRange] = useState<[number, number]>([0, 50])
+  const [jeonsePriceRange, setJeonsePriceRange] = useState<[number, number]>([0, 20])
+  const [monthlyPriceRange, setMonthlyPriceRange] = useState<[number, number]>([0, 10])
+
+  // Area filter (in 평)
+  const [areaRange, setAreaRange] = useState<[number, number]>([0, 70])
+
+  // Selected quick filters
+  const [selectedPyeongFilter, setSelectedPyeongFilter] = useState<string | null>(null)
   const [markers, setMarkers] = useState<any[]>([])
   const [polygons, setPolygons] = useState<any[]>([])
   const [clusters, setClusters] = useState<Cluster[]>([])
@@ -55,7 +74,7 @@ export function MapInterface() {
   const [displayedProperties, setDisplayedProperties] = useState<PropertyData[]>([])
   const [itemsToShow, setItemsToShow] = useState(20)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
-  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(true)
 
   // 서비스 가능 지역 목록
   const serviceAreas = getAllDistrictNames()
@@ -155,9 +174,106 @@ export function MapInterface() {
       filtered = filtered.filter((property) => property.구 === filterType)
     }
 
+    // Property type filter
+    if (propertyTypeFilter !== "전체") {
+      filtered = filtered.filter((property) => {
+        if (propertyTypeFilter === "아파트") {
+          return property.type === "residential" || !property.type
+        } else if (propertyTypeFilter === "오피스텔") {
+          return property.type === "office"
+        }
+        return true
+      })
+    }
+
+    // Transaction type filter
+    if (transactionFilter !== "전체") {
+      filtered = filtered.filter((property) => {
+        if (transactionFilter === "매매") {
+          const salePrice = property.매매_최고가_억원
+          return salePrice && salePrice !== '' && salePrice !== '0'
+        } else if (transactionFilter === "전세") {
+          const jeonsePrice = property.전세_최고가_억원
+          return jeonsePrice && jeonsePrice !== '' && jeonsePrice !== '0'
+        } else if (transactionFilter === "월세") {
+          const monthlyPrice = property.월세_최고가_억원
+          return monthlyPrice && monthlyPrice !== '' && monthlyPrice !== '0'
+        }
+        return true
+      })
+    }
+
+    // Price range filter - only apply if ranges are not at default max values
+    const isPriceFilterActive =
+      salePriceRange[1] < 50 || salePriceRange[0] > 0 ||
+      jeonsePriceRange[1] < 20 || jeonsePriceRange[0] > 0 ||
+      monthlyPriceRange[1] < 10 || monthlyPriceRange[0] > 0
+
+    if (isPriceFilterActive) {
+      filtered = filtered.filter((property) => {
+        let matchesFilter = false
+
+        // Check sale price
+        const salePrice = property.매매_최고가_억원
+        if (salePrice && salePrice !== '' && salePrice !== '0') {
+          const price = parseFloat(salePrice)
+          if (price >= salePriceRange[0] && price <= salePriceRange[1]) {
+            matchesFilter = true
+          }
+        }
+
+        // Check jeonse price
+        const jeonsePrice = property.전세_최고가_억원
+        if (jeonsePrice && jeonsePrice !== '' && jeonsePrice !== '0') {
+          const price = parseFloat(jeonsePrice)
+          if (price >= jeonsePriceRange[0] && price <= jeonsePriceRange[1]) {
+            matchesFilter = true
+          }
+        }
+
+        // Check monthly price
+        const monthlyPrice = property.월세_최고가_억원
+        if (monthlyPrice && monthlyPrice !== '' && monthlyPrice !== '0') {
+          const price = parseFloat(monthlyPrice)
+          if (price >= monthlyPriceRange[0] && price <= monthlyPriceRange[1]) {
+            matchesFilter = true
+          }
+        }
+
+        return matchesFilter
+      })
+    }
+
+    // Area filter - only apply if not at default range
+    const isAreaFilterActive = areaRange[0] > 0 || areaRange[1] < 70
+
+    if (isAreaFilterActive) {
+      filtered = filtered.filter((property) => {
+        const areaStr = property.면적요약
+        if (!areaStr) return true // Don't filter out if no area info
+
+        // Extract area in pyeong from string like "84㎡(25평)" or "25평"
+        const pyeongMatch = areaStr.match(/(\d+(?:\.\d+)?)평/)
+        if (pyeongMatch) {
+          const pyeong = parseFloat(pyeongMatch[1])
+          return pyeong >= areaRange[0] && pyeong <= areaRange[1]
+        }
+
+        // Try to extract from square meters
+        const sqmMatch = areaStr.match(/(\d+(?:\.\d+)?)㎡/)
+        if (sqmMatch) {
+          const sqm = parseFloat(sqmMatch[1])
+          const pyeong = sqm / 3.3058 // Convert to pyeong
+          return pyeong >= areaRange[0] && pyeong <= areaRange[1]
+        }
+
+        return true // Don't filter out if can't parse area
+      })
+    }
+
     setFilteredProperties(filtered)
     setItemsToShow(20) // Reset pagination when filters change
-  }, [properties, searchQuery, filterType])
+  }, [properties, searchQuery, filterType, propertyTypeFilter, transactionFilter, salePriceRange, jeonsePriceRange, monthlyPriceRange, areaRange])
 
   // Update displayed properties when filteredProperties or itemsToShow changes
   useEffect(() => {
@@ -190,7 +306,11 @@ export function MapInterface() {
 
   const handlePropertyClick = (property: PropertyData) => {
     setSelectedProperty(property)
-    setSidebarOpen(true) // Show sidebar when property is clicked
+    // Center map on selected property
+    if (map && property.위도 && property.경도) {
+      const position = new window.kakao.maps.LatLng(property.위도, property.경도)
+      map.setCenter(position)
+    }
   }
 
   const getTrustScoreColor = (score: number) => {
@@ -397,11 +517,14 @@ export function MapInterface() {
   useEffect(() => {
     if (filteredProperties.length > 0) {
       // console.log('Current zoom level:', currentZoom) // 디버깅용
-      const newClusters = clusterProperties(filteredProperties, currentZoom)
+      const newClusters = clusterProperties(filteredProperties, currentZoom, transactionFilter)
       setClusters(newClusters)
       // console.log('Clusters created:', newClusters.length) // 디버깅용
+    } else {
+      // Clear clusters if no filtered properties
+      setClusters([])
     }
-  }, [filteredProperties, currentZoom])
+  }, [filteredProperties, currentZoom, transactionFilter])
 
   const setupPropertyMarkers = (kakaoMap: any) => {
     // Clear existing markers
@@ -426,66 +549,130 @@ export function MapInterface() {
           // Show detailed property information for single properties at high zoom
           markerContent = createDetailedMarkerContent(cluster.properties[0])
         } else if (cluster.count === 1) {
-          // Hogangnono-style house icon with price info
+          // Naver-style property marker with transaction type indicator
           const property = cluster.properties[0]
           const isOffice = property.type === 'office' || property.name?.includes('오피스')
-          
-          // Get price info
+
+          // Get price info and determine transaction type
           const saleHigh = property.매매_최고가_억원;
-          const saleLow = property.매매_최저가_억원;
           const rentHigh = property.전세_최고가_억원;
-          const rentLow = property.전세_최저가_억원;
-          
+          const monthlyHigh = property.월세_최고가_억원;
+
           let priceText = '';
-          let priceColor = '#2563eb'; // Default blue
-          
-          if (saleHigh && saleHigh !== '' && saleHigh !== '0') {
+          let markerColor = '#3182f6'; // Default blue
+          let iconText = '';
+
+          // Determine transaction type based on active filter or priority
+          // If transaction filter is active, show that type. Otherwise show by priority (매매 > 전세 > 월세)
+          if (transactionFilter === "매매" && saleHigh && saleHigh !== '' && saleHigh !== '0') {
             const price = parseFloat(saleHigh);
             priceText = price >= 1 ? `${price.toFixed(0)}억` : `${(price * 10).toFixed(0)}천`;
-            // Price-based coloring
-            if (price >= 50) priceColor = '#dc2626'; // Red for expensive
-            else if (price >= 30) priceColor = '#f59e0b'; // Orange 
-            else if (price >= 15) priceColor = '#10b981'; // Green
-            else priceColor = '#3b82f6'; // Blue
-          } else if (rentHigh && rentHigh !== '' && rentHigh !== '0') {
+            markerColor = '#EF4444'; // Vibrant red for sale (Tailwind red-500)
+            iconText = '매';
+          } else if (transactionFilter === "전세" && rentHigh && rentHigh !== '' && rentHigh !== '0') {
             const price = parseFloat(rentHigh);
             priceText = price >= 1 ? `${price.toFixed(0)}억` : `${(price * 10).toFixed(0)}천`;
-            priceColor = '#8b5cf6'; // Purple for rent
+            markerColor = '#3B82F6'; // Bright blue for jeonse (Tailwind blue-500)
+            iconText = '전';
+          } else if (transactionFilter === "월세" && monthlyHigh && monthlyHigh !== '' && monthlyHigh !== '0') {
+            const price = parseFloat(monthlyHigh);
+            // 월세는 만원 단위로 표시
+            priceText = `${Math.round(price)}만`;
+            markerColor = '#10B981'; // Fresh green for monthly (Tailwind emerald-500)
+            iconText = '월';
+          } else if (saleHigh && saleHigh !== '' && saleHigh !== '0') {
+            // Default priority: 매매
+            const price = parseFloat(saleHigh);
+            priceText = price >= 1 ? `${price.toFixed(0)}억` : `${(price * 10).toFixed(0)}천`;
+            markerColor = '#EF4444'; // Vibrant red for sale (Tailwind red-500)
+            iconText = '매';
+          } else if (rentHigh && rentHigh !== '' && rentHigh !== '0') {
+            // Default priority: 전세
+            const price = parseFloat(rentHigh);
+            priceText = price >= 1 ? `${price.toFixed(0)}억` : `${(price * 10).toFixed(0)}천`;
+            markerColor = '#3B82F6'; // Bright blue for jeonse (Tailwind blue-500)
+            iconText = '전';
+          } else if (monthlyHigh && monthlyHigh !== '' && monthlyHigh !== '0') {
+            // Default priority: 월세
+            const price = parseFloat(monthlyHigh);
+            // 월세는 만원 단위로 표시
+            priceText = `${Math.round(price)}만`;
+            markerColor = '#10B981'; // Fresh green for monthly (Tailwind emerald-500)
+            iconText = '월';
+          } else {
+            priceText = '-';
+            iconText = '?';
           }
-          
+
           markerContent = `
             <div style="
-              background: ${priceColor};
-              color: white;
-              padding: 2px 6px;
-              border-radius: 4px;
-              border: 1px solid rgba(255,255,255,0.8);
-              box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+              display: flex;
+              flex-direction: column;
+              align-items: center;
               cursor: pointer;
-              font-size: 10px;
-              font-weight: 700;
-              text-align: center;
-              min-width: 35px;
-              transition: all 0.2s ease;
               position: relative;
             ">
-              ${priceText || '가격미상'}
+              <!-- House icon with transaction type badge -->
               <div style="
-                position: absolute;
-                bottom: -4px;
-                left: 50%;
-                transform: translateX(-50%);
-                width: 0;
-                height: 0;
-                border-left: 4px solid transparent;
-                border-right: 4px solid transparent;
-                border-top: 4px solid ${priceColor};
-              "></div>
+                position: relative;
+                width: 32px;
+                height: 32px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+              ">
+                <!-- House SVG -->
+                <svg width="32" height="32" viewBox="0 0 32 32" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));">
+                  <!-- House body -->
+                  <path d="M16 4 L4 14 L4 28 L28 28 L28 14 Z" fill="${markerColor}" stroke="white" stroke-width="1.5"/>
+                  <!-- Door -->
+                  <rect x="12" y="20" width="8" height="8" fill="white" opacity="0.9"/>
+                  <!-- Roof -->
+                  <path d="M16 2 L2 13 L4 13 L16 4 L28 13 L30 13 Z" fill="${markerColor}" stroke="white" stroke-width="1"/>
+                </svg>
+
+                <!-- Transaction type badge -->
+                <div style="
+                  position: absolute;
+                  top: -4px;
+                  right: -4px;
+                  background: white;
+                  color: ${markerColor};
+                  border: 2px solid ${markerColor};
+                  border-radius: 50%;
+                  width: 16px;
+                  height: 16px;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  font-size: 9px;
+                  font-weight: 900;
+                  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+                ">
+                  ${iconText}
+                </div>
+              </div>
+
+              <!-- Price label -->
+              <div style="
+                background: ${markerColor};
+                color: white;
+                padding: 2px 8px;
+                border-radius: 10px;
+                font-size: 11px;
+                font-weight: 700;
+                margin-top: 2px;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+                white-space: nowrap;
+                border: 1px solid rgba(255,255,255,0.3);
+              ">
+                ${priceText}
+              </div>
             </div>
           `
         } else {
           // Cluster marker
-          markerContent = createClusterMarkerContent(cluster, style)
+          markerContent = createClusterMarkerContent(cluster, style, transactionFilter)
         }
 
         // Create DOM element
@@ -521,8 +708,9 @@ export function MapInterface() {
 
           markerElement.addEventListener('click', () => {
             if (cluster.count === 1) {
-              setSelectedProperty(cluster.properties[0] as unknown as PropertyData)
-              setSidebarOpen(true) // Show sidebar when marker is clicked
+              const property = cluster.properties[0] as unknown as PropertyData
+              setSelectedProperty(property)
+              kakaoMap.setCenter(position)
             } else {
               // Zoom in to cluster or show cluster properties
               kakaoMap.setCenter(position)
@@ -585,24 +773,48 @@ export function MapInterface() {
     }
   }, [map])
 
-  // Setup markers when clusters change
+  // Setup markers when clusters or transaction filter changes
   useEffect(() => {
-    if (map && clusters.length > 0) {
+    if (map) {
       setupPropertyMarkers(map)
     }
-  }, [map, clusters])
+  }, [map, clusters, transactionFilter])
 
   return (
-    <div className={`${isFullscreen ? "fixed inset-0 z-50" : ""} flex h-full bg-background`}>
+    <>
+    <div className={`${isFullscreen ? "fixed inset-0 z-50" : ""} flex h-full bg-background relative`}>
       {/* Left Panel - Search and Filters */}
+      {sidebarOpen && (
       <div className="w-80 border-r border-border flex flex-col">
         {/* Header */}
         <div className="p-4 border-b border-border bg-primary">
-          <h2 className="text-lg font-bold text-primary-foreground">서울 강남3구 부동산 정보</h2>
-          <p className="text-sm text-primary-foreground/80">서비스 가능 지역: 강남구, 서초구, 송파구</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-bold text-primary-foreground">
+                {selectedProperty ? selectedProperty.단지명 : "서울 강남3구 부동산 정보"}
+              </h2>
+              <p className="text-sm text-primary-foreground/80">
+                {selectedProperty
+                  ? `${selectedProperty.구} ${selectedProperty.동}`
+                  : "서비스 가능 지역: 강남구, 서초구, 송파구"
+                }
+              </p>
+            </div>
+            {selectedProperty && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setSelectedProperty(null)}
+                className="text-primary-foreground hover:bg-primary-foreground/20"
+              >
+                ✕
+              </Button>
+            )}
+          </div>
         </div>
 
-        {/* Search */}
+        {/* Search - Hide when showing property detail */}
+        {!selectedProperty && (
         <div className="p-4 border-b border-border">
           <div className="flex gap-2 mb-3">
             <Input
@@ -650,8 +862,10 @@ export function MapInterface() {
             <Badge variant="outline">매물 클러스터</Badge>
           </div>
         </div>
+        )}
 
-        {/* Property List */}
+        {/* Property List - Hide when showing property detail */}
+        {!selectedProperty && (
         <div className="flex-1 overflow-y-auto" onScroll={handleScroll}>
           <div className="p-4">
             <div className="flex items-center justify-between mb-4">
@@ -666,8 +880,35 @@ export function MapInterface() {
             ) : (
               <div className="space-y-3">
                 {displayedProperties.map((property, index) => {
-                  const primaryPrice = property.매매_최저가_억원 || property.전세_최저가_억원 || property.월세_최저가_억원 || 'N/A'
-                  const priceType = property.매매_최저가_억원 ? '매매' : property.전세_최저가_억원 ? '전세' : property.월세_최저가_억원 ? '월세' : ''
+                  // Display price based on active transaction filter
+                  let primaryPrice = 'N/A'
+                  let priceType = ''
+
+                  if (transactionFilter === "매매" && property.매매_최저가_억원) {
+                    primaryPrice = `${property.매매_최저가_억원}억`
+                    priceType = '매매'
+                  } else if (transactionFilter === "전세" && property.전세_최저가_억원) {
+                    primaryPrice = `${property.전세_최저가_억원}억`
+                    priceType = '전세'
+                  } else if (transactionFilter === "월세" && property.월세_최저가_억원) {
+                    primaryPrice = `${Math.round(parseFloat(property.월세_최저가_억원))}만`
+                    priceType = '월세'
+                  } else {
+                    // Default priority when filter is "전체"
+                    if (property.매매_최저가_억원) {
+                      primaryPrice = `${property.매매_최저가_억원}억`
+                      priceType = '매매'
+                    } else if (property.전세_최저가_억원) {
+                      primaryPrice = `${property.전세_최저가_억원}억`
+                      priceType = '전세'
+                    } else if (property.월세_최저가_억원) {
+                      primaryPrice = `${Math.round(parseFloat(property.월세_최저가_억원))}만`
+                      priceType = '월세'
+                    } else {
+                      primaryPrice = 'N/A'
+                    }
+                  }
+
                   const transactions = Number(property.총_거래건수) || 0
 
                   return (
@@ -730,37 +971,365 @@ export function MapInterface() {
             )}
           </div>
         </div>
+        )}
+
+        {/* Property Detail - Show when property is selected */}
+        {selectedProperty && (
+          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            {/* Price Information */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">가격 정보</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {selectedProperty.매매_최저가_억원 && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">매매</span>
+                    <div className="text-right">
+                      <span className="font-medium text-green-600">
+                        {selectedProperty.매매_최저가_억원}
+                      </span>
+                      {selectedProperty.매매_최고가_억원 && (
+                        <span className="font-medium text-green-600">
+                          {` ~ ${selectedProperty.매매_최고가_억원}`}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
+                {selectedProperty.전세_최저가_억원 && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">전세</span>
+                    <div className="text-right">
+                      <span className="font-medium text-blue-600">
+                        {selectedProperty.전세_최저가_억원}
+                      </span>
+                      {selectedProperty.전세_최고가_억원 && (
+                        <span className="font-medium text-blue-600">
+                          {` ~ ${selectedProperty.전세_최고가_억원}`}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
+                {selectedProperty.월세_최저가_억원 && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">월세</span>
+                    <div className="text-right">
+                      <span className="font-medium text-orange-600">
+                        {selectedProperty.월세_최저가_억원}
+                      </span>
+                      {selectedProperty.월세_최고가_억원 && (
+                        <span className="font-medium text-orange-600">
+                          {` ~ ${selectedProperty.월세_최고가_억원}`}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Property Details */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">단지 정보</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex justify-between">
+                  <span className="text-sm text-muted-foreground">면적</span>
+                  <span className="font-medium">{selectedProperty.면적요약 || 'N/A'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-muted-foreground">세대수</span>
+                  <span className="font-medium">{selectedProperty.세대수}세대</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-muted-foreground">동수</span>
+                  <span className="font-medium">{selectedProperty.동수}개동</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-muted-foreground">준공년월</span>
+                  <span className="font-medium">{selectedProperty.준공년월}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">유형</span>
+                  <Badge variant="outline">
+                    {selectedProperty.type === 'office' ? '오피스텔' : '아파트'}
+                  </Badge>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Transaction Info */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">거래 정보</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">총 거래건수</span>
+                  <div className="flex items-center gap-2">
+                    <div className={`w-3 h-3 rounded-full ${Number(selectedProperty.총_거래건수) > 50 ? 'bg-green-500' : Number(selectedProperty.총_거래건수) > 20 ? 'bg-yellow-500' : 'bg-red-500'}`} />
+                    <span className="font-medium">{selectedProperty.총_거래건수}건</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Summary */}
+            {selectedProperty.단지요약 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">단지 요약</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    {selectedProperty.단지요약}
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        )}
       </div>
+      )}
+
+      {/* Sidebar Toggle Button */}
+      <button
+        onClick={() => setSidebarOpen(!sidebarOpen)}
+        className="absolute left-0 top-1/2 -translate-y-1/2 z-20 bg-white border border-border rounded-r-lg p-2 shadow-md hover:bg-gray-50 transition-all"
+        style={{ left: sidebarOpen ? '320px' : '0px' }}
+      >
+        <svg
+          className="w-5 h-5 text-gray-600"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          {sidebarOpen ? (
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          ) : (
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          )}
+        </svg>
+      </button>
 
       {/* Right Panel - Map */}
       <div className="flex-1 relative">
         <div className="w-full h-full relative overflow-hidden">
           <div ref={mapRef} className="w-full h-full" />
 
-          {/* Map Controls */}
-          <div className="absolute top-4 left-4 z-10">
-            <div className="bg-white rounded-lg shadow-md p-2 border border-border">
+          {/* Map Filter Controls - Naver Style */}
+          <div className="absolute top-4 left-4 z-10 flex gap-2">
+            {/* Property Type Filter */}
+            <Select value={propertyTypeFilter} onValueChange={setPropertyTypeFilter}>
+              <SelectTrigger className="w-[200px] bg-white shadow-md border-0 h-10 font-medium">
+                <SelectValue placeholder="아파트, 오피스텔, 원룸·빌라, 기타" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="전체">아파트, 오피스텔, 원룸·빌라, 기타</SelectItem>
+                <SelectItem value="아파트">아파트</SelectItem>
+                <SelectItem value="오피스텔">오피스텔</SelectItem>
+                <SelectItem value="연립주택">연립주택</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* Transaction Type Filter */}
+            <Select value={transactionFilter} onValueChange={setTransactionFilter}>
+              <SelectTrigger className="w-[140px] bg-white shadow-md border-0 h-10 font-medium">
+                <SelectValue placeholder="매매, 전세, 월세" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="전체">매매, 전세, 월세</SelectItem>
+                <SelectItem value="매매">매매</SelectItem>
+                <SelectItem value="전세">전세</SelectItem>
+                <SelectItem value="월세">월세</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* Price Filter Inline Panel */}
+            <div className="relative">
+              <Button
+                variant="outline"
+                className="bg-white shadow-md border-0 h-10 px-4 font-medium hover:bg-white text-black hover:text-black"
+                onClick={() => {
+                  setPriceFilterOpen(!priceFilterOpen)
+                  setAreaFilterOpen(false)
+                }}
+              >
+                실거래 가격
+              </Button>
+
+              {priceFilterOpen && (
+                <div className="absolute top-full left-0 mt-2 w-[400px] bg-white shadow-lg rounded-lg border p-4 z-20">
+                  <div className="space-y-6">
+                    {/* Sale Price Range */}
+                    <div>
+                      <div className="flex items-center justify-between mb-4">
+                        <span className="text-sm font-medium">매매가</span>
+                        <span className="text-sm text-muted-foreground">
+                          {salePriceRange[0]}억 ~ {salePriceRange[1] >= 50 ? '50억 이상' : `${salePriceRange[1]}억`}
+                        </span>
+                      </div>
+                      <Slider
+                        value={salePriceRange}
+                        onValueChange={(value) => setSalePriceRange(value as [number, number])}
+                        max={50}
+                        step={1}
+                        className="mb-2"
+                      />
+                    </div>
+
+                    {/* Jeonse Price Range */}
+                    <div>
+                      <div className="flex items-center justify-between mb-4">
+                        <span className="text-sm font-medium">전세가</span>
+                        <span className="text-sm text-muted-foreground">
+                          {jeonsePriceRange[0]}억 ~ {jeonsePriceRange[1] >= 20 ? '20억 이상' : `${jeonsePriceRange[1]}억`}
+                        </span>
+                      </div>
+                      <Slider
+                        value={jeonsePriceRange}
+                        onValueChange={(value) => setJeonsePriceRange(value as [number, number])}
+                        max={20}
+                        step={1}
+                        className="mb-2"
+                      />
+                    </div>
+
+                    {/* Monthly Rent Price Range */}
+                    <div>
+                      <div className="flex items-center justify-between mb-4">
+                        <span className="text-sm font-medium">월세 (보증금)</span>
+                        <span className="text-sm text-muted-foreground">
+                          {monthlyPriceRange[0]}억 ~ {monthlyPriceRange[1] >= 10 ? '10억 이상' : `${monthlyPriceRange[1]}억`}
+                        </span>
+                      </div>
+                      <Slider
+                        value={monthlyPriceRange}
+                        onValueChange={(value) => setMonthlyPriceRange(value as [number, number])}
+                        max={10}
+                        step={0.5}
+                        className="mb-2"
+                      />
+                    </div>
+
+                    <div className="flex justify-end gap-2">
+                      <Button variant="outline" size="sm" onClick={() => {
+                        setSalePriceRange([0, 50])
+                        setJeonsePriceRange([0, 20])
+                        setMonthlyPriceRange([0, 10])
+                      }}>
+                        초기화
+                      </Button>
+                      <Button size="sm" onClick={() => setPriceFilterOpen(false)}>
+                        적용
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Area Filter Inline Panel */}
+            <div className="relative">
+              <Button
+                variant="outline"
+                className="bg-white shadow-md border-0 h-10 px-4 font-medium hover:bg-white text-black hover:text-black"
+                onClick={() => {
+                  setAreaFilterOpen(!areaFilterOpen)
+                  setPriceFilterOpen(false)
+                }}
+              >
+                면적 {selectedPyeongFilter && `${selectedPyeongFilter}`}
+              </Button>
+
+              {areaFilterOpen && (
+                <div className="absolute top-full left-0 mt-2 w-[400px] bg-white shadow-lg rounded-lg border p-4 z-20">
+                  <div className="space-y-6">
+                    <div>
+                      <div className="flex items-center justify-between mb-4">
+                        <span className="text-sm font-medium">평형</span>
+                        <span className="text-sm text-muted-foreground">
+                          {areaRange[0]}평 ~ {areaRange[1] >= 70 ? '70평~' : `${areaRange[1]}평`}
+                        </span>
+                      </div>
+                      <Slider
+                        value={areaRange}
+                        onValueChange={(value) => setAreaRange(value as [number, number])}
+                        max={70}
+                        step={5}
+                        className="mb-4"
+                      />
+
+                      {/* Quick Select Buttons */}
+                      <div className="grid grid-cols-4 gap-2 mb-2">
+                        {['~10평', '10평대', '20평대', '30평대', '40평대', '50평대', '60평대', '70평~'].map((label) => (
+                          <Button
+                            key={label}
+                            variant={selectedPyeongFilter === label ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => {
+                              setSelectedPyeongFilter(label === selectedPyeongFilter ? null : label)
+                              if (label === '~10평') setAreaRange([0, 10])
+                              else if (label === '10평대') setAreaRange([10, 20])
+                              else if (label === '20평대') setAreaRange([20, 30])
+                              else if (label === '30평대') setAreaRange([30, 40])
+                              else if (label === '40평대') setAreaRange([40, 50])
+                              else if (label === '50평대') setAreaRange([50, 60])
+                              else if (label === '60평대') setAreaRange([60, 70])
+                              else if (label === '70평~') setAreaRange([70, 70])
+                            }}
+                            className="text-xs"
+                          >
+                            {label}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="flex justify-end gap-2">
+                      <Button variant="outline" size="sm" onClick={() => {
+                        setAreaRange([0, 70])
+                        setSelectedPyeongFilter(null)
+                      }}>
+                        초기화
+                      </Button>
+                      <Button size="sm" onClick={() => setAreaFilterOpen(false)}>
+                        적용
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Map View Controls */}
+          <div className="absolute top-4 right-4 z-10">
+            <div className="bg-white rounded-lg shadow-md p-2 border-0">
               <div className="flex gap-1">
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="px-3 py-2 h-8 hover:bg-muted"
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="px-3 py-2 h-8 hover:bg-muted text-xs"
                   onClick={showAllAreas}
                 >
                   전체 보기
                 </Button>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="px-3 py-2 h-8 hover:bg-muted"
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="px-3 py-2 h-8 hover:bg-muted text-xs"
                   onClick={showServiceAreas}
                 >
                   서비스 지역
                 </Button>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="px-3 py-2 h-8 hover:bg-muted"
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="px-3 py-2 h-8 hover:bg-muted text-xs"
                   onClick={toggleFullscreen}
                 >
                   <span className="flex items-center gap-1">
@@ -801,151 +1370,9 @@ export function MapInterface() {
             )}
           </div>
         </div>
-
-        {/* Property Detail Sidebar */}
-        {sidebarOpen && selectedProperty && (
-          <div className="absolute inset-y-0 right-0 w-96 bg-background border-l border-border shadow-2xl z-50 flex flex-col">
-            {/* Header */}
-            <div className="p-4 border-b border-border bg-primary">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-bold text-primary-foreground">{selectedProperty.단지명}</h3>
-                  <div className="flex items-center gap-1 mt-1">
-                    <MapPin className="h-3 w-3 text-primary-foreground/70" />
-                    <span className="text-sm text-primary-foreground/70">{selectedProperty.구} {selectedProperty.동}</span>
-                  </div>
-                </div>
-                <Button 
-                  variant="ghost" 
-                  size="icon"
-                  className="text-primary-foreground hover:bg-primary-foreground/20"
-                  onClick={() => setSidebarOpen(false)}
-                >
-                  ✕
-                </Button>
-              </div>
-            </div>
-
-            {/* Content */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
-              {/* Price Information */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">가격 정보</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {selectedProperty.매매_최저가_억원 && (
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">매매</span>
-                      <div className="text-right">
-                        <span className="font-medium text-green-600">
-                          {selectedProperty.매매_최저가_억원}
-                        </span>
-                        {selectedProperty.매매_최고가_억원 && (
-                          <span className="font-medium text-green-600">
-                            {` ~ ${selectedProperty.매매_최고가_억원}`}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                  {selectedProperty.전세_최저가_억원 && (
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">전세</span>
-                      <div className="text-right">
-                        <span className="font-medium text-blue-600">
-                          {selectedProperty.전세_최저가_억원}
-                        </span>
-                        {selectedProperty.전세_최고가_억원 && (
-                          <span className="font-medium text-blue-600">
-                            {` ~ ${selectedProperty.전세_최고가_억원}`}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                  {selectedProperty.월세_최저가_억원 && (
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">월세</span>
-                      <div className="text-right">
-                        <span className="font-medium text-orange-600">
-                          {selectedProperty.월세_최저가_억원}
-                        </span>
-                        {selectedProperty.월세_최고가_억원 && (
-                          <span className="font-medium text-orange-600">
-                            {` ~ ${selectedProperty.월세_최고가_억원}`}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Property Details */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">단지 정보</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="flex justify-between">
-                    <span className="text-sm text-muted-foreground">면적</span>
-                    <span className="font-medium">{selectedProperty.면적요약 || 'N/A'}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-muted-foreground">세대수</span>
-                    <span className="font-medium">{selectedProperty.세대수}세대</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-muted-foreground">동수</span>
-                    <span className="font-medium">{selectedProperty.동수}개동</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-muted-foreground">준공년월</span>
-                    <span className="font-medium">{selectedProperty.준공년월}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">유형</span>
-                    <Badge variant="outline">
-                      {selectedProperty.type === 'office' ? '오피스텔' : '아파트'}
-                    </Badge>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Transaction Info */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">거래 정보</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">총 거래건수</span>
-                    <div className="flex items-center gap-2">
-                      <div className={`w-3 h-3 rounded-full ${Number(selectedProperty.총_거래건수) > 50 ? 'bg-green-500' : Number(selectedProperty.총_거래건수) > 20 ? 'bg-yellow-500' : 'bg-red-500'}`} />
-                      <span className="font-medium">{selectedProperty.총_거래건수}건</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Summary */}
-              {selectedProperty.단지요약 && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-base">단지 요약</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground leading-relaxed">
-                      {selectedProperty.단지요약}
-                    </p>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-          </div>
-        )}
       </div>
     </div>
+    <FloatingChatButton />
+    </>
   )
 }

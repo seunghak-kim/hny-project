@@ -86,7 +86,7 @@ export function generatePropertyCoordinates(district: string, count: number): Cl
 }
 
 // Enhanced clustering algorithm with better performance and accuracy
-export function clusterProperties(properties: any[], zoomLevel: number): Cluster[] {
+export function clusterProperties(properties: any[], zoomLevel: number, transactionFilter?: string): Cluster[] {
   if (properties.length === 0) return []
 
   // Hogangnono-style progressive clustering (Kakao Map: lower zoom = more zoomed in)
@@ -300,34 +300,87 @@ export function clusterProperties(properties: any[], zoomLevel: number): Cluster
     })
   })
 
-  // Calculate representative price for each cluster (prioritize sale over rent)
+  // Calculate representative price for each cluster based on transaction filter
   clusters.forEach(cluster => {
-    const priceData = cluster.properties.map((property: any) => {
-      const saleHigh = parseFloat(property.매매_최고가_억원 || '0')
-      const saleLow = parseFloat(property.매매_최저가_억원 || '0')
-      const rentHigh = parseFloat(property.전세_최고가_억원 || '0')
-      const rentLow = parseFloat(property.전세_최저가_억원 || '0')
-      
-      // Prioritize sale price, use average of high/low if both exist
-      if (saleHigh > 0 || saleLow > 0) {
-        const avgSale = saleHigh > 0 && saleLow > 0 ? (saleHigh + saleLow) / 2 : (saleHigh || saleLow)
-        return { price: avgSale, type: 'sale' }
-      } else if (rentHigh > 0 || rentLow > 0) {
-        const avgRent = rentHigh > 0 && rentLow > 0 ? (rentHigh + rentLow) / 2 : (rentHigh || rentLow)
-        return { price: avgRent, type: 'rent' }
+    let prices: number[] = []
+
+    // Filter prices based on active transaction filter
+    if (transactionFilter === "매매") {
+      // Only calculate from 매매 prices
+      prices = cluster.properties.map((property: any) => {
+        const saleHigh = parseFloat(property.매매_최고가_억원 || '0')
+        const saleLow = parseFloat(property.매매_최저가_억원 || '0')
+        if (saleHigh > 0 && saleLow > 0) {
+          return (saleHigh + saleLow) / 2
+        } else if (saleHigh > 0) {
+          return saleHigh
+        } else if (saleLow > 0) {
+          return saleLow
+        }
+        return 0
+      }).filter(price => price > 0)
+    } else if (transactionFilter === "전세") {
+      // Only calculate from 전세 prices
+      prices = cluster.properties.map((property: any) => {
+        const rentHigh = parseFloat(property.전세_최고가_억원 || '0')
+        const rentLow = parseFloat(property.전세_최저가_억원 || '0')
+        if (rentHigh > 0 && rentLow > 0) {
+          return (rentHigh + rentLow) / 2
+        } else if (rentHigh > 0) {
+          return rentHigh
+        } else if (rentLow > 0) {
+          return rentLow
+        }
+        return 0
+      }).filter(price => price > 0)
+    } else if (transactionFilter === "월세") {
+      // Only calculate from 월세 prices (deposit amount in 억원)
+      prices = cluster.properties.map((property: any) => {
+        const monthlyHigh = parseFloat(property.월세_최고가_억원 || '0')
+        const monthlyLow = parseFloat(property.월세_최저가_억원 || '0')
+        if (monthlyHigh > 0 && monthlyLow > 0) {
+          return (monthlyHigh + monthlyLow) / 2
+        } else if (monthlyHigh > 0) {
+          return monthlyHigh
+        } else if (monthlyLow > 0) {
+          return monthlyLow
+        }
+        return 0
+      }).filter(price => price > 0)
+    } else {
+      // Default: prioritize sale > jeonse > monthly
+      const priceData = cluster.properties.map((property: any) => {
+        const saleHigh = parseFloat(property.매매_최고가_억원 || '0')
+        const saleLow = parseFloat(property.매매_최저가_억원 || '0')
+        const rentHigh = parseFloat(property.전세_최고가_억원 || '0')
+        const rentLow = parseFloat(property.전세_최저가_억원 || '0')
+
+        // Prioritize sale price, use average of high/low if both exist
+        if (saleHigh > 0 || saleLow > 0) {
+          const avgSale = saleHigh > 0 && saleLow > 0 ? (saleHigh + saleLow) / 2 : (saleHigh || saleLow)
+          return { price: avgSale, type: 'sale' }
+        } else if (rentHigh > 0 || rentLow > 0) {
+          const avgRent = rentHigh > 0 && rentLow > 0 ? (rentHigh + rentLow) / 2 : (rentHigh || rentLow)
+          return { price: avgRent, type: 'rent' }
+        }
+        return { price: 0, type: 'none' }
+      }).filter(item => item.price > 0)
+
+      if (priceData.length > 0) {
+        // Prefer sale prices for average calculation
+        const saleOnlyPrices = priceData.filter(item => item.type === 'sale').map(item => item.price)
+        if (saleOnlyPrices.length > 0) {
+          prices = saleOnlyPrices
+        } else {
+          // Use rent prices if no sale prices available
+          prices = priceData.map(item => item.price)
+        }
       }
-      return { price: 0, type: 'none' }
-    }).filter(item => item.price > 0)
-    
-    if (priceData.length > 0) {
-      // Prefer sale prices for average calculation
-      const saleOnlyPrices = priceData.filter(item => item.type === 'sale').map(item => item.price)
-      if (saleOnlyPrices.length > 0) {
-        cluster.averagePrice = saleOnlyPrices.reduce((sum, price) => sum + price, 0) / saleOnlyPrices.length
-      } else {
-        // Use rent prices if no sale prices available
-        cluster.averagePrice = priceData.reduce((sum, item) => sum + item.price, 0) / priceData.length
-      }
+    }
+
+    // Calculate average price from filtered prices
+    if (prices.length > 0) {
+      cluster.averagePrice = prices.reduce((sum, price) => sum + price, 0) / prices.length
     }
   })
 
@@ -505,64 +558,88 @@ export function createDetailedMarkerContent(property: any): string {
   `;
 }
 
-// Create hogangnono-style cluster marker content
-export function createClusterMarkerContent(cluster: Cluster, style: any): string {
-  const sizeMap: Record<string, { width: number; height: number }> = {
-    small: { width: 24, height: 24 },
-    medium: { width: 32, height: 32 },
-    large: { width: 40, height: 40 },
-    xlarge: { width: 48, height: 48 }
+// Create Naver-style cluster marker content
+export function createClusterMarkerContent(cluster: Cluster, style: any, transactionFilter?: string): string {
+  const sizeMap: Record<string, { width: number; height: number; padding: string }> = {
+    small: { width: 60, height: 45, padding: '8px 10px' },
+    medium: { width: 80, height: 55, padding: '10px 14px' },
+    large: { width: 100, height: 65, padding: '12px 16px' },
+    xlarge: { width: 120, height: 75, padding: '14px 18px' }
   };
-  
+
   const size = sizeMap[style.size as keyof typeof sizeMap] || sizeMap.medium;
-  
-  // Hogangnono-style dong cluster display (only for far zoom)
+
+  // Naver-style dong cluster display with blue/green/orange colors
   if (cluster.count > 1) {
-    const avgPriceText = cluster.averagePrice 
-      ? `${cluster.averagePrice.toFixed(1)}억` 
-      : '정보없음';
-    
+    // Format price based on transaction filter - 월세 uses 만원, others use 억원
+    let avgPriceText = '정보없음';
+    if (cluster.averagePrice) {
+      if (transactionFilter === "월세") {
+        // 월세는 만원 단위로 표시
+        avgPriceText = `${Math.round(cluster.averagePrice)}만`;
+      } else {
+        // 매매, 전세는 억원 단위로 표시
+        avgPriceText = `${cluster.averagePrice.toFixed(1)}억`;
+      }
+    }
+
     const displayName = cluster.dongName || '알 수 없음';
-    
+
+    // Naver-style color selection based on average price
+    let bgColor = '#3182f6'; // Default blue
+    if (cluster.averagePrice) {
+      if (cluster.averagePrice >= 30) bgColor = '#ff9500'; // Orange for expensive
+      else if (cluster.averagePrice >= 15) bgColor = '#34c759'; // Green for medium
+    }
+
     return `
       <div style="
-        background: ${style.backgroundColor};
-        color: ${style.color};
-        padding: 12px 16px;
-        border-radius: 8px;
-        border: 2px solid ${style.borderColor};
-        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        background: ${bgColor};
+        color: white;
+        padding: ${size.padding};
+        border-radius: 4px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.25);
         cursor: pointer;
-        font-weight: 600;
-        font-size: 12px;
+        font-weight: 700;
         text-align: center;
-        min-width: 100px;
-        max-width: 140px;
+        min-width: ${size.width}px;
         transition: all 0.2s ease;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        position: relative;
       " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
-        <div style="font-size: 11px; font-weight: 700; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+        <div style="font-size: 13px; font-weight: 700; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
           ${displayName}
         </div>
-        <div style="font-size: 14px; font-weight: 700;">
+        <div style="font-size: 16px; font-weight: 700; letter-spacing: -0.5px;">
           ${avgPriceText}
         </div>
+        <div style="
+          position: absolute;
+          bottom: -4px;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 0;
+          height: 0;
+          border-left: 4px solid transparent;
+          border-right: 4px solid transparent;
+          border-top: 4px solid ${bgColor};
+        "></div>
       </div>
     `;
   }
-  
-  // Simple circle for regular clusters
+
+  // Small circle for individual clusters in medium zoom
   return `
     <div style="
-      background: ${style.backgroundColor};
+      background: #3182f6;
       width: ${size.width}px;
       height: ${size.height}px;
       border-radius: 50%;
-      border: 2px solid ${style.borderColor};
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-      color: ${style.color};
+      box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+      color: white;
       font-weight: 700;
       font-size: ${style.fontSize || '14px'};
       cursor: pointer;
