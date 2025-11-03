@@ -321,6 +321,18 @@ export function MapInterface() {
     return "bg-red-500"
   }
 
+  // Format monthly rent price (raw value in 만원 units)
+  const formatMonthlyPrice = (priceInManwon: number): string => {
+    if (priceInManwon >= 10000) {
+      // Convert to 억 if >= 1억 (10,000만원)
+      const eok = priceInManwon / 10000
+      // Remove .0 decimal for whole numbers (e.g., 9.0억 → 9억)
+      return eok % 1 === 0 ? `${Math.round(eok)}억원` : `${eok.toFixed(1)}억원`
+    }
+    // Display in 만원 with thousand separators
+    return `${Math.round(priceInManwon).toLocaleString()}만원`
+  }
+
   useEffect(() => {
     if (typeof window === 'undefined' || !mapRef.current) return
 
@@ -579,7 +591,13 @@ export function MapInterface() {
           } else if (transactionFilter === "월세" && monthlyHigh && monthlyHigh !== '' && monthlyHigh !== '0') {
             const price = parseFloat(monthlyHigh);
             // 월세는 만원 단위로 표시
-            priceText = `${Math.round(price)}만`;
+            if (price >= 10000 ){
+              // Convert to 억 if >= 1억 (10,000만원)
+              const eok = price / 10000
+              // Remove .0 decimal for whole numbers (e.g., 9.0억 → 9억)
+              priceText = eok % 1 === 0 ? `${Math.round(eok)}억` : `${eok.toFixed(1)}억원`
+            }
+            else{ priceText = `${Math.round(price)}만`;}
             markerColor = '#10B981'; // Fresh green for monthly (Tailwind emerald-500)
             iconText = '월';
           } else if (saleHigh && saleHigh !== '' && saleHigh !== '0') {
@@ -911,8 +929,7 @@ export function MapInterface() {
                     priceType = '전세'
                   } else if (transactionFilter === "월세" && property.월세_최저가) {
                     // Use raw value in 만원 units
-                    const price = parseFloat(property.월세_최저가)
-                    primaryPrice = price >= 10000 ? `${(price / 10000).toFixed(1)}억` : `${Math.round(price).toLocaleString()}만`
+                    primaryPrice = formatMonthlyPrice(parseFloat(property.월세_최저가))
                     priceType = '월세'
                   } else {
                     // Default priority when filter is "전체"
@@ -924,8 +941,7 @@ export function MapInterface() {
                       priceType = '전세'
                     } else if (property.월세_최저가) {
                       // Use raw value in 만원 units
-                      const price = parseFloat(property.월세_최저가)
-                      primaryPrice = price >= 10000 ? `${(price / 10000).toFixed(1)}억` : `${Math.round(price).toLocaleString()}만`
+                      primaryPrice = formatMonthlyPrice(parseFloat(property.월세_최저가))
                       priceType = '월세'
                     } else {
                       primaryPrice = 'N/A'
@@ -1040,17 +1056,11 @@ export function MapInterface() {
                     <span className="text-sm text-muted-foreground">월세</span>
                     <div className="text-right">
                       <span className="font-medium text-orange-600">
-                        {(() => {
-                          const lowPrice = parseFloat(selectedProperty.월세_최저가)
-                          return lowPrice >= 10000 ? `${(lowPrice / 10000).toFixed(1)}억` : `${Math.round(lowPrice).toLocaleString()}만`
-                        })()}
+                        {formatMonthlyPrice(parseFloat(selectedProperty.월세_최저가))}
                       </span>
                       {selectedProperty.월세_최고가 && (
                         <span className="font-medium text-orange-600">
-                          {` ~ ${(() => {
-                            const highPrice = parseFloat(selectedProperty.월세_최고가)
-                            return highPrice >= 10000 ? `${(highPrice / 10000).toFixed(1)}억` : `${Math.round(highPrice).toLocaleString()}만`
-                          })()}`}
+                          {` ~ ${formatMonthlyPrice(parseFloat(selectedProperty.월세_최고가))}`}
                         </span>
                       )}
                     </div>

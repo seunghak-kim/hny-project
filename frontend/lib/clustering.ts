@@ -46,6 +46,18 @@ export interface Cluster {
   clusterLevel?: string
 }
 
+// Helper function to format monthly rent price
+const formatMonthlyPrice = (priceInManwon: number): string => {
+  if (priceInManwon >= 10000) {
+    // Convert to 억 if >= 1억 (10,000만원)
+    const eok = priceInManwon / 10000
+    // Remove .0 decimal for whole numbers (e.g., 9.0억 → 9억)
+    return eok % 1 === 0 ? `${Math.round(eok)}억원` : `${eok.toFixed(1)}억원`
+  }
+  // Display in 만원 with thousand separators
+  return `${Math.round(priceInManwon).toLocaleString()}만원`
+}
+
 // Calculate distance between two points using Haversine formula
 export function calculateDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
   const R = 6371 // Earth's radius in kilometers
@@ -520,8 +532,7 @@ export function createDetailedMarkerContent(property: any): string {
       // Format monthly rent properly from raw 만원 values
       const highPrice = parseFloat(monthlyHigh);
       const lowPrice = parseFloat(monthlyLow || monthlyHigh);
-      const formatPrice = (price: number) => price >= 10000 ? `${(price / 10000).toFixed(1)}억` : `${Math.round(price).toLocaleString()}만`;
-      primaryPrice = lowPrice !== highPrice ? `${formatPrice(lowPrice)}~${formatPrice(highPrice)}` : formatPrice(highPrice);
+      primaryPrice = lowPrice !== highPrice ? `${formatMonthlyPrice(lowPrice)}~${formatMonthlyPrice(highPrice)}` : formatMonthlyPrice(highPrice);
       priceType = '월세';
     } else {
       primaryPrice = '정보없음';
@@ -581,11 +592,11 @@ export function createClusterMarkerContent(cluster: Cluster, style: any, transac
     if (cluster.averagePrice) {
       if (transactionFilter === "월세") {
         // 월세 average is in 만원 units - format appropriately
-        const price = cluster.averagePrice;
-        avgPriceText = price >= 10000 ? `${(price / 10000).toFixed(1)}억` : `${Math.round(price).toLocaleString()}만`;
+        avgPriceText = formatMonthlyPrice(cluster.averagePrice);
       } else {
         // 매매, 전세는 억원 단위로 표시
-        avgPriceText = `${cluster.averagePrice.toFixed(1)}억`;
+        const eok = cluster.averagePrice;
+        avgPriceText = eok % 1 === 0 ? `${Math.round(eok)}억` : `${eok.toFixed(1)}억`;
       }
     }
 
