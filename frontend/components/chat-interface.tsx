@@ -35,9 +35,11 @@ interface AnswerMetadata {
 }
 
 interface GuidanceData {
-  detected_intent: "irrelevant" | "unclear" | "unknown"
+  detected_intent: "irrelevant" | "unclear" | "unknown" | "usage_guide"
   original_query: string
   message: string
+  features?: any[]
+  tips?: string[]
 }
 
 interface Message {
@@ -148,11 +150,11 @@ export function ChatInterface({ onSplitView: _onSplitView, currentSessionId }: C
   const [animatedSupervisorProgress, setAnimatedSupervisorProgress] = useState(0)
 
   const exampleQuestions = [
+    "챗봇 사용법 알려줘",
     "공인중개사가 할 수 없는 금지행위에는 어떤 것들이 있나요?",
-    "임대차계약이 만료되면 자동으로 갱신되나요?",
-    "민간임대주택에서의 수리 의무는 누가 지나요?",
-    "관리비의 부과 대상과 납부 의무자는 누구인가요?",
-    "부동산 등기에서 사용되는 전문 용어들은 무엇인가요?",
+    "전세 보증금 10% 인상 요구하는데 법적으로 문제없어요?",
+    "역세권이랑 역전세권 용어 차이 알려줘",
+    "성수동 오피스텔 전세 2억 이하로 나온 매물 리스트 보여줘",
   ]
 
   // WebSocket 메시지 핸들러
@@ -326,17 +328,19 @@ export function ChatInterface({ onSplitView: _onSplitView, currentSessionId }: C
         // 최종 응답 수신 - Progress 제거
         setMessages((prev) => prev.filter(m => m.type !== "progress"))
 
-        // ✅ Guidance 응답 체크
-        if (message.response?.type === "guidance") {
+        // ✅ Usage Guide 및 Guidance 응답 체크
+        if (message.response?.type === "usage_guide" || message.response?.type === "guidance") {
           const guidanceMessage: Message = {
             id: (Date.now() + 1).toString(),
             type: "guidance",
             content: message.response.message,
             timestamp: new Date(),
             guidanceData: {
-              detected_intent: message.response.detected_intent || "unknown",
+              detected_intent: message.response.detected_intent || message.response.type || "unknown",
               original_query: message.response.original_query || "",
-              message: message.response.message
+              message: message.response.message,
+              features: message.response.features,
+              tips: message.response.tips
             }
           }
           setMessages((prev) => [...prev, guidanceMessage])
@@ -812,7 +816,8 @@ export function ChatInterface({ onSplitView: _onSplitView, currentSessionId }: C
   return (
     <>
       <div className="flex flex-col h-full bg-background">
-        <div ref={scrollAreaRef} className="flex-1 px-4 py-1.5 overflow-y-auto">
+        {/* 메시지 영역 - 헤더를 고려하여 최대 높이 제한 */}
+        <div ref={scrollAreaRef} className="flex-1 overflow-y-auto px-4 py-2">
           <div className="space-y-2 max-w-full mx-auto">
             {messages.map((message) => (
               <div key={message.id} className="space-y-2">
@@ -895,10 +900,10 @@ export function ChatInterface({ onSplitView: _onSplitView, currentSessionId }: C
           </div>
         </div>
 
-        {/* Example Questions */}
-        <div className="border-t border-border px-3 py-1.5">
-          <p className="text-xs text-muted-foreground mb-1">예시 질문:</p>
-          <div className="flex flex-wrap gap-1.5 mb-1.5">
+        {/* Example Questions & Input - 여백 축소 */}
+        <div className="flex-shrink-0 border-t border-border px-4 pt-3 pb-2">
+          <p className="text-xs text-muted-foreground mb-2">예시 질문:</p>
+          <div className="flex flex-wrap gap-2 mb-3">
             {exampleQuestions.map((question, index) => (
               <Button
                 key={index}
@@ -914,7 +919,7 @@ export function ChatInterface({ onSplitView: _onSplitView, currentSessionId }: C
           </div>
 
           {/* Input */}
-          <div className="flex gap-2">
+          <div className="flex gap-2 mb-0">
             <Input
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
