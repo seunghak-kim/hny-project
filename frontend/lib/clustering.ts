@@ -40,6 +40,20 @@ export interface Cluster {
   size: "small" | "medium" | "large" | "xlarge"
   count: number
   averagePrice?: number
+  // 거래 유형별 평균 가격
+  averagePricesByTransaction?: {
+    매매?: number  // 억원 단위
+    전세?: number  // 억원 단위
+    월세?: number  // 만원 단위
+  }
+  // 부동산 유형별 평균 가격
+  averagePricesByPropertyType?: {
+    [propertyType: string]: {
+      매매?: number  // 억원 단위
+      전세?: number  // 억원 단위
+      월세?: number  // 만원 단위
+    }
+  }
   dongName?: string
   complexName?: string
   districtName?: string
@@ -97,306 +111,212 @@ export function generatePropertyCoordinates(district: string, count: number): Cl
   return points
 }
 
-// Enhanced clustering algorithm with better performance and accuracy
+// 클라이언트 사이드 클러스터링 (지도 렌더링용)
 export function clusterProperties(properties: any[], zoomLevel: number, transactionFilter?: string): Cluster[] {
-  if (properties.length === 0) return []
+  if (!properties || properties.length === 0) {
+    return [];
+  }
 
-  // Hogangnono-style progressive clustering (Kakao Map: lower zoom = more zoomed in)
+  // Zoom level에 따른 클러스터링 파라미터 결정
+  // Kakao Map: level이 작을수록 확대된 상태 (1=최대확대, 14=최대축소)
+  // 줌 레벨 6 미만: 개별 마커만 표시
+  // 줌 레벨 6-8: 동별 클러스터링 (매물 1개라도 동 클러스터 생성)
+  // 줌 레벨 9+: 구별 클러스터링
   const getClusteringParams = (zoom: number) => {
-    if (zoom >= 5) return { distance: 0.02, minClusterSize: 1, clusterByDong: true, clusterLevel: 'dong' }      // Far - dong level clusters with avg price
-    return { distance: 0, minClusterSize: 1, clusterByDong: false, clusterLevel: 'individual' }                  // Close - individual properties with details
+    if (zoom < 5) return { minClusterSize: 1, clusterBy: "individual" }   // 개별 표시
+    if (zoom <= 8) return { minClusterSize: 1, clusterBy: "dong" }        // 동별 클러스터링
+    return { minClusterSize: 1, clusterBy: "district" }                   // 구별 클러스터링
   }
 
-  const { distance: maxDistance, minClusterSize, clusterByDong, clusterLevel } = getClusteringParams(zoomLevel)
-  
+  const params = getClusteringParams(zoomLevel)
+  const { minClusterSize, clusterBy } = params
+
+  // Individual markers (no clustering)
+  if (clusterBy === "individual") {
+    return properties.map(property => ({
+      center: {
+        lat: property.위도 || property.latitude,
+        lng: property.경도 || property.longitude
+      },
+      properties: [property],
+      bounds: {
+        north: property.위도 || property.latitude,
+        south: property.위도 || property.latitude,
+        east: property.경도 || property.longitude,
+        west: property.경도 || property.longitude
+      },
+      size: "small" as const,
+      count: 1,
+      averagePrice: getPropertyPrice(property, transactionFilter),
+      clusterLevel: "individual"
+    }))
+  }
+
+  // Group properties by cluster key
+  const groups: { [key: string]: any[] } = {}
+
+  properties.forEach(property => {
+    let key = ""
+    if (clusterBy === "district") {
+      key = property.구 || property.district || ""
+    } else if (clusterBy === "dong") {
+      key = `${property.구 || property.district}_${property.동 || property.dong}`
+    }
+
+    if (key) {
+      if (!groups[key]) groups[key] = []
+      groups[key].push(property)
+    }
+  })
+
+  // Create clusters from groups
   const clusters: Cluster[] = []
-  const processed = new Set<number>()
 
-  // Use actual coordinates from CSV data or fallback to district-based generation
-  const getPropertyCoordinates = (property: any) => {
-    // First check for actual coordinates from CSV (위도, 경도)
-    if (property.위도 && property.경도 && !isNaN(property.위도) && !isNaN(property.경도)) {
-      return { lat: property.위도, lng: property.경도 }
-    }
-    
-    // Legacy coordinate format
-    if (property.coordinates?.lat && property.coordinates?.lng) {
-      return { lat: property.coordinates.lat, lng: property.coordinates.lng }
-    }
-    
-    // Fallback: Generate coordinates based on district with some randomization
-    const districtBase = {
-      '강남구': { lat: 37.5172, lng: 127.0473 },
-      '서초구': { lat: 37.4837, lng: 127.0324 },
-      '송파구': { lat: 37.5145, lng: 127.1059 }
-    }
-    
-    const district = property.district || property.구 || '강남구'
-    const base = districtBase[district as keyof typeof districtBase] || districtBase['강남구']
-    
-    // Add randomization based on property name hash for consistency
-    const hash = property.단지명 ? property.단지명.split('').reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0) : 0
-    const latOffset = (hash % 100) / 10000 - 0.005  // ±0.005 degrees
-    const lngOffset = ((hash * 7) % 100) / 10000 - 0.005  // ±0.005 degrees
-    
-    return {
-      lat: base.lat + latOffset,
-      lng: base.lng + lngOffset
-    }
-  }
-
-  // If zoom is high enough, return individual properties without clustering
-  if (maxDistance === 0) {
-    return properties.map(property => {
-      const coords = getPropertyCoordinates(property)
-      return {
-        center: coords,
-        properties: [property],
-        bounds: {
-          north: coords.lat,
-          south: coords.lat,
-          east: coords.lng,
-          west: coords.lng,
-        },
-        size: "small" as const,
-        count: 1
-      }
-    })
-  }
-
-  // Pre-calculate coordinates and sort by district for efficient clustering
-  const propertiesWithCoords = properties.map((property, index) => ({
-    property,
-    coords: getPropertyCoordinates(property),
-    originalIndex: index,
-    district: property.구 || '기타'
-  }))
-
-  // Progressive clustering based on zoom level
-  if (clusterByDong) {
-    const levelGroups = new Map<string, typeof propertiesWithCoords>()
-    
-    // Only dong-level clustering for far zoom
-    propertiesWithCoords.forEach(item => {
-      const dongKey = `${item.district}_${item.property.동 || '기타'}`;
-      if (!levelGroups.has(dongKey)) {
-        levelGroups.set(dongKey, []);
-      }
-      levelGroups.get(dongKey)!.push(item);
-    });
-
-    // Create clusters based on grouping level
-    levelGroups.forEach((groupProperties, groupKey) => {
-      if (groupProperties.length >= minClusterSize) {
-        const allLats = groupProperties.map(item => item.coords.lat)
-        const allLngs = groupProperties.map(item => item.coords.lng)
-        
-        const cluster: Cluster = {
-          center: {
-            lat: allLats.reduce((sum, lat) => sum + lat, 0) / allLats.length,
-            lng: allLngs.reduce((sum, lng) => sum + lng, 0) / allLngs.length
-          },
-          properties: groupProperties.map(item => item.property),
-          bounds: {
-            north: Math.max(...allLats),
-            south: Math.min(...allLats),
-            east: Math.max(...allLngs),
-            west: Math.min(...allLngs),
-          },
-          size: "medium",
-          count: groupProperties.length,
-          dongName: groupProperties[0].property.동 || '기타',
-          clusterLevel: 'dong'
-        }
-
-        // Determine cluster size
-        if (cluster.count >= 100) cluster.size = "xlarge"
-        else if (cluster.count >= 50) cluster.size = "large"
-        else if (cluster.count >= 10) cluster.size = "medium"
-        else cluster.size = "small"
-
-        clusters.push(cluster)
-        groupProperties.forEach(item => processed.add(item.originalIndex))
-      }
-    })
-  }
-
-  // Group by district for distance-based clustering
-  const districtGroups = new Map<string, typeof propertiesWithCoords>()
-  propertiesWithCoords.forEach(item => {
-    if (!processed.has(item.originalIndex)) {
-      if (!districtGroups.has(item.district)) {
-        districtGroups.set(item.district, [])
-      }
-      districtGroups.get(item.district)!.push(item)
-    }
-  })
-
-  // Process remaining properties with distance-based clustering
-  districtGroups.forEach(districtProperties => {
-    districtProperties.forEach((item, index) => {
-      if (processed.has(item.originalIndex)) return
-
-      const coords = item.coords
-      const cluster: Cluster = {
-        center: { ...coords },
-        properties: [item.property],
-        bounds: {
-          north: coords.lat,
-          south: coords.lat,
-          east: coords.lng,
-          west: coords.lng,
-        },
-        size: "small",
-        count: 1
-      }
-
-      processed.add(item.originalIndex)
-
-      // Find nearby properties in the same district
-      for (let i = index + 1; i < districtProperties.length; i++) {
-        const otherItem = districtProperties[i]
-        if (processed.has(otherItem.originalIndex)) continue
-
-        const distance = calculateDistance(coords.lat, coords.lng, otherItem.coords.lat, otherItem.coords.lng)
-
-        if (distance <= maxDistance) {
-          cluster.properties.push(otherItem.property)
-          processed.add(otherItem.originalIndex)
-
-          // Update bounds
-          cluster.bounds.north = Math.max(cluster.bounds.north, otherItem.coords.lat)
-          cluster.bounds.south = Math.min(cluster.bounds.south, otherItem.coords.lat)
-          cluster.bounds.east = Math.max(cluster.bounds.east, otherItem.coords.lng)
-          cluster.bounds.west = Math.min(cluster.bounds.west, otherItem.coords.lng)
-
-          cluster.count = cluster.properties.length
-        }
-      }
-
-      // Only create cluster if it meets minimum size requirement
-      if (cluster.count >= minClusterSize || zoomLevel > 14) {
-        // Recalculate center as centroid
-        if (cluster.count > 1) {
-          const allLats = cluster.properties.map(p => getPropertyCoordinates(p).lat)
-          const allLngs = cluster.properties.map(p => getPropertyCoordinates(p).lng)
-          cluster.center.lat = allLats.reduce((sum, lat) => sum + lat, 0) / allLats.length
-          cluster.center.lng = allLngs.reduce((sum, lng) => sum + lng, 0) / allLngs.length
-        }
-
-        // Determine cluster size based on count and zoom
-        if (cluster.count >= 100) cluster.size = "xlarge"
-        else if (cluster.count >= 50) cluster.size = "large"
-        else if (cluster.count >= 10) cluster.size = "medium"
-        else cluster.size = "small"
-
-        clusters.push(cluster)
-      } else {
-        // If cluster is too small, add properties as individual markers
-        cluster.properties.forEach(property => {
-          const propCoords = getPropertyCoordinates(property)
+  Object.entries(groups).forEach(([, groupProps]) => {
+    if (groupProps.length < minClusterSize) {
+      // Add as individual markers
+      groupProps.forEach(prop => {
+        const lat = prop.위도 || prop.latitude
+        const lng = prop.경도 || prop.longitude
+        if (lat && lng) {
           clusters.push({
-            center: propCoords,
-            properties: [property],
-            bounds: {
-              north: propCoords.lat,
-              south: propCoords.lat,
-              east: propCoords.lng,
-              west: propCoords.lng,
-            },
-            size: "small",
-            count: 1
+            center: { lat, lng },
+            properties: [prop],
+            bounds: { north: lat, south: lat, east: lng, west: lng },
+            size: "small" as const,
+            count: 1,
+            averagePrice: getPropertyPrice(prop, transactionFilter),
+            clusterLevel: "individual"
           })
-        })
-      }
+        }
+      })
+      return
+    }
+
+    // Calculate cluster center and bounds
+    const validProps = groupProps.filter(p => (p.위도 || p.latitude) && (p.경도 || p.longitude))
+    if (validProps.length === 0) return
+
+    const lats = validProps.map(p => p.위도 || p.latitude)
+    const lngs = validProps.map(p => p.경도 || p.longitude)
+
+    const centerLat = lats.reduce((sum, lat) => sum + lat, 0) / lats.length
+    const centerLng = lngs.reduce((sum, lng) => sum + lng, 0) / lngs.length
+
+    // Calculate average prices by transaction type
+    const prices = validProps.map(p => getPropertyPrice(p, transactionFilter)).filter((p): p is number => p !== undefined && p > 0)
+    const avgPrice = prices.length > 0 ? prices.reduce((sum, p) => sum + p, 0) / prices.length : undefined
+
+    // Calculate size
+    let size: "small" | "medium" | "large" | "xlarge" = "small"
+    if (validProps.length >= 200) size = "xlarge"
+    else if (validProps.length >= 100) size = "large"
+    else if (validProps.length >= 50) size = "medium"
+
+    // Extract names based on cluster level (only district and dong)
+    let districtName: string | undefined = undefined
+    let dongName: string | undefined = undefined
+
+    if (clusterBy === "district") {
+      districtName = validProps[0].구 || validProps[0].district || "지역"
+    } else if (clusterBy === "dong") {
+      districtName = validProps[0].구 || validProps[0].district
+      dongName = validProps[0].동 || validProps[0].dong || "동"
+    }
+
+    clusters.push({
+      center: { lat: centerLat, lng: centerLng },
+      properties: validProps,
+      bounds: {
+        north: Math.max(...lats),
+        south: Math.min(...lats),
+        east: Math.max(...lngs),
+        west: Math.min(...lngs)
+      },
+      size,
+      count: validProps.length,
+      averagePrice: avgPrice,
+      districtName,
+      dongName,
+      clusterLevel: clusterBy,
+      averagePricesByTransaction: calculateAveragePricesByTransaction(validProps)
     })
-  })
-
-  // Calculate representative price for each cluster based on transaction filter
-  clusters.forEach(cluster => {
-    let prices: number[] = []
-
-    // Filter prices based on active transaction filter
-    if (transactionFilter === "매매") {
-      // Only calculate from 매매 prices
-      prices = cluster.properties.map((property: any) => {
-        const saleHigh = parseFloat(property.매매_최고가_억원 || '0')
-        const saleLow = parseFloat(property.매매_최저가_억원 || '0')
-        if (saleHigh > 0 && saleLow > 0) {
-          return (saleHigh + saleLow) / 2
-        } else if (saleHigh > 0) {
-          return saleHigh
-        } else if (saleLow > 0) {
-          return saleLow
-        }
-        return 0
-      }).filter(price => price > 0)
-    } else if (transactionFilter === "전세") {
-      // Only calculate from 전세 prices
-      prices = cluster.properties.map((property: any) => {
-        const rentHigh = parseFloat(property.전세_최고가_억원 || '0')
-        const rentLow = parseFloat(property.전세_최저가_억원 || '0')
-        if (rentHigh > 0 && rentLow > 0) {
-          return (rentHigh + rentLow) / 2
-        } else if (rentHigh > 0) {
-          return rentHigh
-        } else if (rentLow > 0) {
-          return rentLow
-        }
-        return 0
-      }).filter(price => price > 0)
-    } else if (transactionFilter === "월세") {
-      // Only calculate from 월세 prices (use raw values in 만원 units)
-      prices = cluster.properties.map((property: any) => {
-        const monthlyHigh = parseFloat(property.월세_최고가 || '0')
-        const monthlyLow = parseFloat(property.월세_최저가 || '0')
-        if (monthlyHigh > 0 && monthlyLow > 0) {
-          return (monthlyHigh + monthlyLow) / 2
-        } else if (monthlyHigh > 0) {
-          return monthlyHigh
-        } else if (monthlyLow > 0) {
-          return monthlyLow
-        }
-        return 0
-      }).filter(price => price > 0)
-    } else {
-      // Default: prioritize sale > jeonse > monthly
-      const priceData = cluster.properties.map((property: any) => {
-        const saleHigh = parseFloat(property.매매_최고가_억원 || '0')
-        const saleLow = parseFloat(property.매매_최저가_억원 || '0')
-        const rentHigh = parseFloat(property.전세_최고가_억원 || '0')
-        const rentLow = parseFloat(property.전세_최저가_억원 || '0')
-
-        // Prioritize sale price, use average of high/low if both exist
-        if (saleHigh > 0 || saleLow > 0) {
-          const avgSale = saleHigh > 0 && saleLow > 0 ? (saleHigh + saleLow) / 2 : (saleHigh || saleLow)
-          return { price: avgSale, type: 'sale' }
-        } else if (rentHigh > 0 || rentLow > 0) {
-          const avgRent = rentHigh > 0 && rentLow > 0 ? (rentHigh + rentLow) / 2 : (rentHigh || rentLow)
-          return { price: avgRent, type: 'rent' }
-        }
-        return { price: 0, type: 'none' }
-      }).filter(item => item.price > 0)
-
-      if (priceData.length > 0) {
-        // Prefer sale prices for average calculation
-        const saleOnlyPrices = priceData.filter(item => item.type === 'sale').map(item => item.price)
-        if (saleOnlyPrices.length > 0) {
-          prices = saleOnlyPrices
-        } else {
-          // Use rent prices if no sale prices available
-          prices = priceData.map(item => item.price)
-        }
-      }
-    }
-
-    // Calculate average price from filtered prices
-    if (prices.length > 0) {
-      cluster.averagePrice = prices.reduce((sum, price) => sum + price, 0) / prices.length
-    }
   })
 
   return clusters
+}
+
+// Helper function to get property price based on transaction filter
+function getPropertyPrice(property: any, transactionFilter?: string): number | undefined {
+  if (transactionFilter === "매매") {
+    const price = property.매매_최고가 || property.매매_최저가
+    return price ? parseFloat(price) / 10000 : undefined // Convert 만원 to 억원
+  } else if (transactionFilter === "전세") {
+    const price = property.전세_최고가 || property.전세_최저가
+    return price ? parseFloat(price) / 10000 : undefined
+  } else if (transactionFilter === "월세") {
+    const price = property.월세_최고가 || property.월세_최저가
+    return price ? parseFloat(price) : undefined // Keep in 만원
+  }
+
+  // Default: prioritize sale > jeonse > monthly
+  const salePrice = property.매매_최고가
+  if (salePrice && parseFloat(salePrice) > 0) {
+    return parseFloat(salePrice) / 10000
+  }
+  const jeonsePrice = property.전세_최고가
+  if (jeonsePrice && parseFloat(jeonsePrice) > 0) {
+    return parseFloat(jeonsePrice) / 10000
+  }
+  const monthlyPrice = property.월세_최고가
+  if (monthlyPrice && parseFloat(monthlyPrice) > 0) {
+    return parseFloat(monthlyPrice)
+  }
+  return undefined
+}
+
+// Calculate average prices by transaction type
+function calculateAveragePricesByTransaction(properties: any[]): {
+  매매?: number
+  전세?: number
+  월세?: number
+} {
+  const result: any = {}
+
+  // 매매
+  const salePrices = properties
+    .map(p => {
+      const price = p.매매_최고가 || p.매매_최저가
+      return price ? parseFloat(price) / 10000 : 0
+    })
+    .filter(p => p > 0)
+  if (salePrices.length > 0) {
+    result.매매 = salePrices.reduce((sum, p) => sum + p, 0) / salePrices.length
+  }
+
+  // 전세
+  const jeonsePrices = properties
+    .map(p => {
+      const price = p.전세_최고가 || p.전세_최저가
+      return price ? parseFloat(price) / 10000 : 0
+    })
+    .filter(p => p > 0)
+  if (jeonsePrices.length > 0) {
+    result.전세 = jeonsePrices.reduce((sum, p) => sum + p, 0) / jeonsePrices.length
+  }
+
+  // 월세
+  const monthlyPrices = properties
+    .map(p => {
+      const price = p.월세_최고가 || p.월세_최저가
+      return price ? parseFloat(price) : 0
+    })
+    .filter(p => p > 0)
+  if (monthlyPrices.length > 0) {
+    result.월세 = monthlyPrices.reduce((sum, p) => sum + p, 0) / monthlyPrices.length
+  }
+
+  return result
 }
 
 // Hogangnono-style cluster marker styling with price indicators
@@ -587,20 +507,77 @@ export function createClusterMarkerContent(cluster: Cluster, style: any, transac
 
   // Naver-style dong cluster display with blue/green/orange colors
   if (cluster.count > 1) {
-    // Format price based on transaction filter - 월세 uses 만원, others use 억원
+    // Build detailed price text with all transaction types
+    const priceDetails: string[] = [];
+
+    if (cluster.averagePricesByTransaction?.매매) {
+      const price = cluster.averagePricesByTransaction.매매;
+      const text = price % 1 === 0 ? `매매 ${Math.round(price)}억` : `매매 ${price.toFixed(1)}억`;
+      priceDetails.push(text);
+    }
+
+    if (cluster.averagePricesByTransaction?.전세) {
+      const price = cluster.averagePricesByTransaction.전세;
+      const text = price % 1 === 0 ? `전세 ${Math.round(price)}억` : `전세 ${price.toFixed(1)}억`;
+      priceDetails.push(text);
+    }
+
+    if (cluster.averagePricesByTransaction?.월세) {
+      const price = cluster.averagePricesByTransaction.월세;
+      priceDetails.push(`월세 ${formatMonthlyPrice(price)}`);
+    }
+
+    // Build property type breakdown
+    const propertyTypeDetails: string[] = [];
+    if (cluster.averagePricesByPropertyType) {
+      Object.entries(cluster.averagePricesByPropertyType).forEach(([propType, prices]) => {
+        const priceStr: string[] = [];
+        if (prices.매매) {
+          const p = prices.매매;
+          priceStr.push(p % 1 === 0 ? `${Math.round(p)}억` : `${p.toFixed(1)}억`);
+        }
+        if (prices.전세 && !prices.매매) {
+          const p = prices.전세;
+          priceStr.push(p % 1 === 0 ? `${Math.round(p)}억` : `${p.toFixed(1)}억`);
+        }
+        if (prices.월세 && !prices.매매 && !prices.전세) {
+          priceStr.push(formatMonthlyPrice(prices.월세));
+        }
+
+        if (priceStr.length > 0) {
+          propertyTypeDetails.push(`${propType}: ${priceStr[0]}`);
+        }
+      });
+    }
+
+    // Main display price (based on active filter)
     let avgPriceText = '정보없음';
     if (cluster.averagePrice) {
       if (transactionFilter === "월세") {
-        // 월세 average is in 만원 units - format appropriately
         avgPriceText = formatMonthlyPrice(cluster.averagePrice);
       } else {
-        // 매매, 전세는 억원 단위로 표시
         const eok = cluster.averagePrice;
         avgPriceText = eok % 1 === 0 ? `${Math.round(eok)}억` : `${eok.toFixed(1)}억`;
       }
     }
 
-    const displayName = cluster.dongName || '알 수 없음';
+    // Display name based on cluster level (only district and dong)
+    let displayName = '지역';
+    if (cluster.clusterLevel === "district" && cluster.districtName) {
+      displayName = cluster.districtName;
+    } else if (cluster.clusterLevel === "dong") {
+      if (cluster.dongName && cluster.districtName) {
+        displayName = `${cluster.districtName} ${cluster.dongName}`;
+      } else if (cluster.dongName) {
+        displayName = cluster.dongName;
+      } else if (cluster.districtName) {
+        displayName = cluster.districtName;
+      }
+    } else if (cluster.districtName) {
+      displayName = cluster.districtName;
+    } else if (cluster.dongName) {
+      displayName = cluster.dongName;
+    }
 
     // Naver-style color selection based on average price
     let bgColor = '#3182f6'; // Default blue
@@ -608,6 +585,9 @@ export function createClusterMarkerContent(cluster: Cluster, style: any, transac
       if (cluster.averagePrice >= 30) bgColor = '#ff9500'; // Orange for expensive
       else if (cluster.averagePrice >= 15) bgColor = '#34c759'; // Green for medium
     }
+
+    // Build tooltip content
+    const tooltipContent = `거래 유형별:\n${priceDetails.join('\n') || '정보없음'}\n\n부동산 유형별:\n${propertyTypeDetails.join('\n') || '정보없음'}`;
 
     return `
       <div style="
@@ -623,13 +603,21 @@ export function createClusterMarkerContent(cluster: Cluster, style: any, transac
         transition: all 0.2s ease;
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
         position: relative;
-      " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+      "
+      onmouseover="this.style.transform='scale(1.05)'; this.style.zIndex='10000';"
+      onmouseout="this.style.transform='scale(1)'; this.style.zIndex='1';"
+      title="${tooltipContent.replace(/\n/g, '&#10;')}">
         <div style="font-size: 13px; font-weight: 700; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
           ${displayName}
         </div>
         <div style="font-size: 16px; font-weight: 700; letter-spacing: -0.5px;">
           ${avgPriceText}
         </div>
+        ${priceDetails.length > 0 ? `
+        <div style="font-size: 9px; margin-top: 4px; opacity: 0.9; border-top: 1px solid rgba(255,255,255,0.3); padding-top: 3px;">
+          ${priceDetails.slice(0, 2).join(' | ')}
+        </div>
+        ` : ''}
         <div style="
           position: absolute;
           bottom: -4px;
