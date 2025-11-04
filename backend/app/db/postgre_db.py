@@ -3,14 +3,16 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sess
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import sessionmaker
 from app.core.config import settings
- 
+
 # Sync Engine (기존 코드 호환성)
-engine = create_engine(settings.DATABASE_URL, pool_pre_ping=True)
+# Use sqlalchemy_url property which ensures proper URL format
+database_url = settings.sqlalchemy_url if hasattr(settings, 'sqlalchemy_url') else settings.DATABASE_URL
+engine = create_engine(database_url, pool_pre_ping=True)
 SessionLocal = sessionmaker(autoflush=False, autocommit=False, bind=engine)
 Session = SessionLocal  # 하위 호환성을 위해 유지
 
 # Async Engine (SessionManager용) - psycopg3 async driver
-async_database_url = settings.DATABASE_URL.replace('postgresql+psycopg://', 'postgresql+psycopg_async://')
+async_database_url = database_url.replace('postgresql+psycopg://', 'postgresql+psycopg_async://')
 async_engine = create_async_engine(async_database_url, pool_pre_ping=True, echo=False)
 AsyncSessionLocal = async_sessionmaker(
     async_engine,
