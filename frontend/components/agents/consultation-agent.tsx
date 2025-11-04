@@ -94,21 +94,12 @@ export function ConsultationAgent() {
     <div className="flex flex-col h-full bg-background">
       {/* Header */}
       <div className="border-b border-border p-4">
-        <h2 className="text-xl font-semibold text-foreground">상담 에이전트</h2>
-        <p className="text-sm text-muted-foreground">맞춤형 매물 추천 및 부동산 상담을 제공합니다</p>
+        <h2 className="text-xl font-semibold text-foreground">맞춤형 매물 추천</h2>
+        <p className="text-sm text-muted-foreground">AI 기반 맞춤형 매물 추천 기능을 제공합니다.</p>
       </div>
 
       {/* Content */}
-      <div className="flex-1 p-4">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="recommendations">매물 추천</TabsTrigger>
-            <TabsTrigger value="policies">정부 정책</TabsTrigger>
-            <TabsTrigger value="process">거래 절차</TabsTrigger>
-            <TabsTrigger value="qna">Q&A</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="recommendations" className="mt-4 space-y-6">
+      <div className="flex-1 p-4 space-y-6">
             {/* Preference Settings */}
             <Card>
               <CardHeader>
@@ -254,146 +245,6 @@ export function ConsultationAgent() {
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
-
-          <TabsContent value="policies" className="mt-4 space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="h-5 w-5" />
-                  정부 지원 정책
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {mockPolicies.map((policy) => (
-                    <div key={policy.id} className="border border-border rounded-lg p-4">
-                      <div className="flex items-start justify-between mb-2">
-                        <h3 className="font-semibold">{policy.title}</h3>
-                        {policy.deadline && (
-                          <Badge variant="destructive" className="text-xs">
-                            마감: {policy.deadline}
-                          </Badge>
-                        )}
-                      </div>
-
-                      <p className="text-sm text-muted-foreground mb-3">{policy.description}</p>
-
-                      <div className="space-y-2 mb-3">
-                        <div>
-                          <span className="text-sm font-medium">지원 대상:</span>
-                          <div className="flex flex-wrap gap-1 mt-1">
-                            {policy.eligibility.map((item, index) => (
-                              <Badge key={index} variant="outline" className="text-xs">
-                                {item}
-                              </Badge>
-                            ))}
-                          </div>
-                        </div>
-
-                        <div>
-                          <span className="text-sm font-medium">지원 내용:</span>
-                          <p className="text-sm text-muted-foreground">{policy.benefits}</p>
-                        </div>
-                      </div>
-
-                      <Button size="sm" variant="outline">
-                        자세히 보기
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="process" className="mt-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="h-5 w-5" />
-                  부동산 거래 절차 가이드
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="border-l-4 border-primary pl-4">
-                    <h3 className="font-semibold mb-2">1. 매물 탐색 및 선정</h3>
-                    <p className="text-sm text-muted-foreground">
-                      • 예산 및 조건 설정
-                      <br />• 매물 정보 수집 및 비교
-                      <br />• 현장 방문 및 확인
-                    </p>
-                  </div>
-
-                  <div className="border-l-4 border-primary pl-4">
-                    <h3 className="font-semibold mb-2">2. 서류 확인 및 검증</h3>
-                    <p className="text-sm text-muted-foreground">
-                      • 등기부등본 확인
-                      <br />• 건축물대장 검토
-                      <br />• 임대인 신분 확인
-                    </p>
-                  </div>
-
-                  <div className="border-l-4 border-primary pl-4">
-                    <h3 className="font-semibold mb-2">3. 계약 체결</h3>
-                    <p className="text-sm text-muted-foreground">
-                      • 계약서 작성 및 검토
-                      <br />• 특약사항 협의
-                      <br />• 계약금 지급
-                    </p>
-                  </div>
-
-                  <div className="border-l-4 border-primary pl-4">
-                    <h3 className="font-semibold mb-2">4. 잔금 지급 및 입주</h3>
-                    <p className="text-sm text-muted-foreground">
-                      • 잔금 지급
-                      <br />• 열쇠 인수
-                      <br />• 전입신고 및 주소 변경
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="qna" className="mt-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <HelpCircle className="h-5 w-5" />
-                  자주 묻는 질문
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="border border-border rounded-lg p-4">
-                    <h3 className="font-semibold mb-2">전세사기를 어떻게 예방할 수 있나요?</h3>
-                    <p className="text-sm text-muted-foreground">
-                      등기부등본을 통해 소유자 확인, 선순위 근저당권 확인, 임대인 신분증 확인 등을 통해 예방할 수
-                      있습니다.
-                    </p>
-                  </div>
-
-                  <div className="border border-border rounded-lg p-4">
-                    <h3 className="font-semibold mb-2">계약서에서 꼭 확인해야 할 사항은?</h3>
-                    <p className="text-sm text-muted-foreground">
-                      임대차 기간, 보증금 반환 조건, 수리 및 관리비 부담 주체, 특약사항 등을 꼼꼼히 확인해야 합니다.
-                    </p>
-                  </div>
-
-                  <div className="border border-border rounded-lg p-4">
-                    <h3 className="font-semibold mb-2">중개수수료는 얼마인가요?</h3>
-                    <p className="text-sm text-muted-foreground">
-                      매매의 경우 거래금액의 0.5% 이내, 임대차의 경우 보증금의 0.5% 이내에서 중개수수료를 받을 수
-                      있습니다.
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
       </div>
     </div>
   )

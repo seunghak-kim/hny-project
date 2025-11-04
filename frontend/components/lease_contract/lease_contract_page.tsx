@@ -28,6 +28,8 @@ interface LeaseContractPageProps {
   onClose: () => void
   /** 팝업만 닫기 핸들러 (승인/수정/거부 후 - Progress 유지) */
   onClosePopup: () => void
+  /** 팝업 모드 여부 (기본값: true) */
+  isPopup?: boolean
 }
 
 /**
@@ -44,7 +46,8 @@ export function LeaseContractPage({
   onModify,
   onReject,
   onClose,
-  onClosePopup
+  onClosePopup,
+  isPopup = true
 }: LeaseContractPageProps) {
   const [showModifyInput, setShowModifyInput] = useState(false)
   const [modifications, setModifications] = useState("")
@@ -74,10 +77,19 @@ export function LeaseContractPage({
     onClosePopup()  // ✅ Progress 유지하면서 팝업만 닫기
   }
 
+  // 팝업 모드와 전체 페이지 모드에 따라 다른 스타일 적용
+  const containerClass = isPopup
+    ? "fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"
+    : "flex flex-col h-full bg-background"
+
+  const cardClass = isPopup
+    ? "w-full max-w-4xl h-[90vh] flex flex-col bg-white"
+    : "w-full h-full flex flex-col bg-white border-0 rounded-none"
+
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
+    <div className={containerClass}>
       {/* 메인 컨테이너 */}
-      <Card className="w-full max-w-4xl h-[90vh] flex flex-col bg-white">
+      <Card className={cardClass}>
         {/* 헤더 */}
         <div className="flex items-center justify-between p-6 border-b">
           <div className="flex items-center gap-3">

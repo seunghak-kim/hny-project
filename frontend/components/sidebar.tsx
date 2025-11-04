@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { MessageCircle, Map, FileText, Shield, Users, Home, ChevronLeft, ChevronRight, Plus, Brain, Activity } from "lucide-react"
+import { MessageCircle, Map, FileText, Users, Home, ChevronLeft, ChevronRight, Plus, Brain, Activity } from "lucide-react"
 import { SessionList } from "@/components/session-list"
 import type { PageType } from "@/app/page"
 import type { SessionListItem } from "@/hooks/use-chat-sessions"
@@ -31,16 +31,14 @@ export function Sidebar({
   const menuItems = [
     { id: "chat" as PageType, label: "메인 챗봇", icon: MessageCircle },
     { id: "map" as PageType, label: "지도 검색", icon: Map },
-    { id: "analysis" as PageType, label: "분석 에이전트", icon: FileText },
-    { id: "verification" as PageType, label: "검증 에이전트", icon: Shield },
-    { id: "consultation" as PageType, label: "상담 에이전트", icon: Users },
-    { id: "cognitive_dashboard" as PageType, label: "Cognitive 대시보드", icon: Brain },
-    { id: "execution_dashboard" as PageType, label: "Execution 대시보드", icon: Activity },
+    { id: "lease_contract" as PageType, label: "계약서 생성", icon: FileText },
+    { id: "consultation" as PageType, label: "매물 추천", icon: Users },
   ]
 
   return (
     <div
-      className={`${isCollapsed ? "w-16" : "w-64 lg:w-64 md:w-56"} bg-sidebar border-r border-sidebar-border flex flex-col h-screen transition-all duration-300`}
+      className={`${isCollapsed ? "w-16" : "w-64 lg:w-64 md:w-56"} bg-sidebar border-r border-sidebar-border flex flex-col transition-all duration-300`}
+      style={{ height: 'calc(100vh - 64px)' }}
     >
       {/* Header */}
       <div className="p-4 border-b border-sidebar-border">
@@ -111,7 +109,7 @@ export function Sidebar({
           })}
         </div>
 
-        {/* Agent Quick Actions */}
+        {/* Quick Actions - Dashboards */}
         {!isCollapsed && (
           <div className="mt-8">
             <h3 className="text-xs font-semibold text-sidebar-foreground/70 uppercase tracking-wider mb-3">
@@ -121,26 +119,20 @@ export function Sidebar({
               <Button
                 variant="ghost"
                 size="sm"
-                className="w-full justify-start text-xs text-sidebar-foreground/60 hover:text-sidebar-foreground"
-                onClick={() => onPageChange("analysis")}
+                className="w-full justify-start gap-2 text-xs text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent"
+                onClick={() => onPageChange("cognitive_dashboard")}
               >
-                계약서 분석
+                <Brain className="h-3 w-3" />
+                Cognitive Agent
               </Button>
               <Button
                 variant="ghost"
                 size="sm"
-                className="w-full justify-start text-xs text-sidebar-foreground/60 hover:text-sidebar-foreground"
-                onClick={() => onPageChange("verification")}
+                className="w-full justify-start gap-2 text-xs text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent"
+                onClick={() => onPageChange("execution_dashboard")}
               >
-                허위매물 검증
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="w-full justify-start text-xs text-sidebar-foreground/60 hover:text-sidebar-foreground"
-                onClick={() => onPageChange("consultation")}
-              >
-                매물 추천
+                <Activity className="h-3 w-3" />
+                Execution Agent
               </Button>
             </div>
           </div>
