@@ -1,7 +1,38 @@
 """
 Planning Agent - 의도 분석 및 실행 계획 수립 전담
 Supervisor의 계획 관련 로직을 분리하여 독립적으로 관리
+
 Phase 1 Enhancement: Query Decomposer 통합
+Phase 2 Enhancement: Description 기반 Intent 관리 (IntentRegistry)
+
+===============================================================================
+📋 Phase 2 리팩토링: Keyword → Description 방식 전환
+===============================================================================
+
+🎯 주요 변경사항:
+1. Intent 정의: 하드코딩 → YAML 설정 파일 (intent_definitions.yaml)
+2. 프롬프트: 정적 → 동적 생성 (intent_analysis_dynamic.txt)
+3. Agent 선택: 하드코딩 → Description 기반 자동 선택
+
+✅ 새로운 방식 (Description 기반):
+- IntentRegistry.initialize()                    # YAML에서 Intent 로드
+- _initialize_intent_patterns_from_registry()    # 패턴 자동 생성
+- _suggest_agents_from_definition()              # Description 기반 Agent 선택
+- intent_analysis_dynamic.txt                    # 동적 프롬프트
+
+❌ 구버전 (하드코딩) - DEPRECATED:
+- _initialize_intent_patterns()                  # 147-222라인 - 주석처리됨
+- _suggest_agents()                              # 457-559라인 - Fallback용 유지
+- _select_agents_with_llm()                      # 561-660라인 - Fallback용 유지
+- _select_agents_with_llm_simple()               # 662-702라인 - Fallback용 유지
+
+📂 관련 파일:
+- Intent 정의: backend/app/service_agent/config/intent_definitions.yaml
+- Registry: backend/app/service_agent/cognitive_agents/intent_registry.py
+- 프롬프트: backend/app/service_agent/llm_manager/prompts/cognitive/intent_analysis_dynamic.txt
+- 백업: backend/app/service_agent/llm_manager/prompts/cognitive/intent_analysis.txt.backup
+
+===============================================================================
 """
 
 import logging
@@ -11,7 +42,7 @@ from pathlib import Path
 from typing import Dict, Any, List, Optional, Tuple
 from dataclasses import dataclass, field
 from enum import Enum
-from langsmith import traceable 
+from langsmith import traceable
 
 # Path setup
 backend_dir = Path(__file__).parent.parent.parent.parent
@@ -26,6 +57,7 @@ from app.service_agent.cognitive_agents.query_decomposer import (
     DecomposedQuery,
     ExecutionMode as DecomposerExecutionMode
 )
+from app.service_agent.cognitive_agents.intent_registry import IntentRegistry, IntentDefinition
 
 logger = logging.getLogger(__name__)
 
@@ -108,72 +140,116 @@ class PlanningAgent:
             llm_context: LLM Context (Optional)
         """
         self.llm_service = LLMService(llm_context=llm_context) if llm_context else None
-        self.intent_patterns = self._initialize_intent_patterns()
+
+        # Phase 2: IntentRegistry 초기화 (Description 기반)
+        IntentRegistry.initialize()
+
+        # 하위 호환성을 위해 intent_patterns 유지 (fallback용)
+        self.intent_patterns = self._initialize_intent_patterns_from_registry()
         self.agent_capabilities = self._load_agent_capabilities()
+
         # Phase 1: Query Decomposer 추가
         self.query_decomposer = QueryDecomposer(self.llm_service)
 
+    def _initialize_intent_patterns_from_registry(self) -> Dict[IntentType, List[str]]:
+        """
+        IntentRegistry에서 의도 패턴 자동 생성 (Description 기반)
+        Fallback 패턴 매칭을 위해 question_patterns을 추출
+        """
+        patterns = {}
+        all_intents = IntentRegistry.get_all_intents(enabled_only=True)
+
+        for intent_name, intent_def in all_intents.items():
+            try:
+                intent_type = IntentType[intent_name]
+                # question_patterns에서 키워드 추출
+                keywords = []
+                for pattern in intent_def.question_patterns:
+                    # "~가 뭐야?" -> "뭐야" 추출
+                    keywords.extend(pattern.replace("~", "").replace("?", "").split())
+                patterns[intent_type] = keywords
+            except KeyError:
+                logger.warning(f"IntentType not found for: {intent_name}")
+                continue
+
+        return patterns
+
     def _initialize_intent_patterns(self) -> Dict[IntentType, List[str]]:
-        """의도 패턴 초기화 - 15개 카테고리"""
-        return {
-            IntentType.TERM_DEFINITION: [
-                "뭐야", "무엇", "의미", "설명", "개념", "정의", "차이", "란",
-                "LTV", "대항력", "분양권", "입주권", "재건축", "재개발", "DSR"
-            ],
-            IntentType.LEGAL_INQUIRY: [
-                "법", "전세", "임대", "보증금", "계약", "권리", "의무", "갱신", "가능한가요",
-                "살다", "거주", "세입자", "집주인", "임차인", "임대인", "해지", "계약서",
-                "주택임대차보호법", "확정일자", "대항력", "인상", "계약금", "위약금", "등기", "청약", "당첨"
-            ],
-            IntentType.LOAN_SEARCH: [
-                "대출", "상품", "찾다", "어떤 게", "주택담보대출", "전세자금대출",
-                "신생아 특례", "청년", "은행"
-            ],
-            IntentType.LOAN_COMPARISON: [
-                "비교", "금리", "한도", "조건", "유리", "어느", "은행별",
-                "DSR", "LTV", "DTI"
-            ],
-            IntentType.BUILDING_REGISTRY: [
-                "건축물대장", "건물정보", "준공", "용도", "면적", "조회",
-                "불법 증축", "주차장", "세대수"
-            ],
-            IntentType.PROPERTY_INFRA_ANALYSIS: [
-                "지하철", "마트", "병원", "약국", "초등학교", "중학교", "고등학교",
-                "학군", "인프라", "근처", "주변", "도보권", "거리", "교통", "편의시설"
-            ],
-            IntentType.PRICE_EVALUATION: [
-                "적정가", "가격 평가", "괜찮아", "비싸", "저렴", "유사 매물",
-                "적정한가요", "합리적", "평가"
-            ],
-            IntentType.PROPERTY_SEARCH: [
-                "찾다", "검색", "구하다", "원하다", "방", "아파트", "오피스텔", "빌라",
-                "원룸", "매물", "리스트"
-            ],
-            IntentType.PROPERTY_RECOMMENDATION: [
-                "추천", "제안", "적합", "좋은", "맞춤", "어디",
-                "나한테 맞는", "신혼부부", "학군", "투자"
-            ],
-            IntentType.ROI_CALCULATION: [
-                "투자", "수익률", "ROI", "계산", "유리", "손익",
-                "월세", "매매", "전세"
-            ],
-            IntentType.POLICY_INQUIRY: [
-                "특별공급", "생애최초", "신혼부부", "청년", "지원", "정책", "혜택",
-                "다자녀", "세제", "감면"
-            ],
-            IntentType.CONTRACT_CREATION: [
-                "작성", "만들", "생성", "초안", "계약서",
-                "써줘", "만들어줘", "작성해줘", "양식"
-            ],
-            IntentType.MARKET_INQUIRY: [
-                "시세", "추이", "트렌드", "거래 동향", "올랐나요", "떨어졌나요",
-                "변화", "상승", "하락", "시장", "분위기", "전월 대비", "작년 대비"
-            ],
-            IntentType.COMPREHENSIVE: [
-                "종합", "전체", "모든", "복합적", "다각도", "어떻게 해야", "고민",
-                "분석", "추천", "해결", "대처", "도움", "조언"
-            ]
-        }
+        """
+        [DEPRECATED] 하드코딩된 의도 패턴 초기화
+
+        ⚠️ 이 메서드는 Description 기반(IntentRegistry)으로 완전히 대체되었습니다.
+        - 사용: _initialize_intent_patterns_from_registry() (124-145라인)
+        - 정의 파일: backend/app/service_agent/config/intent_definitions.yaml
+
+        하위 호환성을 위해 빈 dict를 반환합니다.
+        """
+        # Description 기반으로 완전히 대체되어 빈 dict 반환
+        return {}
+
+        # ===================================================================
+        # [DEPRECATED] 아래 하드코딩은 IntentRegistry로 대체되었습니다.
+        # intent_definitions.yaml에서 관리됩니다.
+        # ===================================================================
+        # return {
+        #     IntentType.TERM_DEFINITION: [
+        #         "뭐야", "무엇", "의미", "설명", "개념", "정의", "차이", "란",
+        #         "LTV", "대항력", "분양권", "입주권", "재건축", "재개발", "DSR"
+        #     ],
+        #     IntentType.LEGAL_INQUIRY: [
+        #         "법", "전세", "임대", "보증금", "계약", "권리", "의무", "갱신", "가능한가요",
+        #         "살다", "거주", "세입자", "집주인", "임차인", "임대인", "해지", "계약서",
+        #         "주택임대차보호법", "확정일자", "대항력", "인상", "계약금", "위약금", "등기", "청약", "당첨"
+        #     ],
+        #     IntentType.LOAN_SEARCH: [
+        #         "대출", "상품", "찾다", "어떤 게", "주택담보대출", "전세자금대출",
+        #         "신생아 특례", "청년", "은행"
+        #     ],
+        #     IntentType.LOAN_COMPARISON: [
+        #         "비교", "금리", "한도", "조건", "유리", "어느", "은행별",
+        #         "DSR", "LTV", "DTI"
+        #     ],
+        #     IntentType.BUILDING_REGISTRY: [
+        #         "건축물대장", "건물정보", "준공", "용도", "면적", "조회",
+        #         "불법 증축", "주차장", "세대수"
+        #     ],
+        #     IntentType.PROPERTY_INFRA_ANALYSIS: [
+        #         "지하철", "마트", "병원", "약국", "초등학교", "중학교", "고등학교",
+        #         "학군", "인프라", "근처", "주변", "도보권", "거리", "교통", "편의시설"
+        #     ],
+        #     IntentType.PRICE_EVALUATION: [
+        #         "적정가", "가격 평가", "괜찮아", "비싸", "저렴", "유사 매물",
+        #         "적정한가요", "합리적", "평가"
+        #     ],
+        #     IntentType.PROPERTY_SEARCH: [
+        #         "찾다", "검색", "구하다", "원하다", "방", "아파트", "오피스텔", "빌라",
+        #         "원룸", "매물", "리스트"
+        #     ],
+        #     IntentType.PROPERTY_RECOMMENDATION: [
+        #         "추천", "제안", "적합", "좋은", "맞춤", "어디",
+        #         "나한테 맞는", "신혼부부", "학군", "투자"
+        #     ],
+        #     IntentType.ROI_CALCULATION: [
+        #         "투자", "수익률", "ROI", "계산", "유리", "손익",
+        #         "월세", "매매", "전세"
+        #     ],
+        #     IntentType.POLICY_INQUIRY: [
+        #         "특별공급", "생애최초", "신혼부부", "청년", "지원", "정책", "혜택",
+        #         "다자녀", "세제", "감면"
+        #     ],
+        #     IntentType.CONTRACT_CREATION: [
+        #         "작성", "만들", "생성", "초안", "계약서",
+        #         "써줘", "만들어줘", "작성해줘", "양식"
+        #     ],
+        #     IntentType.MARKET_INQUIRY: [
+        #         "시세", "추이", "트렌드", "거래 동향", "올랐나요", "떨어졌나요",
+        #         "변화", "상승", "하락", "시장", "분위기", "전월 대비", "작년 대비"
+        #     ],
+        #     IntentType.COMPREHENSIVE: [
+        #         "종합", "전체", "모든", "복합적", "다각도", "어떻게 해야", "고민",
+        #         "분석", "추천", "해결", "대처", "도움", "조언"
+        #     ]
+        # }
 
     def _load_agent_capabilities(self) -> Dict[str, Any]:
         """Agent 능력 정보 로드"""
@@ -209,32 +285,27 @@ class PlanningAgent:
         return self._analyze_with_patterns(query, context)
 
     async def _analyze_with_llm(self, query: str, context: Optional[Dict]) -> IntentResult:
-        """LLM을 사용한 의도 분석 (LLMService 사용)"""
+        """
+        LLM을 사용한 의도 분석 (Description 기반)
+        IntentRegistry에서 Intent 정의를 동적으로 가져와 프롬프트에 포함
+        """
         try:
             # Context에서 chat_history 추출
             chat_history = context.get("chat_history", []) if context else []
 
             # Chat history를 문자열로 포맷팅
-            chat_history_text = ""
-            if chat_history:
-                formatted_history = []
-                for msg in chat_history:
-                    role = msg.get("role", "unknown")
-                    content = msg.get("content", "")
-                    if role == "user":
-                        formatted_history.append(f"사용자: {content}")
-                    elif role == "assistant":
-                        formatted_history.append(f"AI: {content}")
+            chat_history_text = self._format_chat_history(chat_history)
 
-                if formatted_history:
-                    chat_history_text = "\n".join(formatted_history)
+            # IntentRegistry에서 Intent 정의를 동적으로 생성
+            intent_definitions = IntentRegistry.generate_compact_definitions(enabled_only=True)
 
-            # LLMService를 통한 의도 분석
+            # LLMService를 통한 의도 분석 (동적 프롬프트)
             result = await self.llm_service.complete_json_async(
-                prompt_name="intent_analysis",
+                prompt_name="intent_analysis_dynamic",  # 새로운 동적 프롬프트
                 variables={
                     "query": query,
-                    "chat_history": chat_history_text
+                    "chat_history": chat_history_text,
+                    "intent_definitions": intent_definitions  # 동적으로 생성된 정의
                 },
                 temperature=0.0,  # 더 빠른 샘플링 (deterministic)
                 max_tokens=500    # 불필요하게 긴 reasoning 방지
@@ -251,16 +322,26 @@ class PlanningAgent:
                 logger.warning(f"Unknown intent type from LLM: {intent_str}, using UNCLEAR")
                 intent_type = IntentType.UNCLEAR
 
-            # Agent 선택 (IRRELEVANT/UNCLEAR은 생략하여 성능 최적화)
+            # Agent 선택 (Description 기반)
             if intent_type in [IntentType.IRRELEVANT, IntentType.UNCLEAR]:
                 suggested_agents = []
                 logger.info(f"⚡ Skipping agent selection for {intent_type.value} (performance optimization)")
             else:
-                suggested_agents = await self._suggest_agents(
-                    intent_type=intent_type,
-                    query=query,
-                    keywords=result.get("keywords", [])
-                )
+                # IntentRegistry에서 Intent 정의 가져오기
+                intent_def = IntentRegistry.get_intent(intent_str)
+                if intent_def:
+                    suggested_agents = await self._suggest_agents_from_definition(
+                        intent_def=intent_def,
+                        query=query,
+                        keywords=result.get("keywords", [])
+                    )
+                else:
+                    # Fallback: 기존 방식
+                    suggested_agents = await self._suggest_agents(
+                        intent_type=intent_type,
+                        query=query,
+                        keywords=result.get("keywords", [])
+                    )
 
             # 🆕 reuse_previous_data를 entities에 추가
             entities = result.get("entities", {})
@@ -283,6 +364,61 @@ class PlanningAgent:
         except Exception as e:
             logger.error(f"LLM intent analysis failed: {e}")
             raise
+
+    def _format_chat_history(self, chat_history: List[Dict]) -> str:
+        """
+        Chat history를 문자열로 포맷팅
+
+        Args:
+            chat_history: 채팅 기록 리스트
+
+        Returns:
+            포맷팅된 채팅 기록 문자열
+        """
+        if not chat_history:
+            return ""
+
+        formatted_history = []
+        for msg in chat_history:
+            role = msg.get("role", "unknown")
+            content = msg.get("content", "")
+            if role == "user":
+                formatted_history.append(f"사용자: {content}")
+            elif role == "assistant":
+                formatted_history.append(f"AI: {content}")
+
+        return "\n".join(formatted_history) if formatted_history else ""
+
+    async def _suggest_agents_from_definition(
+        self,
+        intent_def: IntentDefinition,
+        query: str,
+        keywords: List[str]
+    ) -> List[str]:
+        """
+        IntentDefinition 기반 Agent 추천 (Description 기반)
+
+        Args:
+            intent_def: Intent 정의
+            query: 원본 쿼리
+            keywords: 키워드 목록
+
+        Returns:
+            선택된 Agent 목록
+        """
+        # Intent Definition에서 기본 Agent 가져오기
+        base_agents = intent_def.agents.copy()
+
+        # 분석 필요 여부 체크 (Definition 기반)
+        if intent_def.requires_analysis and intent_def.analysis_keywords:
+            needs_analysis = any(kw in query for kw in intent_def.analysis_keywords)
+
+            if not needs_analysis and "analysis_team" in base_agents:
+                base_agents.remove("analysis_team")
+                logger.info(f"✅ {intent_def.display_name} without analysis keywords → removed analysis_team")
+
+        logger.info(f"✅ Description-based agent selection for {intent_def.display_name}: {base_agents}")
+        return base_agents
 
     def _analyze_with_patterns(self, query: str, context: Optional[Dict]) -> IntentResult:
         """패턴 매칭 기반 의도 분석"""
@@ -338,6 +474,16 @@ class PlanningAgent:
             fallback=True
         )
 
+    # ===================================================================
+    # [DEPRECATED] 아래 메서드들은 Description 기반으로 대체되었습니다.
+    #
+    # - _suggest_agents() → _suggest_agents_from_definition() (350-379라인)
+    # - _select_agents_with_llm() → IntentRegistry 기반 자동 선택
+    # - _select_agents_with_llm_simple() → 제거됨
+    #
+    # Fallback 용도로만 유지합니다.
+    # ===================================================================
+
     async def _suggest_agents(
         self,
         intent_type: IntentType,
@@ -345,7 +491,10 @@ class PlanningAgent:
         keywords: List[str]
     ) -> List[str]:
         """
-        LLM 기반 Agent 추천 - 다층 Fallback 전략 + 키워드 필터
+        [DEPRECATED] LLM 기반 Agent 추천 - 다층 Fallback 전략 + 키워드 필터
+
+        ⚠️ 이 메서드는 _suggest_agents_from_definition()으로 대체되었습니다.
+        Fallback 용도로만 유지됩니다.
 
         Args:
             intent_type: 분석된 의도 타입
@@ -447,7 +596,10 @@ class PlanningAgent:
         attempt: int = 1
     ) -> List[str]:
         """
-        LLM을 사용한 Agent 선택 (상세 버전)
+        [DEPRECATED] LLM을 사용한 Agent 선택 (상세 버전)
+
+        ⚠️ 이 메서드는 IntentRegistry 기반으로 대체되었습니다.
+        Agent 정보는 intent_definitions.yaml에서 자동으로 로드됩니다.
 
         Args:
             intent_type: 의도 타입
@@ -458,7 +610,28 @@ class PlanningAgent:
         Returns:
             선택된 Agent 목록
         """
-        # 사용 가능한 Agent 정보 수집
+        # ===================================================================
+        # [DEPRECATED] 아래 하드코딩은 IntentRegistry로 대체되었습니다.
+        # intent_definitions.yaml의 agents, tools 필드에서 관리됩니다.
+        # ===================================================================
+        # available_agents = {
+        #     "search_team": {
+        #         "name": "search_team",
+        #         "capabilities": "법률 검색, 용어 설명, 부동산 시세 조회, ...",
+        #         "tools": ["realestate_terminology", "legal_search", ...],
+        #         "use_cases": ["용어설명", "법률해설", ...]
+        #     },
+        #     "analysis_team": { ... },
+        #     "document_team": { ... }
+        # }
+
+        # Fallback: IntentRegistry에서 Agent 정보 가져오기
+        intent_def = IntentRegistry.get_intent(intent_type.name)
+        if intent_def:
+            logger.info(f"Using IntentRegistry agents for {intent_type.value}: {intent_def.agents}")
+            return intent_def.agents
+
+        # 최종 Fallback: 하드코딩된 기본값
         available_agents = {
             "search_team": {
                 "name": "search_team",
@@ -522,9 +695,20 @@ class PlanningAgent:
         query: str
     ) -> List[str]:
         """
-        LLM을 사용한 Agent 선택 (간소화 버전)
+        [DEPRECATED] LLM을 사용한 Agent 선택 (간소화 버전)
+
+        ⚠️ 이 메서드는 IntentRegistry 기반으로 대체되었습니다.
+        _suggest_agents_from_definition()을 사용하세요.
+
         Primary 실패 시 더 간단한 프롬프트로 재시도
         """
+        # IntentRegistry 기반 Fallback
+        intent_def = IntentRegistry.get_intent(intent_type.name)
+        if intent_def:
+            logger.info(f"Using IntentRegistry agents (simple fallback): {intent_def.agents}")
+            return intent_def.agents
+
+        # 최종 Fallback: LLM 호출
         try:
             result = await self.llm_service.complete_json_async(
                 prompt_name="agent_selection_simple",
