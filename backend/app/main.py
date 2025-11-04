@@ -145,10 +145,12 @@ app.add_middleware(
 
 # Import and include routers
 from app.api.chat_api import router as chat_router
+from app.api.real_estate_api import router as real_estate_router
 from app.api.error_handlers import register_error_handlers
 
 # Include routers
 app.include_router(chat_router)
+app.include_router(real_estate_router)
 
 # Register error handlers
 register_error_handlers(app)
