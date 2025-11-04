@@ -63,7 +63,7 @@ logger = logging.getLogger(__name__)
 
 
 class IntentType(Enum):
-    """의도 타입 정의 (15개 카테고리)"""
+    """의도 타입 정의 (17개 카테고리)"""
     TERM_DEFINITION = "용어설명"
     LEGAL_INQUIRY = "법률해설"
     LOAN_SEARCH = "대출상품검색"
@@ -78,6 +78,7 @@ class IntentType(Enum):
     CONTRACT_CREATION = "계약서생성"
     MARKET_INQUIRY = "시세트렌드분석"
     COMPREHENSIVE = "종합분석"
+    USAGE = "사용법안내"
     IRRELEVANT = "무관"
     UNCLEAR = "unclear"
     ERROR = "error"
@@ -323,7 +324,7 @@ class PlanningAgent:
                 intent_type = IntentType.UNCLEAR
 
             # Agent 선택 (Description 기반)
-            if intent_type in [IntentType.IRRELEVANT, IntentType.UNCLEAR]:
+            if intent_type in [IntentType.USAGE, IntentType.IRRELEVANT, IntentType.UNCLEAR]:
                 suggested_agents = []
                 logger.info(f"⚡ Skipping agent selection for {intent_type.value} (performance optimization)")
             else:
@@ -832,16 +833,16 @@ class PlanningAgent:
         """
         logger.info(f"Creating execution plan for intent: {intent.intent_type.value}")
 
-        # IRRELEVANT 의도는 빈 계획 반환 (에이전트 실행하지 않음)
-        if intent.intent_type == IntentType.IRRELEVANT:
-            logger.info("Intent is IRRELEVANT, returning empty execution plan")
+        # USAGE, IRRELEVANT 의도는 빈 계획 반환 (에이전트 실행하지 않음)
+        if intent.intent_type in [IntentType.USAGE, IntentType.IRRELEVANT]:
+            logger.info(f"Intent is {intent.intent_type.value}, returning empty execution plan")
             return ExecutionPlan(
                 steps=[],
                 strategy=ExecutionStrategy.SEQUENTIAL,
                 intent=intent,
                 estimated_time=0.0,
                 parallel_groups=[],
-                metadata={"created_by": "PlanningAgent", "reason": "irrelevant_query"}
+                metadata={"created_by": "PlanningAgent", "reason": f"{intent.intent_type.value}_query"}
             )
 
         # UNCLEAR이고 confidence가 낮으면 빈 계획 반환

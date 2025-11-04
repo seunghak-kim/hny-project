@@ -25,6 +25,7 @@ interface AnswerSection {
   priority?: "high" | "medium" | "low"
   expandable?: boolean
   type?: "text" | "checklist" | "warning"
+  examples?: string[]
 }
 
 interface AnswerMetadata {
@@ -94,6 +95,7 @@ export function AnswerDisplay({ sections, metadata }: AnswerDisplayProps) {
   // 의도 타입 한글 변환
   const getIntentLabel = (intent: string) => {
     const labels: Record<string, string> = {
+      "usage_guide": "사용법 안내",
       "legal_consult": "법률 상담",
       "market_inquiry": "시세 조회",
       "loan_consult": "대출 상담",
@@ -199,6 +201,20 @@ export function AnswerDisplay({ sections, metadata }: AnswerDisplayProps) {
                     </AccordionTrigger>
                     <AccordionContent className="pb-2">
                       {renderContent(section)}
+                      {/* 예시 질문 표시 (usage_guide용) */}
+                      {section.examples && section.examples.length > 0 && (
+                        <div className="mt-3 p-3 bg-blue-50 rounded-md border border-blue-100">
+                          <p className="text-xs font-semibold text-blue-700 mb-2">💡 예시 질문:</p>
+                          <div className="space-y-1">
+                            {section.examples.map((example, idx) => (
+                              <div key={idx} className="flex items-start gap-2">
+                                <span className="text-blue-500 text-xs mt-0.5">→</span>
+                                <span className="text-xs text-blue-600">"{example}"</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </AccordionContent>
                   </AccordionItem>
                 </Accordion>
@@ -208,13 +224,25 @@ export function AnswerDisplay({ sections, metadata }: AnswerDisplayProps) {
         )}
       </CardContent>
 
-      {/* 푸터: 출처 */}
+      {/* 푸터: 출처 또는 팁 */}
       {metadata.sources && metadata.sources.length > 0 && (
         <CardFooter className="pt-3 border-t">
-          <div className="text-xs text-muted-foreground">
-            <span className="font-medium">참고 자료: </span>
-            {metadata.sources.join(" · ")}
-          </div>
+          {metadata.intent_type === "usage_guide" ? (
+            <div className="space-y-2 w-full">
+              <p className="text-xs font-semibold text-amber-700">💡 사용 팁:</p>
+              {metadata.sources.map((tip, idx) => (
+                <div key={idx} className="flex items-start gap-2">
+                  <span className="text-amber-500 text-xs mt-0.5">•</span>
+                  <span className="text-xs text-muted-foreground">{tip}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-xs text-muted-foreground">
+              <span className="font-medium">참고 자료: </span>
+              {metadata.sources.join(" · ")}
+            </div>
+          )}
         </CardFooter>
       )}
     </Card>

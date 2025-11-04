@@ -174,7 +174,11 @@ class TeamBasedSupervisor:
             intent_type = analyzed_intent.get("intent_type", "")
             confidence = analyzed_intent.get("confidence", 0.0)
 
-            # IRRELEVANT 또는 낮은 confidence의 UNCLEAR는 바로 응답
+            # USAGE, IRRELEVANT 또는 낮은 confidence의 UNCLEAR는 바로 응답
+            if intent_type == "사용법안내":
+                logger.info("[TeamSupervisor] Detected USAGE query, routing to respond with usage guide")
+                return "respond"
+
             if intent_type == "irrelevant":
                 logger.info("[TeamSupervisor] Detected IRRELEVANT query, routing to respond with guidance")
                 return "respond"
@@ -1420,8 +1424,8 @@ class TeamBasedSupervisor:
 
         logger.info(f"[TeamSupervisor] Intent type: {intent_type}, confidence: {confidence:.2f}")
 
-        # IRRELEVANT 또는 낮은 confidence UNCLEAR는 안내 메시지 반환
-        if intent_type == "irrelevant" or (intent_type == "unclear" and confidence < 0.3):
+        # USAGE, IRRELEVANT 또는 낮은 confidence UNCLEAR는 안내 메시지 반환
+        if intent_type == "사용법안내" or intent_type == "irrelevant" or (intent_type == "unclear" and confidence < 0.3):
             logger.info(f"[TeamSupervisor] Generating guidance response for {intent_type}")
             response = self._generate_out_of_scope_response(state)
         else:
@@ -1595,6 +1599,71 @@ class TeamBasedSupervisor:
             "data": aggregated
         }
 
+    def _generate_usage_guide_response(self, query: str) -> Dict:
+        """사용법 안내 응답 생성 (전용 함수)"""
+        return {
+            "type": "usage_guide",
+            "message": "도와줘 홈즈냥즈 사용법을 안내해드립니다",
+            "original_query": query,
+            "features": [
+                            {
+                                "id": "legal",
+                                "icon": "📋",
+                                "title": "용어 설명 및 법률 상담",
+                                "description": "부동산 용어와 법률을 쉽게 설명해드립니다",
+                                "examples": [
+                                    "전세금 5% 인상이 가능한가요?",
+                                    "임대차보호법이 뭔가요?"
+                                ]
+                            },
+                            {
+                                "id": "property",
+                                "icon": "🏠",
+                                "title": "매물 정보 및 시세 조회",
+                                "description": "실시간 시장 데이터로 현명한 선택을 지원합니다",
+                                "examples": [
+                                    "강남구 전세 시세 알려줘",
+                                    "서초동 아파트 매매가 알려줘"
+                                ]
+                            },
+                            {
+                                "id": "infrastructure",
+                                "icon": "🏙️",
+                                "title": "인프라 분석",
+                                "description": "강남/서초/송파구 주변 생활 인프라를 분석합니다",
+                                "examples": [
+                                    "강남역 근처 학군 어때?",
+                                    "서초구 교통 인프라 분석해줘"
+                                ]
+                            },
+                            {
+                                "id": "loan",
+                                "icon": "💰",
+                                "title": "은행 대출 및 정부 정책 안내",
+                                "description": "대출 상품과 정부 지원 정책을 안내합니다",
+                                "examples": [
+                                    "전세자금대출 상품 비교해줘",
+                                    "생애최초 특별공급 자격은?"
+                                ]
+                            },
+                            {
+                                "id": "contract",
+                                "icon": "📝",
+                                "title": "임대차 계약서 생성",
+                                "description": "안전한 계약서를 자동으로 작성해드립니다",
+                                "examples": [
+                                    "전세 계약서 만들어줘",
+                                    "월세 계약서 작성해줘"
+                                ]
+                            }
+                        ],
+                        "tips": [
+                            "구체적인 정보(지역, 금액 등)를 함께 말씀해주시면 더 정확한 답변을 드립니다."
+                        ],
+                        "teams_used": [],
+                        "data": {}
+        }
+
     def _generate_out_of_scope_response(self, state: MainSupervisorState) -> Dict:
         """기능 외 질문에 대한 안내 응답 생성"""
         planning_state = state.get("planning_state", {})
@@ -1603,7 +1672,11 @@ class TeamBasedSupervisor:
         query = state.get("query", "")
 
         # Intent 타입에 따른 메시지
-        if intent_type == "irrelevant":
+        if intent_type == "사용법안내":
+            # 전용 함수 호출
+            return self._generate_usage_guide_response(query)
+
+        elif intent_type == "irrelevant":
             message = """안녕하세요! 저는 부동산 전문 상담 AI입니다.
 
 현재 질문은 부동산과 관련이 없는 것으로 보입니다.

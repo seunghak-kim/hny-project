@@ -7,13 +7,14 @@ import { MapInterface } from "@/components/map-interface"
 import { AnalysisAgent } from "@/components/agents/analysis-agent"
 import { VerificationAgent } from "@/components/agents/verification-agent"
 import { ConsultationAgent } from "@/components/agents/consultation-agent"
+import { LeaseContractPage } from "@/components/lease_contract/lease_contract_page"
 import { CognitiveDashboard } from "@/components/dashboards/cognitive-dashboard"
 import { ExecutionDashboard } from "@/components/dashboards/execution-dashboard"
 import { Button } from "@/components/ui/button"
 import { Menu, X } from "lucide-react"
 import { useChatSessions } from "@/hooks/use-chat-sessions"
 
-export type PageType = "chat" | "map" | "analysis" | "verification" | "consultation" | "cognitive_dashboard" | "execution_dashboard"
+export type PageType = "chat" | "map" | "lease_contract" | "analysis" | "verification" | "consultation" | "cognitive_dashboard" | "execution_dashboard"
 
 export default function HomePage() {
   const [currentPage, setCurrentPage] = useState<PageType>("chat")
@@ -53,6 +54,17 @@ export default function HomePage() {
         return <ChatInterface onSplitView={handleSplitView} currentSessionId={currentSessionId} />
       case "map":
         return <MapInterface />
+      case "lease_contract":
+        return (
+          <LeaseContractPage
+            onApprove={() => console.log('Approved')}
+            onModify={(modifications) => console.log('Modified:', modifications)}
+            onReject={() => console.log('Rejected')}
+            onClose={() => setCurrentPage("chat")}
+            onClosePopup={() => setCurrentPage("chat")}
+            isPopup={false}
+          />
+        )
       case "analysis":
         return <AnalysisAgent />
       case "verification":
@@ -84,7 +96,7 @@ export default function HomePage() {
   }
 
   return (
-    <div className="flex h-screen bg-background">
+    <div className="flex bg-background" style={{ height: 'calc(100vh - 64px)' }}>
       <Button
         variant="ghost"
         size="icon"
