@@ -56,10 +56,13 @@ class DatabaseManager:
         try:
             if Path(self.embedding_model_path).exists():
                 self.embedding_model = SentenceTransformer(self.embedding_model_path)
-            else: 
-                raise FileExistsError(f"Embedding model not found: {self.embedding_model_path}")
+                logger.info(f"Embedding model loaded successfully: {self.embedding_model_path}")
+            else:
+                logger.warning(f"Embedding model not found: {self.embedding_model_path}")
+                self.embedding_model = None
         except Exception as e:
             logger.error(f"Embedding model initialization failed: {e}")
+            self.embedding_model = None
             
         
         

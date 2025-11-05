@@ -21,6 +21,7 @@ from app.service_agent.foundation.agent_registry import AgentRegistry
 from app.service_agent.foundation.agent_adapter import AgentAdapter
 from app.service_agent.llm_manager import LLMService
 from app.service_agent.foundation.decision_logger import DecisionLogger
+from app.core.cache_manager import get_cache_manager  # ⭐ NEW: 캐싱 추가
 
 logger = logging.getLogger(__name__)
 
@@ -31,16 +32,28 @@ class SearchExecutor:
     법률, 부동산, 대출 검색 작업을 실행
     """
 
-    def __init__(self, llm_context=None, progress_callback=None):
+    def __init__(self, llm_context=None, progress_callback=None, enable_cache=True):
         """
         초기화
 
         Args:
             llm_context: LLM 컨텍스트
             progress_callback: 진행 상황 콜백 함수 (WebSocket 전송용)
+            enable_cache: 캐싱 활성화 여부 (default: True)
         """
         self.llm_context = llm_context
         self.progress_callback = progress_callback
+
+        # ⭐ NEW: CacheManager 초기화
+        try:
+            self.cache_manager = get_cache_manager(enabled=enable_cache)
+            if self.cache_manager.enabled:
+                logger.info("✅ CacheManager enabled in SearchExecutor")
+            else:
+                logger.info("ℹ️ CacheManager disabled (Redis not available)")
+        except Exception as e:
+            logger.error(f"❌ CacheManager initialization failed: {e}")
+            self.cache_manager = None
 
         # LLMService 초기화 (에러 발생 시 fallback)
         try:
@@ -200,8 +213,14 @@ class SearchExecutor:
         state["start_time"] = datetime.now()
         state["search_progress"] = {}
 
-        # 키워드가 없으면 쿼리에서 추출
-        if not state.get("keywords"):
+        # 키워드가 없거나 비어있으면 쿼리에서 추출
+        keywords = state.get("keywords")
+        if not keywords or not any([
+            keywords.get("legal", []),
+            keywords.get("real_estate", []),
+            keywords.get("loan", []),
+            keywords.get("general", [])
+        ]):
             query = state.get("shared_context", {}).get("query", "")
             state["keywords"] = self._extract_keywords(query)
 
@@ -227,6 +246,22 @@ class SearchExecutor:
     def _extract_keywords_with_llm(self, query: str) -> SearchKeywords:
         """LLM을 사용한 키워드 추출 (LLMService 사용)"""
         try:
+            # ⭐ NEW: Cache check
+            if self.cache_manager and self.cache_manager.enabled:
+                cached_keywords = self.cache_manager.get_llm_response(
+                    query=query,
+                    model="gpt-4o",
+                    prompt_type="keyword_extraction"
+                )
+                if cached_keywords:
+                    logger.info("✅ [Cache HIT] Keywords from cache")
+                    return SearchKeywords(
+                        legal=cached_keywords.get("legal", []),
+                        real_estate=cached_keywords.get("real_estate", []),
+                        loan=cached_keywords.get("loan", []),
+                        general=cached_keywords.get("general", [])
+                    )
+
             # LLMService를 통한 키워드 추출
             result = self.llm_service.complete_json(
                 prompt_name="keyword_extraction",
@@ -237,6 +272,20 @@ class SearchExecutor:
             # JSON 직렬화하여 로깅 (object object 출력 방지)
             import json
             logger.info(f"LLM Keyword Extraction: {json.dumps(result, ensure_ascii=False)}")
+
+            # ⭐ NEW: Cache save
+            if self.cache_manager and self.cache_manager.enabled:
+                try:
+                    self.cache_manager.cache_llm_response(
+                        query=query,
+                        model="gpt-4o",
+                        response=result,
+                        prompt_type="keyword_extraction",
+                        ttl=3600  # 1시간
+                    )
+                    logger.info("✅ [Cache SAVE] Keywords cached")
+                except Exception as e:
+                    logger.warning(f"Failed to cache keywords: {e}")
 
             return SearchKeywords(
                 legal=result.get("legal", []),
@@ -437,6 +486,21 @@ class SearchExecutor:
             logger.info(f"[Tool Selection] Query: {query}")
             logger.info(f"[Tool Selection] Available tools: {list(available_tools.keys())}")
 
+            # ⭐ NEW: Cache check
+            cache_key_data = {
+                "query": query,
+                "available_tools": list(available_tools.keys())
+            }
+            if self.cache_manager and self.cache_manager.enabled:
+                cached_result = self.cache_manager.get_llm_response(
+                    query=str(cache_key_data),
+                    model="gpt-4o",  # 현재 모델
+                    prompt_type="tool_selection"
+                )
+                if cached_result:
+                    logger.info("✅ [Cache HIT] Tool selection from cache")
+                    return cached_result
+
             result = await self.llm_service.complete_json_async(
                 prompt_name="tool_selection_search",  # search 전용 prompt
                 variables={
@@ -484,12 +548,28 @@ class SearchExecutor:
                 except Exception as e:
                     logger.warning(f"Failed to log tool decision: {e}")
 
-            return {
+            result_to_cache = {
                 "selected_tools": selected_tools,
                 "reasoning": reasoning,
                 "confidence": confidence,
                 "decision_id": decision_id
             }
+
+            # ⭐ NEW: Cache save
+            if self.cache_manager and self.cache_manager.enabled:
+                try:
+                    self.cache_manager.cache_llm_response(
+                        query=str(cache_key_data),
+                        model="gpt-4o",
+                        response=result_to_cache,
+                        prompt_type="tool_selection",
+                        ttl=3600  # 1시간
+                    )
+                    logger.info("✅ [Cache SAVE] Tool selection cached")
+                except Exception as e:
+                    logger.warning(f"Failed to cache tool selection: {e}")
+
+            return result_to_cache
 
         except Exception as e:
             logger.error(f"[Tool Selection] LLM tool selection failed: {e}", exc_info=True)
@@ -642,6 +722,8 @@ class SearchExecutor:
         state["selected_tools"] = selected_tools
         state["tool_selection_reasoning"] = tool_selection.get("reasoning", "")
         state["tool_selection_confidence"] = tool_selection.get("confidence", 0.0)
+
+        logger.info(f"[DEBUG] Saved to state - selected_tools: {selected_tools}, confidence: {tool_selection.get('confidence', 0.0)}")
 
         logger.info(
             f"[SearchTeam] LLM selected tools: {selected_tools}, "
@@ -1228,6 +1310,21 @@ class SearchExecutor:
         try:
             logger.info(f"[Parameter Extraction] Extracting parameters for tool: {tool_name}")
 
+            # ⭐ NEW: Cache check
+            cache_key_data = {
+                "query": query,
+                "tool_name": tool_name
+            }
+            if self.cache_manager and self.cache_manager.enabled:
+                cached_params = self.cache_manager.get_llm_response(
+                    query=str(cache_key_data),
+                    model="gpt-4o",
+                    prompt_type="parameter_extraction"
+                )
+                if cached_params:
+                    logger.info("✅ [Cache HIT] Parameters from cache")
+                    return cached_params
+
             # LLM을 사용한 파라미터 추출
             result = await self.llm_service.complete_json_async(
                 prompt_name="parameter_extraction",
@@ -1245,6 +1342,20 @@ class SearchExecutor:
                 logger.info(f"  - Parameters: {parameters}")
                 logger.info(f"  - Reasoning: {reasoning}")
 
+                # ⭐ NEW: Cache save
+                if self.cache_manager and self.cache_manager.enabled:
+                    try:
+                        self.cache_manager.cache_llm_response(
+                            query=str(cache_key_data),
+                            model="gpt-4o",
+                            response=parameters,
+                            prompt_type="parameter_extraction",
+                            ttl=3600  # 1시간
+                        )
+                        logger.info("✅ [Cache SAVE] Parameters cached")
+                    except Exception as e:
+                        logger.warning(f"Failed to cache parameters: {e}")
+
                 return parameters
             else:
                 logger.warning(
@@ -1252,7 +1363,22 @@ class SearchExecutor:
                     f"expected {tool_name}, got {result.get('tool')}"
                 )
                 # 도구는 다르지만 파라미터는 사용 가능하면 반환
-                return result.get("parameters", {})
+                params_to_return = result.get("parameters", {})
+
+                # ⭐ NEW: Cache save (even for mismatched tool)
+                if self.cache_manager and self.cache_manager.enabled:
+                    try:
+                        self.cache_manager.cache_llm_response(
+                            query=str(cache_key_data),
+                            model="gpt-4o",
+                            response=params_to_return,
+                            prompt_type="parameter_extraction",
+                            ttl=3600
+                        )
+                    except Exception as e:
+                        logger.warning(f"Failed to cache parameters: {e}")
+
+                return params_to_return
 
         except Exception as e:
             logger.error(f"[Parameter Extraction] LLM extraction failed: {e}")
@@ -1464,6 +1590,9 @@ class SearchExecutor:
             keywords=keywords or SearchKeywords(legal=[], real_estate=[], loan=[], general=[]),
             search_scope=search_scope or [],
             filters={},
+            selected_tools=None,  # 추가
+            tool_selection_reasoning=None,  # 추가
+            tool_selection_confidence=None,  # 추가
             legal_results=[],
             real_estate_results=[],
             loan_results=[],

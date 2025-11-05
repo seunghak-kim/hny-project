@@ -88,6 +88,11 @@ class SearchTeamState(TypedDict):
     search_scope: List[str]  # ["legal", "real_estate", "loan"]
     filters: Dict[str, Any]
 
+    # Tool selection metadata (for testing/debugging)
+    selected_tools: Optional[List[str]]  # LLM이 선택한 도구 목록
+    tool_selection_reasoning: Optional[str]  # 도구 선택 이유
+    tool_selection_confidence: Optional[float]  # 선택 신뢰도
+
     # Search results
     legal_results: List[Dict[str, Any]]
     real_estate_results: List[Dict[str, Any]]

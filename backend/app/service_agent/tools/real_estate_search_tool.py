@@ -201,8 +201,9 @@ class RealEstateSearchTool:
             property_name_no_space = property_name.replace(' ', '')
 
             # 전략 1: 정확 매칭 (띄어쓰기 무시)
+            from sqlalchemy import func
             exact_match = query.filter(
-                self.RealEstate.name.replace(' ', '') == property_name_no_space
+                func.replace(self.RealEstate.name, ' ', '') == property_name_no_space
             ).first()
 
             if exact_match:
