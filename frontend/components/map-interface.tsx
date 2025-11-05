@@ -1254,11 +1254,11 @@ export function MapInterface() {
                     <span className="text-sm text-muted-foreground">매매</span>
                     <div className="text-right">
                       <span className="font-medium text-green-600">
-                        {selectedProperty.매매_최저가_억원}
+                        {selectedProperty.매매_최저가_억원}억
                       </span>
                       {selectedProperty.매매_최고가_억원 && (
                         <span className="font-medium text-green-600">
-                          {` ~ ${selectedProperty.매매_최고가_억원}`}
+                          {` ~ ${selectedProperty.매매_최고가_억원}억`}
                         </span>
                       )}
                     </div>
@@ -1269,11 +1269,11 @@ export function MapInterface() {
                     <span className="text-sm text-muted-foreground">전세</span>
                     <div className="text-right">
                       <span className="font-medium text-blue-600">
-                        {selectedProperty.전세_최저가_억원}
+                        {selectedProperty.전세_최저가_억원}억
                       </span>
                       {selectedProperty.전세_최고가_억원 && (
                         <span className="font-medium text-blue-600">
-                          {` ~ ${selectedProperty.전세_최고가_억원}`}
+                          {` ~ ${selectedProperty.전세_최고가_억원}억`}
                         </span>
                       )}
                     </div>
