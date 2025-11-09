@@ -1,6 +1,7 @@
 """
 프롬프트 템플릿 관리자 - 코드 블록 안전 처리 버전
 - TXT/YAML 파일 로드
+- Python 프롬프트 설정 로드 (document_configs.py)
 - 변수 치환 (코드 블록 보호)
 - 프롬프트 캐싱
 """
@@ -58,7 +59,19 @@ class PromptManager:
         """
         variables = variables or {}
 
-        # 프롬프트 템플릿 로드 (캐싱 활용)
+        # 1. Python 프롬프트 설정 우선 체크
+        try:
+            from .prompts.document_configs import DOCUMENT_PROMPTS
+            if prompt_name in DOCUMENT_PROMPTS:
+                config = DOCUMENT_PROMPTS[prompt_name]
+                logger.debug(f"Using Python prompt config: {prompt_name}")
+                return config.prompt_text.format(**variables)
+        except ImportError:
+            pass  # document_configs.py 없으면 무시
+        except Exception as e:
+            logger.debug(f"Python prompt load failed, falling back to TXT: {e}")
+
+        # 2. Fallback: TXT/YAML 템플릿 로드
         template = self._load_template(prompt_name, category)
 
         # 안전한 변수 치환 (코드 블록 보호)
@@ -283,6 +296,24 @@ class PromptManager:
                     result[cat] = sorted(prompts)
 
         return result
+
+    def get_prompt_config(self, prompt_name: str):
+        """
+        Get Python prompt configuration object.
+
+        메타데이터(필수 필드, 한글 라벨 등)에 접근하기 위한 메서드.
+
+        Args:
+            prompt_name: 프롬프트 이름
+
+        Returns:
+            PromptConfig instance or None
+        """
+        try:
+            from .prompts.document_configs import DOCUMENT_PROMPTS
+            return DOCUMENT_PROMPTS.get(prompt_name)
+        except ImportError:
+            return None
 
     def clear_cache(self):
         """캐시 초기화"""
