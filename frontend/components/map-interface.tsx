@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Search, Maximize2, Minimize2, X } from "lucide-react"
 import { Slider } from "@/components/ui/slider"
+import { Separator } from "@/components/ui/separator"
 import { getDistrictCoordinatesNew, getDistrictCenterNew, getAllDistrictNames } from "@/lib/district-coordinates"
 import { clusterProperties, getClusterStyle, createDetailedMarkerContent, createClusterMarkerContent, type Cluster } from "@/lib/clustering"
 import { FloatingChatButton } from "@/components/floating-chat-button"
@@ -19,33 +20,38 @@ declare global {
 }
 
 interface PropertyData {
-  단지명: string
-  구: string
-  동: string
+  name: string
+  gu: string
+  dong: string
   // 가격 정보 - 억원 표시용 (포맷된 문자열)
-  매매_최저가_억원?: string
-  매매_최고가_억원?: string
-  전세_최저가_억원?: string
-  전세_최고가_억원?: string
-  월세_최저가_억원?: string
-  월세_최고가_억원?: string
+  sale_min_price_eok?: string
+  sale_max_price_eok?: string
+  jeonse_min_price_eok?: string
+  jeonse_max_price_eok?: string
+  rent_min_price_eok?: string
+  rent_max_price_eok?: string
   // 가격 정보 - Raw values in 만원 units (for calculations)
-  매매_최저가?: string
-  매매_최고가?: string
-  전세_최저가?: string
-  전세_최고가?: string
-  월세_최저가?: string
-  월세_최고가?: string
-  단지요약: string
-  총_거래건수: string
-  면적요약: string
-  세대수: string
-  동수: string
-  준공년월: string
-  위도?: number
-  경도?: number
-  type?: "office" | "residential"
-  유형?: string  // 부동산 유형 (아파트, 오피스텔, 빌라, 단독/다가구, 원룸 등)
+  sale_min_price?: string
+  sale_max_price?: string
+  jeonse_min_price?: string
+  jeonse_max_price?: string
+  rent_min_price?: string
+  rent_max_price?: string
+  summary: string
+  total_article_count: string
+  area_summary: string
+  total_households: string
+  total_buildings: string
+  completion_date: string
+  latitude?: number
+  longitude?: number
+  type?: "office" | "residential" | "dong" | "gu"  // 집계 데이터 타입 추가
+  property_type?: string  // 부동산 유형 (아파트, 오피스텔, 빌라, 단독/다가구, 동 최저가, 구 최저가 등)
+  count?: number  // 집계 데이터의 매물 개수
+  // 주변 시설 정보
+  nearby_subway_stations?: string  // JSON 문자열
+  nearby_schools?: string  // JSON 문자열
+  nearby_marts?: string  // JSON 문자열
 }
 
 export function MapInterface() {
@@ -54,7 +60,7 @@ export function MapInterface() {
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedProperty, setSelectedProperty] = useState<PropertyData | null>(null)
   const [filterType, setFilterType] = useState<string>("전체")
-  const [transactionFilter, setTransactionFilter] = useState<string>("전체")
+  const [transactionFilter, setTransactionFilter] = useState<string>("매매")
   const [propertyTypeFilter, setPropertyTypeFilter] = useState<string>("전체")
   const [sortBy, setSortBy] = useState<string>("이름순")
   const [isFullscreen, setIsFullscreen] = useState(false)
@@ -89,43 +95,121 @@ export function MapInterface() {
 
   // Transform API response to PropertyData format (공통 함수)
   const transformAPIResponse = (data: any[]): PropertyData[] => {
-    return data
-      .filter((item: any) => {
-        // 0원 데이터 필터링: 모든 가격이 0이거나 없는 매물 제외
-        const hasSalePrice = item.매매_최고가 && parseFloat(item.매매_최고가) > 0
-        const hasJeonsePrice = item.전세_최고가 && parseFloat(item.전세_최고가) > 0
-        const hasMonthlyPrice = item.월세_최고가 && parseFloat(item.월세_최고가) > 0
+    console.log('[Transform] Total items received:', data.length)
+    console.log('[Transform] First 3 items:', data.slice(0, 3))
 
-        // 최소 하나의 가격 정보는 있어야 함
-        return hasSalePrice || hasJeonsePrice || hasMonthlyPrice
+    const filtered = data.filter((item: any) => {
+      // 동/구 단위 집계 데이터는 별도 검증 후 통과
+      if (item.type === "dong" || item.type === "gu") {
+        console.log('[Transform] Found aggregate data:', item.type, item)
+
+        // 집계 데이터는 avg_*_price_eok 필드로 가격 검증
+        const hasAggregatePrice = item.avg_sale_price_eok ||
+                                  item.avg_jeonse_price_eok ||
+                                  item.avg_rent_price_eok;
+
+        if (!hasAggregatePrice) {
+          console.warn('[Transform] Aggregate data has no prices:', item)
+          return false
+        }
+
+        return true
+      }
+
+      // 클러스터 데이터는 스킵 (지도에 표시하지 않음)
+      if (item.type === "cluster") {
+        console.log('[Transform] Skipping cluster data')
+        return false
+      }
+
+      // 개별 매물: 위도/경도 체크
+      const hasCoords = item.latitude && item.longitude
+      if (!hasCoords) {
+        console.warn('[Transform] No coordinates:', item.name)
+        return false
+      }
+
+      // 개별 매물: 가격 체크
+      const hasSalePrice = item.sale_max_price && item.sale_max_price > 0
+      const hasJeonsePrice = item.jeonse_max_price && item.jeonse_max_price > 0
+      const hasMonthlyPrice = item.rent_max_price && item.rent_max_price > 0
+
+      const hasAnyPrice = hasSalePrice || hasJeonsePrice || hasMonthlyPrice
+      if (!hasAnyPrice) {
+        console.warn('[Transform] No valid price:', item.name)
+      }
+
+      return hasAnyPrice
+    })
+    return filtered
+      .map((item: any) => {
+        // 동/구 집계 데이터 처리
+        if (item.type === "dong" || item.type === "gu") {
+          return {
+            name: item.type === "gu" ? item.gu : `${item.gu} ${item.dong}`,
+            gu: item.gu || "",
+            dong: item.dong || "",
+            latitude: item.latitude,
+            longitude: item.longitude,
+            summary: "",
+            total_article_count: item.total_transactions?.toString() || item.count?.toString() || "0",
+            area_summary: "",
+            total_households: "",
+            total_buildings: "",
+            completion_date: "",
+            // 집계 데이터는 avg_*_price_eok 필드를 사용 (이미 억원 단위 문자열)
+            sale_min_price_eok: item.avg_sale_price_eok || "",
+            sale_max_price_eok: item.avg_sale_price_eok || "",
+            jeonse_min_price_eok: item.avg_jeonse_price_eok || "",
+            jeonse_max_price_eok: item.avg_jeonse_price_eok || "",
+            rent_min_price_eok: item.avg_rent_price_eok || "",
+            rent_max_price_eok: item.avg_rent_price_eok || "",
+            // Raw 가격 데이터는 없음 (집계된 데이터이므로)
+            sale_min_price: "",
+            sale_max_price: "",
+            jeonse_min_price: "",
+            jeonse_max_price: "",
+            rent_min_price: "",
+            rent_max_price: "",
+            property_type: item.property_type || (item.type === "gu" ? "구 최저가" : "동 최저가"),
+            type: item.type as any, // "dong" or "gu"
+            count: item.count || 1  // 집계된 매물 개수
+          }
+        }
+
+        // 개별 매물 데이터 처리
+        return {
+          name: item.name,
+          gu: item.gu || "",
+          dong: item.dong || "",
+          latitude: item.latitude,
+          longitude: item.longitude,
+          summary: "",
+          total_article_count: item.total_article_count?.toString() || "0",
+          area_summary: item.area_summary || "",
+          total_households: item.total_households?.toString() || "",
+          total_buildings: item.total_buildings?.toString() || "",
+          completion_date: item.completion_date || "",
+          sale_min_price_eok: item.sale_min_price_eok || "",
+          sale_max_price_eok: item.sale_max_price_eok || "",
+          jeonse_min_price_eok: item.jeonse_min_price_eok || "",
+          jeonse_max_price_eok: item.jeonse_max_price_eok || "",
+          rent_min_price_eok: item.rent_min_price_eok || "",
+          rent_max_price_eok: item.rent_max_price_eok || "",
+          sale_min_price: item.sale_min_price?.toString() || "",
+          sale_max_price: item.sale_max_price?.toString() || "",
+          jeonse_min_price: item.jeonse_min_price?.toString() || "",
+          jeonse_max_price: item.jeonse_max_price?.toString() || "",
+          rent_min_price: item.rent_min_price?.toString() || "",
+          rent_max_price: item.rent_max_price?.toString() || "",
+          property_type: item.property_type || "아파트",
+          type: "residential" as const,
+          // 주변 시설 정보 추가
+          nearby_subway_stations: item.nearby_subway_stations || undefined,
+          nearby_schools: item.nearby_schools || undefined,
+          nearby_marts: item.nearby_marts || undefined
+        }
       })
-      .map((item: any) => ({
-        단지명: item.단지명,
-        구: item.구 || "",
-        동: item.동 || "",
-        위도: item.위도,
-        경도: item.경도,
-        단지요약: "",
-        총_거래건수: item.총_거래건수?.toString() || "0",
-        면적요약: item.면적요약 || "",
-        세대수: item.세대수?.toString() || "",
-        동수: item.동수?.toString() || "",
-        준공년월: item.준공년월 || "",
-        매매_최저가_억원: item.매매_최저가_억원 || "",
-        매매_최고가_억원: item.매매_최고가_억원 || "",
-        전세_최저가_억원: item.전세_최저가_억원 || "",
-        전세_최고가_억원: item.전세_최고가_억원 || "",
-        월세_최저가_억원: item.월세_최저가_억원 || "",
-        월세_최고가_억원: item.월세_최고가_억원 || "",
-        매매_최저가: item.매매_최저가?.toString() || "",
-        매매_최고가: item.매매_최고가?.toString() || "",
-        전세_최저가: item.전세_최저가?.toString() || "",
-        전세_최고가: item.전세_최고가?.toString() || "",
-        월세_최저가: item.월세_최저가?.toString() || "",
-        월세_최고가: item.월세_최고가?.toString() || "",
-        유형: item.유형 || "아파트",
-        type: "residential"
-      }))
   }
 
   // Load ALL properties for sidebar search (전체 매물)
@@ -137,7 +221,7 @@ export function MapInterface() {
         north: "37.7",
         west: "126.8",
         east: "127.2",
-        limit: "10000", // 전체 매물 - 제한 해제
+        limit: "20000", // 전체 매물 로드 (사이드바 검색용)
       })
 
       // Add filters
@@ -146,7 +230,6 @@ export function MapInterface() {
           "아파트": "apartment",
           "오피스텔": "officetel",
           "빌라": "villa",
-          "원룸": "oneroom",
           "단독/다가구": "house"
         }
         const apiType = typeMapping[propertyTypeFilter]
@@ -189,31 +272,34 @@ export function MapInterface() {
       const neLatLng = bounds.getNorthEast()
 
       // Get current zoom level
-      const zoom = mapInstance.getLevel()
+      const zoom: number = mapInstance.getLevel()
+      console.log('[API] Current zoom level:', zoom)
 
-      // 줌 레벨 6 이상일 때는 강남구/서초구/송파구 전체 영역 데이터 로드
-      let params: URLSearchParams
-      if (zoom >= 6) {
-        // 강남3구 전체 범위 (고정)
-        params = new URLSearchParams({
-          south: "37.4",      // 서초구 남단
-          north: "37.58",     // 강남구 북단
-          west: "126.98",     // 서초구 서단
-          east: "127.15",     // 송파구 동단
-          zoom: zoom.toString(),
-          limit: "5000",      // 전체 데이터
-        })
-      } else {
-        // 줌 레벨 5 이하일 때는 viewport 기반
-        params = new URLSearchParams({
-          south: swLatLng.getLat().toString(),
-          north: neLatLng.getLat().toString(),
-          west: swLatLng.getLng().toString(),
-          east: neLatLng.getLng().toString(),
-          zoom: zoom.toString(),
-          limit: "1000",
-        })
+      let south = swLatLng.getLat()
+      let north = neLatLng.getLat()
+      let west = swLatLng.getLng()
+      let east = neLatLng.getLng()
+
+      // 줌 레벨 7 이상(축소)일 때, 보이는 영역보다 더 넓은 데이터를 요청하여 부드러운 경험 제공
+      if (zoom >= 7) {
+        const latExpansion = (north - south) * 0.5 // 50% 확장
+        const lngExpansion = (east - west) * 0.5   // 50% 확장
+        south -= latExpansion
+        north += latExpansion
+        west -= lngExpansion
+        east += lngExpansion
       }
+
+      // 항상 현재 viewport 기반으로 데이터 로드
+      // 백엔드에서 zoom 레벨에 따라 자동으로 집계 레벨 결정
+      const params = new URLSearchParams({
+        south: south.toString(),
+        north: north.toString(),
+        west: west.toString(),
+        east: east.toString(),
+        zoom: zoom.toString(),
+        limit: "5000",
+      })
 
       // Add filters
       if (propertyTypeFilter !== "전체") {
@@ -221,7 +307,6 @@ export function MapInterface() {
           "아파트": "apartment",
           "오피스텔": "officetel",
           "빌라": "villa",
-          "원룸": "oneroom",
           "단독/다가구": "house"
         }
         const apiType = typeMapping[propertyTypeFilter]
@@ -246,7 +331,9 @@ export function MapInterface() {
       const response = await fetch(`http://localhost:8000/api/real-estate/properties?${params}`)
       const data = await response.json()
 
-      setProperties(transformAPIResponse(data))
+      const transformed = transformAPIResponse(data)
+
+      setProperties(transformed)
     } catch (error) {
       console.error("Error loading property data from API:", error)
       setProperties([])
@@ -285,21 +372,36 @@ export function MapInterface() {
     if (searchQuery) {
       filtered = filtered.filter(
         (property) =>
-          property.단지명.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          property.구.includes(searchQuery) ||
-          property.동.includes(searchQuery)
+          property.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          property.gu.includes(searchQuery) ||
+          property.dong.includes(searchQuery)
       )
     }
 
     // District filter
     if (filterType !== "전체") {
-      filtered = filtered.filter((property) => property.구 === filterType)
+      filtered = filtered.filter((property) => property.gu === filterType)
     }
+
+    // 가격이 0원인 매물 필터링
+    filtered = filtered.filter((property) => {
+      // 동/구 집계 데이터는 통과
+      if (property.type === "dong" || property.type === "gu") {
+        return true
+      }
+
+      // 개별 매물: 최소 하나의 가격이 0보다 커야 함
+      const hasSale = property.sale_max_price && parseFloat(property.sale_max_price) > 0
+      const hasJeonse = property.jeonse_max_price && parseFloat(property.jeonse_max_price) > 0
+      const hasRent = property.rent_max_price && parseFloat(property.rent_max_price) > 0
+
+      return hasSale || hasJeonse || hasRent
+    })
 
     // Property type filter
     if (propertyTypeFilter !== "전체") {
       filtered = filtered.filter((property) => {
-        const propertyType = property.유형 || (property.type === 'office' ? '오피스텔' : '아파트')
+        const propertyType = property.property_type || (property.type === 'office' ? '오피스텔' : '아파트')
 
         if (propertyTypeFilter === "아파트") {
           return propertyType === "아파트" || propertyType === "APT"
@@ -309,8 +411,6 @@ export function MapInterface() {
           return propertyType === "빌라" || propertyType.includes("빌라")
         } else if (propertyTypeFilter === "단독/다가구") {
           return propertyType === "단독/다가구" || propertyType.includes("단독") || propertyType.includes("다가구")
-        } else if (propertyTypeFilter === "원룸") {
-          return propertyType === "원룸"
         }
         return true
       })
@@ -320,13 +420,13 @@ export function MapInterface() {
     if (transactionFilter !== "전체") {
       filtered = filtered.filter((property) => {
         if (transactionFilter === "매매") {
-          const salePrice = property.매매_최고가
+          const salePrice = property.sale_max_price
           return salePrice && salePrice !== '' && salePrice !== '0' && parseFloat(salePrice) > 0
         } else if (transactionFilter === "전세") {
-          const jeonsePrice = property.전세_최고가
+          const jeonsePrice = property.jeonse_max_price
           return jeonsePrice && jeonsePrice !== '' && jeonsePrice !== '0' && parseFloat(jeonsePrice) > 0
         } else if (transactionFilter === "월세") {
-          const monthlyPrice = property.월세_최고가
+          const monthlyPrice = property.rent_max_price
           return monthlyPrice && monthlyPrice !== '' && monthlyPrice !== '0' && parseFloat(monthlyPrice) > 0
         }
         return true
@@ -344,7 +444,7 @@ export function MapInterface() {
         let matchesFilter = false
 
         // Check sale price - convert from 만원 to 억원
-        const salePrice = property.매매_최고가
+        const salePrice = property.sale_max_price
         if (salePrice && salePrice !== '' && salePrice !== '0') {
           const priceInEok = parseFloat(salePrice) / 10000
           if (priceInEok >= salePriceRange[0] && priceInEok <= salePriceRange[1]) {
@@ -353,7 +453,7 @@ export function MapInterface() {
         }
 
         // Check jeonse price - convert from 만원 to 억원
-        const jeonsePrice = property.전세_최고가
+        const jeonsePrice = property.jeonse_max_price
         if (jeonsePrice && jeonsePrice !== '' && jeonsePrice !== '0') {
           const priceInEok = parseFloat(jeonsePrice) / 10000
           if (priceInEok >= jeonsePriceRange[0] && priceInEok <= jeonsePriceRange[1]) {
@@ -362,7 +462,7 @@ export function MapInterface() {
         }
 
         // Check monthly price - convert from 만원 to 억원
-        const monthlyPrice = property.월세_최고가
+        const monthlyPrice = property.rent_max_price
         if (monthlyPrice && monthlyPrice !== '' && monthlyPrice !== '0') {
           const priceInEok = parseFloat(monthlyPrice) / 10000
           if (priceInEok >= monthlyPriceRange[0] && priceInEok <= monthlyPriceRange[1]) {
@@ -379,7 +479,7 @@ export function MapInterface() {
 
     if (isAreaFilterActive) {
       filtered = filtered.filter((property) => {
-        const areaStr = property.면적요약
+        const areaStr = property.area_summary
         if (!areaStr) return true // Don't filter out if no area info
 
         // Extract area in pyeong from string like "84㎡(25평)" or "25평"
@@ -401,8 +501,49 @@ export function MapInterface() {
       })
     }
 
+    // Apply sorting
+    if (sortBy === "이름순") {
+      filtered.sort((a, b) => a.name.localeCompare(b.name))
+    } else if (sortBy === "가격순") {
+      filtered.sort((a, b) => {
+        // Helper function to get price value for sorting
+        const getPriceValue = (property: PropertyData): number => {
+          // 거래 필터에 따라 해당 가격 반환
+          if (transactionFilter === "매매") {
+            const price = property.sale_max_price
+            return price && price !== '' && price !== '0' ? parseFloat(price) : Infinity
+          } else if (transactionFilter === "전세") {
+            const price = property.jeonse_max_price
+            return price && price !== '' && price !== '0' ? parseFloat(price) : Infinity
+          } else if (transactionFilter === "월세") {
+            const price = property.rent_max_price
+            return price && price !== '' && price !== '0' ? parseFloat(price) : Infinity
+          } else {
+            // "전체"인 경우 매매 > 전세 > 월세 우선순위로 가격 반환
+            const salePrice = property.sale_max_price
+            if (salePrice && salePrice !== '' && salePrice !== '0') {
+              return parseFloat(salePrice)
+            }
+            const jeonsePrice = property.jeonse_max_price
+            if (jeonsePrice && jeonsePrice !== '' && jeonsePrice !== '0') {
+              return parseFloat(jeonsePrice)
+            }
+            const rentPrice = property.rent_max_price
+            if (rentPrice && rentPrice !== '' && rentPrice !== '0') {
+              return parseFloat(rentPrice)
+            }
+            return Infinity // 가격 정보가 없는 경우 맨 뒤로
+          }
+        }
+
+        const priceA = getPriceValue(a)
+        const priceB = getPriceValue(b)
+        return priceA - priceB // 오름차순 정렬 (낮은 가격부터)
+      })
+    }
+
     return filtered
-  }, [allProperties, searchQuery, filterType, propertyTypeFilter, transactionFilter, salePriceRange, jeonsePriceRange, monthlyPriceRange, areaRange])
+  }, [allProperties, searchQuery, filterType, propertyTypeFilter, transactionFilter, salePriceRange, jeonsePriceRange, monthlyPriceRange, areaRange, sortBy])
 
   // Reset pagination when filters change
   useEffect(() => {
@@ -438,12 +579,44 @@ export function MapInterface() {
     // Search is handled by useEffect above
   }
 
-  const handlePropertyClick = (property: PropertyData) => {
-    setSelectedProperty(property)
-    // Center map on selected property
-    if (map && property.위도 && property.경도) {
-      const position = new window.kakao.maps.LatLng(property.위도, property.경도)
+  const handlePropertyClick = async (property: PropertyData) => {
+    // If property doesn't have nearby facilities, fetch detailed info
+    if (!property.nearby_subway_stations && !property.nearby_schools && !property.nearby_marts && property.latitude && property.longitude) {
+      try {
+        // Fetch detailed property info with nearby facilities (small area, limit=1)
+        const smallRange = 0.001 // ~100m
+        const params = new URLSearchParams({
+          south: (property.latitude - smallRange).toString(),
+          north: (property.latitude + smallRange).toString(),
+          west: (property.longitude - smallRange).toString(),
+          east: (property.longitude + smallRange).toString(),
+          limit: "1",
+          zoom: "1"
+        })
+
+        const response = await fetch(`http://localhost:8000/api/real-estate/properties?${params}`)
+        const data = await response.json()
+
+        if (data && data.length > 0) {
+          // Use the detailed property data with nearby facilities
+          const detailedProperty = transformAPIResponse(data)[0]
+          setSelectedProperty(detailedProperty)
+        } else {
+          setSelectedProperty(property)
+        }
+      } catch (error) {
+        console.error("Error fetching property details:", error)
+        setSelectedProperty(property)
+      }
+    } else {
+      setSelectedProperty(property)
+    }
+
+    // Center map on selected property and zoom to level 1 (20m)
+    if (map && property.latitude && property.longitude) {
+      const position = new window.kakao.maps.LatLng(property.latitude, property.longitude)
       map.setCenter(position)
+      map.setLevel(1) // 줌 레벨 1 (20m)
     }
   }
 
@@ -662,16 +835,13 @@ export function MapInterface() {
   // Update clusters when properties or zoom changes - optimized with useMemo
   // 지도 클러스터링은 viewport 내의 properties 사용
   const clusters = useMemo(() => {
+    // 줌 레벨 9 이상(축소 상태)에서는 아무것도 표시하지 않음
+    if (currentZoom >= 9) {
+      return []
+    }
+
     if (properties.length > 0) {
-      console.log('Properties loaded:', properties.length)
-      console.log('Sample properties:', properties.slice(0, 3).map(p => ({ 구: p.구, 동: p.동 })))
       const newClusters = clusterProperties(properties, currentZoom, transactionFilter)
-      console.log('Clusters created:', newClusters.length)
-      console.log('Cluster details:', newClusters.map(c => ({
-        name: c.districtName || c.dongName,
-        count: c.count,
-        level: c.clusterLevel
-      })))
       return newClusters
     }
     // Return empty array if no properties in viewport
@@ -695,7 +865,11 @@ export function MapInterface() {
     const clustersToRender = clusters.slice(0, MAX_MARKERS)
 
     if (clusters.length > MAX_MARKERS) {
-      console.log(`Rendering ${MAX_MARKERS} out of ${clusters.length} clusters for performance`)
+    }
+
+    if (clusters.length === 0) {
+      setMarkers([])
+      return
     }
 
     clustersToRender.forEach((cluster) => {
@@ -713,66 +887,116 @@ export function MapInterface() {
           const property = cluster.properties[0]
           const isOffice = property.type === 'office' || property.name?.includes('오피스')
 
-          // Get price info and determine transaction type (use raw values for accuracy)
-          const saleHigh = property.매매_최고가;
-          const rentHigh = property.전세_최고가;
-          const monthlyHigh = property.월세_최고가;
+          // 동/구 최저가 데이터인지 확인
+          const isAggregated = property.property_type === "동 최저가" || property.property_type === "구 최저가"
 
           let priceText = '';
           let markerColor = '#3182f6'; // Default blue
           let iconText = '';
 
-          // Helper to check if price is valid
-          const isValidPrice = (price: any) => price && price !== '' && price !== '0' && parseFloat(price) > 0;
+          // 집계 데이터(동/구 최저가)의 경우 다른 로직 사용
+          if (isAggregated) {
+            // 집계 데이터는 이미 포맷된 문자열 (예: "5.2억")
+            const saleEok = property.sale_max_price_eok;
+            const jeonseEok = property.jeonse_max_price_eok;
+            const rentEok = property.rent_max_price_eok;
 
-          // Determine transaction type based on active filter or priority
-          // If transaction filter is active, show that type. Otherwise show by priority (매매 > 전세 > 월세)
-          if (transactionFilter === "매매" && isValidPrice(saleHigh)) {
-            const price = parseFloat(saleHigh) / 10000; // Convert 만원 to 억원
-            priceText = price >= 1 ? `${price.toFixed(0)}억` : `${(price * 10).toFixed(0)}천`;
-            markerColor = '#EF4444'; // Vibrant red for sale
-            iconText = '매';
-          } else if (transactionFilter === "전세" && isValidPrice(rentHigh)) {
-            const price = parseFloat(rentHigh) / 10000; // Convert 만원 to 억원
-            priceText = price >= 1 ? `${price.toFixed(0)}억` : `${(price * 10).toFixed(0)}천`;
-            markerColor = '#3B82F6'; // Bright blue for jeonse
-            iconText = '전';
-          } else if (transactionFilter === "월세" && isValidPrice(monthlyHigh)) {
-            const price = parseFloat(monthlyHigh); // Already in 만원
-            if (price >= 10000) {
-              const eok = price / 10000
-              priceText = eok % 1 === 0 ? `${Math.round(eok)}억` : `${eok.toFixed(1)}억`
+            // Helper to check if price string is valid
+            const isValidEokPrice = (price: any) => price && price !== '' && price !== '0';
+
+            // 집계 데이터 표시를 위한 아이콘 (최저가 표시)
+            const aggregateIcon = property.property_type === "동 최저가" ? "동" : "구";
+
+            // Determine transaction type based on active filter or priority
+            if (transactionFilter === "매매" && isValidEokPrice(saleEok)) {
+              priceText = saleEok;
+              markerColor = '#EF4444'; // Vibrant red for sale
+              iconText = aggregateIcon;
+            } else if (transactionFilter === "전세" && isValidEokPrice(jeonseEok)) {
+              priceText = jeonseEok;
+              markerColor = '#3B82F6'; // Bright blue for jeonse
+              iconText = aggregateIcon;
+            } else if (transactionFilter === "월세" && isValidEokPrice(rentEok)) {
+              priceText = rentEok;
+              markerColor = '#10B981'; // Fresh green for monthly
+              iconText = aggregateIcon;
+            } else if (isValidEokPrice(saleEok)) {
+              // Default priority: 매매
+              priceText = saleEok;
+              markerColor = '#EF4444';
+              iconText = aggregateIcon;
+            } else if (isValidEokPrice(jeonseEok)) {
+              // Default priority: 전세
+              priceText = jeonseEok;
+              markerColor = '#3B82F6';
+              iconText = aggregateIcon;
+            } else if (isValidEokPrice(rentEok)) {
+              // Default priority: 월세
+              priceText = rentEok;
+              markerColor = '#10B981';
+              iconText = aggregateIcon;
             } else {
-              priceText = `${Math.round(price)}만`;
+              priceText = property.name || '-'; // 동/구 이름 표시
+              iconText = aggregateIcon;
             }
-            markerColor = '#10B981'; // Fresh green for monthly
-            iconText = '월';
-          } else if (isValidPrice(saleHigh)) {
-            // Default priority: 매매
-            const price = parseFloat(saleHigh) / 10000;
-            priceText = price >= 1 ? `${price.toFixed(0)}억` : `${(price * 10).toFixed(0)}천`;
-            markerColor = '#EF4444';
-            iconText = '매';
-          } else if (isValidPrice(rentHigh)) {
-            // Default priority: 전세
-            const price = parseFloat(rentHigh) / 10000;
-            priceText = price >= 1 ? `${price.toFixed(0)}억` : `${(price * 10).toFixed(0)}천`;
-            markerColor = '#3B82F6';
-            iconText = '전';
-          } else if (isValidPrice(monthlyHigh)) {
-            // Default priority: 월세
-            const price = parseFloat(monthlyHigh);
-            if (price >= 10000) {
-              const eok = price / 10000
-              priceText = eok % 1 === 0 ? `${Math.round(eok)}억` : `${eok.toFixed(1)}억`
-            } else {
-              priceText = `${Math.round(price)}만`;
-            }
-            markerColor = '#10B981';
-            iconText = '월';
           } else {
-            priceText = '-';
-            iconText = '?';
+            // 개별 매물 데이터 처리 (기존 로직)
+            const saleHigh = property.sale_max_price;
+            const rentHigh = property.jeonse_max_price;
+            const monthlyHigh = property.rent_max_price;
+
+            // Helper to check if price is valid
+            const isValidPrice = (price: any) => price && price !== '' && price !== '0' && parseFloat(price) > 0;
+
+            // Determine transaction type based on active filter or priority
+            // If transaction filter is active, show that type. Otherwise show by priority (매매 > 전세 > 월세)
+            if (transactionFilter === "매매" && isValidPrice(saleHigh)) {
+              const price = parseFloat(saleHigh) / 10000; // Convert 만원 to 억원
+              priceText = price >= 1 ? `${price.toFixed(0)}억` : `${(price * 10).toFixed(0)}천`;
+              markerColor = '#EF4444'; // Vibrant red for sale
+              iconText = '매';
+            } else if (transactionFilter === "전세" && isValidPrice(rentHigh)) {
+              const price = parseFloat(rentHigh) / 10000; // Convert 만원 to 억원
+              priceText = price >= 1 ? `${price.toFixed(0)}억` : `${(price * 10).toFixed(0)}천`;
+              markerColor = '#3B82F6'; // Bright blue for jeonse
+              iconText = '전';
+            } else if (transactionFilter === "월세" && isValidPrice(monthlyHigh)) {
+              const price = parseFloat(monthlyHigh); // Already in 만원
+              if (price >= 10000) {
+                const eok = price / 10000
+                priceText = eok % 1 === 0 ? `${Math.round(eok)}억` : `${eok.toFixed(1)}억`
+              } else {
+                priceText = `${Math.round(price)}만`;
+              }
+              markerColor = '#10B981'; // Fresh green for monthly
+              iconText = '월';
+            } else if (isValidPrice(saleHigh)) {
+              // Default priority: 매매
+              const price = parseFloat(saleHigh) / 10000;
+              priceText = price >= 1 ? `${price.toFixed(0)}억` : `${(price * 10).toFixed(0)}천`;
+              markerColor = '#EF4444';
+              iconText = '매';
+            } else if (isValidPrice(rentHigh)) {
+              // Default priority: 전세
+              const price = parseFloat(rentHigh) / 10000;
+              priceText = price >= 1 ? `${price.toFixed(0)}억` : `${(price * 10).toFixed(0)}천`;
+              markerColor = '#3B82F6';
+              iconText = '전';
+            } else if (isValidPrice(monthlyHigh)) {
+              // Default priority: 월세
+              const price = parseFloat(monthlyHigh);
+              if (price >= 10000) {
+                const eok = price / 10000
+                priceText = eok % 1 === 0 ? `${Math.round(eok)}억` : `${eok.toFixed(1)}억`
+              } else {
+                priceText = `${Math.round(price)}만`;
+              }
+              markerColor = '#10B981';
+              iconText = '월';
+            } else {
+              priceText = '-';
+              iconText = '?';
+            }
           }
 
           markerContent = `
@@ -843,7 +1067,38 @@ export function MapInterface() {
           `
         } else {
           // Cluster marker
-          markerContent = createClusterMarkerContent(cluster, style, transactionFilter)
+          // 클러스터의 평균 가격을 더 정확하게 계산하여 전달
+          let avgPrice = 0;
+          let validPrices: number[] = [];
+
+          if (transactionFilter === '매매') {
+            validPrices = cluster.properties.map(p => p.sale_max_price ? parseFloat(p.sale_max_price) : 0).filter(p => p > 0);
+          } else if (transactionFilter === '전세') {
+            validPrices = cluster.properties.map(p => p.jeonse_max_price ? parseFloat(p.jeonse_max_price) : 0).filter(p => p > 0);
+          } else if (transactionFilter === '월세') {
+            validPrices = cluster.properties.map(p => p.rent_max_price ? parseFloat(p.rent_max_price) : 0).filter(p => p > 0);
+          } else { // "전체"
+            // 매매 -> 전세 -> 월세 순으로 유효한 가격 찾기
+            const salePrices = cluster.properties.map(p => p.sale_max_price ? parseFloat(p.sale_max_price) : 0).filter(p => p > 0);
+            const jeonsePrices = cluster.properties.map(p => p.jeonse_max_price ? parseFloat(p.jeonse_max_price) : 0).filter(p => p > 0);
+            const rentPrices = cluster.properties.map(p => p.rent_max_price ? parseFloat(p.rent_max_price) : 0).filter(p => p > 0);
+            
+            if (salePrices.length > 0) validPrices = salePrices;
+            else if (jeonsePrices.length > 0) validPrices = jeonsePrices;
+            else if (rentPrices.length > 0) validPrices = rentPrices;
+          }
+
+          if (validPrices.length > 0) {
+            avgPrice = validPrices.reduce((a, b) => a + b, 0) / validPrices.length;
+          }
+
+          const tempCluster = { ...cluster, averagePrice: avgPrice };
+          markerContent = createClusterMarkerContent(tempCluster, style, transactionFilter)
+        }
+
+        // 가격 정보가 없어서 빈 마커 콘텐츠가 반환된 경우 스킵
+        if (!markerContent || markerContent.trim() === '') {
+          return
         }
 
         // Create DOM element
@@ -916,6 +1171,12 @@ export function MapInterface() {
     setIsFullscreen(!isFullscreen)
   }
 
+  // Load initial properties when map is first initialized
+  useEffect(() => {
+    if (!map || typeof window === 'undefined') return
+    loadPropertiesFromAPI(map)
+  }, [map, loadPropertiesFromAPI])
+
   // Setup zoom change listener with debouncing for performance
   useEffect(() => {
     if (!map || typeof window === 'undefined') return
@@ -931,14 +1192,9 @@ export function MapInterface() {
 
         timeoutId = setTimeout(() => {
           const level = map.getLevel()
-          const prevZoom = currentZoom
           setCurrentZoom(level)
-
-          // Reload properties only when crossing the level 6 boundary
-          // or when in level < 6 (viewport mode)
-          if ((prevZoom < 6 && level < 6) || (prevZoom < 6 && level >= 6) || (prevZoom >= 6 && level < 6)) {
-            loadPropertiesFromAPI(map)
-          }
+          // 줌 레벨이 변경될 때마다 항상 API를 호출하여 데이터를 새로고침합니다.
+          loadPropertiesFromAPI(map)
         }, 150) // Wait 150ms after zoom stops
       } catch (error) {
         console.error('Error getting map level:', error)
@@ -977,12 +1233,9 @@ export function MapInterface() {
         }
 
         timeoutId = setTimeout(() => {
-          // 줌 레벨 6 이상일 때는 전역 데이터를 사용하므로 드래그 시 reload 안 함
-          const currentLevel = map.getLevel()
-          if (currentLevel < 6) {
-            // 줌 레벨 5 이하일 때만 viewport 기반 reload
-            loadPropertiesFromAPI(map)
-          }
+          // 모든 줌 레벨에서 viewport 기반으로 데이터 다시 로드
+          // 백엔드가 줌 레벨에 따라 자동으로 개별 매물/동 평균/구 평균 결정
+          loadPropertiesFromAPI(map)
         }, 300) // Wait 300ms after drag stops
       } catch (error) {
         console.error('Error on drag end:', error)
@@ -1056,11 +1309,11 @@ export function MapInterface() {
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-lg font-bold text-primary-foreground">
-                {selectedProperty ? selectedProperty.단지명 : "서울 강남3구 부동산 정보"}
+                {selectedProperty ? selectedProperty.name : "서울 강남3구 부동산 정보"}
               </h2>
               <p className="text-sm text-primary-foreground/80">
                 {selectedProperty
-                  ? `${selectedProperty.구} ${selectedProperty.동}`
+                  ? `${selectedProperty.gu} ${selectedProperty.dong}`
                   : "서비스 가능 지역: 강남구, 서초구, 송파구"
                 }
               </p>
@@ -1115,7 +1368,6 @@ export function MapInterface() {
               <SelectContent>
                 <SelectItem value="이름순">이름순</SelectItem>
                 <SelectItem value="가격순">가격순</SelectItem>
-                <SelectItem value="신뢰도순">신뢰도순</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -1124,7 +1376,7 @@ export function MapInterface() {
             <Badge variant="secondary" className="bg-primary text-primary-foreground">
               서비스 가능 지역
             </Badge>
-            <Badge variant="outline">매물 클러스터</Badge>
+            <Badge variant="outline">매물 클러스터</Badge> 
           </div>
         </div>
         )}
@@ -1148,54 +1400,53 @@ export function MapInterface() {
                   // Display price based on active transaction filter
                   let primaryPrice = 'N/A'
                   let priceType = ''
-
-                  if (transactionFilter === "매매" && property.매매_최저가_억원) {
-                    primaryPrice = `${property.매매_최저가_억원}억`
+                  if (transactionFilter === "매매" && property.sale_min_price_eok) {
+                    primaryPrice = `${property.sale_min_price_eok}억`
                     priceType = '매매'
-                  } else if (transactionFilter === "전세" && property.전세_최저가_억원) {
-                    primaryPrice = `${property.전세_최저가_억원}억`
+                  } else if (transactionFilter === "전세" && property.jeonse_min_price_eok) {
+                    primaryPrice = `${property.jeonse_min_price_eok}억`
                     priceType = '전세'
-                  } else if (transactionFilter === "월세" && property.월세_최저가) {
+                  } else if (transactionFilter === "월세" && property.rent_min_price) {
                     // Use raw value in 만원 units
-                    primaryPrice = formatMonthlyPrice(parseFloat(property.월세_최저가))
+                    primaryPrice = formatMonthlyPrice(parseFloat(property.rent_min_price))
                     priceType = '월세'
                   } else {
                     // Default priority when filter is "전체"
-                    if (property.매매_최저가_억원) {
-                      primaryPrice = `${property.매매_최저가_억원}억`
+                    if (property.sale_min_price_eok) {
+                      primaryPrice = `${property.sale_min_price_eok}억`
                       priceType = '매매'
-                    } else if (property.전세_최저가_억원) {
-                      primaryPrice = `${property.전세_최저가_억원}억`
+                    } else if (property.jeonse_min_price_eok) {
+                      primaryPrice = `${property.jeonse_min_price_eok}억`
                       priceType = '전세'
-                    } else if (property.월세_최저가) {
+                    } else if (property.rent_min_price) {
                       // Use raw value in 만원 units
-                      primaryPrice = formatMonthlyPrice(parseFloat(property.월세_최저가))
+                      primaryPrice = formatMonthlyPrice(parseFloat(property.rent_min_price))
                       priceType = '월세'
                     } else {
                       primaryPrice = 'N/A'
                     }
                   }
 
-                  const transactions = Number(property.총_거래건수) || 0
+                  const transactions = Number(property.total_article_count) || 0
 
                   return (
                     <Card
-                      key={`${property.단지명}-${index}`}
+                      key={`${property.name}-${index}`}
                       className={`cursor-pointer transition-colors hover:bg-muted/50 ${
-                        selectedProperty?.단지명 === property.단지명 ? "ring-2 ring-primary" : ""
+                        selectedProperty?.name === property.name ? "ring-2 ring-primary" : ""
                       }`}
                       onClick={() => handlePropertyClick(property)}
                     >
                       <CardContent className="p-4">
                         <div className="flex items-start justify-between mb-2">
-                          <h4 className="font-medium text-sm">{property.단지명}</h4>
+                          <h4 className="font-medium text-sm">{property.name}</h4>
                           <div className="flex items-center gap-1">
                             <div className={`w-2 h-2 rounded-full ${transactions > 50 ? 'bg-green-500' : transactions > 20 ? 'bg-yellow-500' : 'bg-red-500'}`} />
                             <span className="text-xs text-muted-foreground">{transactions}</span>
                           </div>
                         </div>
                         <p className="text-xs text-muted-foreground mb-2">
-                          {property.구} {property.동} | {property.단지요약}
+                          {property.gu} {property.dong} | {property.summary}
                         </p>
                         <div className="flex items-center justify-between">
                           <div>
@@ -1203,12 +1454,12 @@ export function MapInterface() {
                             {priceType && <span className="text-xs text-muted-foreground ml-1">({priceType})</span>}
                           </div>
                           <Badge variant="outline" className="text-xs">
-                            {property.유형 || (property.type === 'office' ? '오피스텔' : '아파트')}
+                            {property.property_type || (property.type === 'office' ? '오피스텔' : '아파트')}
                           </Badge>
                         </div>
-                        {property.면적요약 && (
+                        {property.area_summary && (
                           <div className="text-xs text-muted-foreground mt-1">
-                            {property.면적요약}
+                            {property.area_summary}
                           </div>
                         )}
                       </CardContent>
@@ -1249,46 +1500,46 @@ export function MapInterface() {
                 <CardTitle className="text-base">가격 정보</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                {selectedProperty.매매_최저가_억원 && (
+                {(transactionFilter === "전체" || transactionFilter === "매매") && selectedProperty.sale_min_price_eok && (
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-muted-foreground">매매</span>
                     <div className="text-right">
                       <span className="font-medium text-green-600">
-                        {selectedProperty.매매_최저가_억원}억
+                        {selectedProperty.sale_min_price_eok}억
                       </span>
-                      {selectedProperty.매매_최고가_억원 && (
+                      {selectedProperty.sale_max_price_eok && (
                         <span className="font-medium text-green-600">
-                          {` ~ ${selectedProperty.매매_최고가_억원}억`}
+                          {` ~ ${selectedProperty.sale_max_price_eok}억`}
                         </span>
                       )}
                     </div>
                   </div>
                 )}
-                {selectedProperty.전세_최저가_억원 && (
+                {(transactionFilter === "전체" || transactionFilter === "전세") && selectedProperty.jeonse_min_price_eok && (
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-muted-foreground">전세</span>
                     <div className="text-right">
                       <span className="font-medium text-blue-600">
-                        {selectedProperty.전세_최저가_억원}억
+                        {selectedProperty.jeonse_min_price_eok}억
                       </span>
-                      {selectedProperty.전세_최고가_억원 && (
+                      {selectedProperty.jeonse_max_price_eok && (
                         <span className="font-medium text-blue-600">
-                          {` ~ ${selectedProperty.전세_최고가_억원}억`}
+                          {` ~ ${selectedProperty.jeonse_max_price_eok}억`}
                         </span>
                       )}
                     </div>
                   </div>
                 )}
-                {selectedProperty.월세_최저가 && (
+                {(transactionFilter === "전체" || transactionFilter === "월세") && selectedProperty.rent_min_price && (
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-muted-foreground">월세</span>
                     <div className="text-right">
                       <span className="font-medium text-orange-600">
-                        {formatMonthlyPrice(parseFloat(selectedProperty.월세_최저가))}
+                        {formatMonthlyPrice(parseFloat(selectedProperty.rent_min_price))}
                       </span>
-                      {selectedProperty.월세_최고가 && (
+                      {selectedProperty.rent_max_price && (
                         <span className="font-medium text-orange-600">
-                          {` ~ ${formatMonthlyPrice(parseFloat(selectedProperty.월세_최고가))}`}
+                          {` ~ ${formatMonthlyPrice(parseFloat(selectedProperty.rent_max_price))}`}
                         </span>
                       )}
                     </div>
@@ -1305,24 +1556,24 @@ export function MapInterface() {
               <CardContent className="space-y-3">
                 <div className="flex justify-between">
                   <span className="text-sm text-muted-foreground">면적</span>
-                  <span className="font-medium">{selectedProperty.면적요약 || 'N/A'}</span>
+                  <span className="font-medium">{selectedProperty.area_summary || 'N/A'}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm text-muted-foreground">세대수</span>
-                  <span className="font-medium">{selectedProperty.세대수}세대</span>
+                  <span className="font-medium">{selectedProperty.total_households}세대</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm text-muted-foreground">동수</span>
-                  <span className="font-medium">{selectedProperty.동수}개동</span>
+                  <span className="font-medium">{selectedProperty.total_buildings}개동</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm text-muted-foreground">준공년월</span>
-                  <span className="font-medium">{selectedProperty.준공년월}</span>
+                  <span className="font-medium">{selectedProperty.completion_date}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-muted-foreground">유형</span>
                   <Badge variant="outline">
-                    {selectedProperty.유형 || (selectedProperty.type === 'office' ? '오피스텔' : '아파트')}
+                    {selectedProperty.property_type || (selectedProperty.type === 'office' ? '오피스텔' : '아파트')}
                   </Badge>
                 </div>
               </CardContent>
@@ -1337,23 +1588,130 @@ export function MapInterface() {
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-muted-foreground">총 거래건수</span>
                   <div className="flex items-center gap-2">
-                    <div className={`w-3 h-3 rounded-full ${Number(selectedProperty.총_거래건수) > 50 ? 'bg-green-500' : Number(selectedProperty.총_거래건수) > 20 ? 'bg-yellow-500' : 'bg-red-500'}`} />
-                    <span className="font-medium">{selectedProperty.총_거래건수}건</span>
+                    <div className={`w-3 h-3 rounded-full ${Number(selectedProperty.total_article_count) > 50 ? 'bg-green-500' : Number(selectedProperty.total_article_count) > 20 ? 'bg-yellow-500' : 'bg-red-500'}`} />
+                    <span className="font-medium">{selectedProperty.total_article_count}건</span>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
             {/* Summary */}
-            {selectedProperty.단지요약 && (
+            {selectedProperty.summary && (
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base">단지 요약</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-muted-foreground leading-relaxed">
-                    {selectedProperty.단지요약}
+                    {selectedProperty.summary}
                   </p>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Nearby Facilities */}
+            {(selectedProperty.nearby_subway_stations || selectedProperty.nearby_schools || selectedProperty.nearby_marts) && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">주변 시설</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-5">
+                  {/* 지하철역 */}
+                  {selectedProperty.nearby_subway_stations && (() => {
+                    try {
+                      const stations = JSON.parse(selectedProperty.nearby_subway_stations)
+                      if (Array.isArray(stations) && stations.length > 0) {
+                        return (
+                          <>
+                            <div>
+                              <h4 className="text-sm font-semibold mb-3 flex items-center gap-2 text-blue-700">
+                                <span className="text-lg">🚇</span>
+                                지하철역
+                              </h4>
+                              <div className="space-y-2">
+                                {stations.slice(0, 3).map((station: any, idx: number) => (
+                                  <div key={idx} className="flex justify-between items-center text-sm bg-white border border-blue-200 p-3 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+                                    <span className="font-medium text-gray-900">{station.name}</span>
+                                    <span className="text-sm font-semibold text-blue-600 bg-blue-50 px-2 py-1 rounded">{station.distance}m</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                            {(selectedProperty.nearby_schools || selectedProperty.nearby_marts) && (
+                              <Separator className="my-4" />
+                            )}
+                          </>
+                        )
+                      }
+                    } catch (e) {
+                      console.error('Failed to parse subway stations:', e)
+                    }
+                    return null
+                  })()}
+
+                  {/* 초중고 */}
+                  {selectedProperty.nearby_schools && (() => {
+                    try {
+                      const schools = JSON.parse(selectedProperty.nearby_schools)
+                      if (Array.isArray(schools) && schools.length > 0) {
+                        return (
+                          <>
+                            <div>
+                              <h4 className="text-sm font-semibold mb-3 flex items-center gap-2 text-green-700">
+                                <span className="text-lg">🏫</span>
+                                학교시설
+                              </h4>
+                              <div className="space-y-2">
+                                {schools.slice(0, 3).map((school: any, idx: number) => (
+                                  <div key={idx} className="flex justify-between items-center text-sm bg-white border border-green-200 p-3 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+                                    <div className="flex-1">
+                                      <div className="font-medium text-gray-900">{school.name}</div>
+                                      <div className="text-xs text-gray-500 mt-0.5">{school.category}</div>
+                                    </div>
+                                    <span className="text-sm font-semibold text-green-600 bg-green-50 px-2 py-1 rounded ml-2">{school.distance}m</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                            {selectedProperty.nearby_marts && (
+                              <Separator className="my-4" />
+                            )}
+                          </>
+                        )
+                      }
+                    } catch (e) {
+                      console.error('Failed to parse schools:', e)
+                    }
+                    return null
+                  })()}
+
+                  {/* 마트 */}
+                  {selectedProperty.nearby_marts && (() => {
+                    try {
+                      const marts = JSON.parse(selectedProperty.nearby_marts)
+                      if (Array.isArray(marts) && marts.length > 0) {
+                        return (
+                          <div>
+                            <h4 className="text-sm font-semibold mb-3 flex items-center gap-2 text-orange-700">
+                              <span className="text-lg">🛒</span>
+                              마트
+                            </h4>
+                            <div className="space-y-2">
+                              {marts.slice(0, 3).map((mart: any, idx: number) => (
+                                <div key={idx} className="flex justify-between items-center text-sm bg-white border border-orange-200 p-3 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+                                  <span className="font-medium text-gray-900">{mart.name}</span>
+                                  <span className="text-sm font-semibold text-orange-600 bg-orange-50 px-2 py-1 rounded">{mart.distance}m</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )
+                      }
+                    } catch (e) {
+                      console.error('Failed to parse marts:', e)
+                    }
+                    return null
+                  })()}
                 </CardContent>
               </Card>
             )}
@@ -1391,7 +1749,7 @@ export function MapInterface() {
             {/* Property Type Filter */}
             <Select value={propertyTypeFilter} onValueChange={setPropertyTypeFilter}>
               <SelectTrigger className="w-[240px] bg-white shadow-md border-0 h-10 font-medium">
-                <SelectValue placeholder="아파트, 오피스텔, 빌라, 단독/다가구, 원룸" />
+                <SelectValue placeholder="아파트, 오피스텔, 빌라, 단독/다가구" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="전체">전체 유형</SelectItem>
@@ -1399,7 +1757,6 @@ export function MapInterface() {
                 <SelectItem value="오피스텔">오피스텔</SelectItem>
                 <SelectItem value="빌라">빌라</SelectItem>
                 <SelectItem value="단독/다가구">단독/다가구</SelectItem>
-                <SelectItem value="원룸">원룸</SelectItem>
               </SelectContent>
             </Select>
 
@@ -1409,10 +1766,10 @@ export function MapInterface() {
                 <SelectValue placeholder="매매, 전세, 월세" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="전체">매매, 전세, 월세</SelectItem>
                 <SelectItem value="매매">매매</SelectItem>
                 <SelectItem value="전세">전세</SelectItem>
                 <SelectItem value="월세">월세</SelectItem>
+                <SelectItem value="전체">매매, 전세, 월세</SelectItem>
               </SelectContent>
             </Select>
 

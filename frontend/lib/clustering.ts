@@ -2,7 +2,8 @@
 export interface Property {
   id: string
   name: string
-  type: "office" | "residential"
+  type: "office" | "residential" // 이게 무슨 타입이지 ?
+  property_type?: string  // 부동산 유형 (아파트, 오피스텔, 동 평균, 구 평균 등)
   district: string
   dong: string
   price: {
@@ -117,15 +118,51 @@ export function clusterProperties(properties: any[], zoomLevel: number, transact
     return [];
   }
 
+  // API에서 이미 집계된 데이터(dong/gu)가 온 경우, 그대로 표시
+  // type === "dong" 또는 "gu"인 데이터는 API에서 이미 집계된 것
+  const hasAggregatedData = properties.some(p => p.type === "dong" || p.type === "gu");
+
+  if (hasAggregatedData) {
+    // 집계된 데이터를 Cluster 형식으로 변환하여 그대로 반환
+    return properties
+      .filter(p => p.type === "dong" || p.type === "gu")
+      .map(property => {
+        const avgPrice = getPropertyPrice(property, transactionFilter);
+
+        return {
+          center: {
+            lat: property.latitude,
+            lng: property.longitude
+          },
+          properties: [property],
+          bounds: {
+            north: property.latitude,
+            south: property.latitude,
+            east: property.longitude,
+            west: property.longitude
+          },
+          size: "medium" as const,
+          count: property.count || 1,
+          averagePrice: avgPrice,
+          districtName: property.gu,
+          dongName: property.dong,
+          clusterLevel: property.type === "gu" ? "district" : "dong",
+          averagePricesByTransaction: calculateAveragePricesByTransaction([property])
+        }
+      });
+  }
+
+  // 개별 매물 데이터만 클러스터링 적용
   // Zoom level에 따른 클러스터링 파라미터 결정
   // Kakao Map: level이 작을수록 확대된 상태 (1=최대확대, 14=최대축소)
-  // 줌 레벨 6 미만: 개별 마커만 표시
-  // 줌 레벨 6-8: 동별 클러스터링 (매물 1개라도 동 클러스터 생성)
-  // 줌 레벨 9+: 구별 클러스터링
+  // 줌 레벨 4 이하: 개별 마커만 표시
+  // 줌 레벨 5-6: 동별 클러스터링
+  // 줌 레벨 7-8: 구별 클러스터링 (API에서 제공)
+  // 줌 레벨 9+: 개별 마커 (축소 상태이지만 API가 처리 안함)
   const getClusteringParams = (zoom: number) => {
-    if (zoom < 5) return { minClusterSize: 1, clusterBy: "individual" }   // 개별 표시
-    if (zoom <= 8) return { minClusterSize: 1, clusterBy: "dong" }        // 동별 클러스터링
-    return { minClusterSize: 1, clusterBy: "district" }                   // 구별 클러스터링
+    if (zoom < 5) return { minClusterSize: 1, clusterBy: "individual" }; // 개별 표시 (레벨 4까지)
+    if (zoom < 7) return { minClusterSize: 1, clusterBy: "dong" };       // 동별 클러스터링 (레벨 5-6)
+    return { minClusterSize: 1, clusterBy: "individual" };                // 개별 표시 (레벨 7 이상은 API에서 처리)
   }
 
   const params = getClusteringParams(zoomLevel)
@@ -160,7 +197,11 @@ export function clusterProperties(properties: any[], zoomLevel: number, transact
     if (clusterBy === "district") {
       key = property.구 || property.district || ""
     } else if (clusterBy === "dong") {
-      key = `${property.구 || property.district}_${property.동 || property.dong}`
+      // '구' 정보가 없어도 '동' 이름만으로 클러스터링이 가능하도록 수정
+      // 송파구 데이터에서 '구' 정보가 누락되어 하나의 클러스터로 합쳐지는 문제 해결
+      const gu = property.구 || property.district || "";
+      const dong = property.동 || property.dong || "";
+      key = gu ? `${gu}_${dong}` : dong;
     }
 
     if (key) {
@@ -204,8 +245,33 @@ export function clusterProperties(properties: any[], zoomLevel: number, transact
     const centerLng = lngs.reduce((sum, lng) => sum + lng, 0) / lngs.length
 
     // Calculate average prices by transaction type
-    const prices = validProps.map(p => getPropertyPrice(p, transactionFilter)).filter((p): p is number => p !== undefined && p > 0)
-    const avgPrice = prices.length > 0 ? prices.reduce((sum, p) => sum + p, 0) / prices.length : undefined
+    let avgPrice: number | undefined;
+
+    if (clusterBy === 'district') {
+      // '구' 클러스터링 시, '동'별 평균 가격을 먼저 구한 후, 그 평균들의 평균을 계산
+      const dongGroups: { [dongName: string]: any[] } = {};
+      validProps.forEach(p => {
+        const dongKey = p.동 || p.dong || 'unknown';
+        if (!dongGroups[dongKey]) {
+          dongGroups[dongKey] = [];
+        }
+        dongGroups[dongKey].push(p);
+      });
+
+      const dongAveragePrices: number[] = [];
+      Object.values(dongGroups).forEach(dongProps => {
+        const dongPrices = dongProps.map(p => getPropertyPrice(p, transactionFilter)).filter((p): p is number => p !== undefined && p > 0);
+        if (dongPrices.length > 0) {
+          const dongAvg = dongPrices.reduce((sum, p) => sum + p, 0) / dongPrices.length;
+          dongAveragePrices.push(dongAvg);
+        }
+      });
+
+      avgPrice = dongAveragePrices.length > 0 ? dongAveragePrices.reduce((sum, p) => sum + p, 0) / dongAveragePrices.length : undefined;
+    } else {
+      const prices = validProps.map(p => getPropertyPrice(p, transactionFilter)).filter((p): p is number => p !== undefined && p > 0)
+      avgPrice = prices.length > 0 ? prices.reduce((sum, p) => sum + p, 0) / prices.length : undefined
+    }
 
     // Calculate size
     let size: "small" | "medium" | "large" | "xlarge" = "small"
@@ -248,6 +314,56 @@ export function clusterProperties(properties: any[], zoomLevel: number, transact
 
 // Helper function to get property price based on transaction filter
 function getPropertyPrice(property: any, transactionFilter?: string): number | undefined {
+  // Check if this is aggregate data (dong/gu 최저가)
+  const isAggregateData = property.property_type === "동 최저가" || property.property_type === "구 최저가"
+
+  if (isAggregateData) {
+    // Handle aggregate data with *_eok fields (already in string format like "5.2억")
+    if (transactionFilter === "매매") {
+      const priceStr = property.sale_max_price_eok
+      if (priceStr && priceStr !== '') {
+        // Parse "5.2억" -> 5.2 (억원 단위)
+        const numStr = priceStr.replace('억', '').trim()
+        return parseFloat(numStr)
+      }
+    } else if (transactionFilter === "전세") {
+      const priceStr = property.jeonse_max_price_eok
+      if (priceStr && priceStr !== '') {
+        const numStr = priceStr.replace('억', '').trim()
+        return parseFloat(numStr)
+      }
+    } else if (transactionFilter === "월세") {
+      const priceStr = property.rent_max_price_eok
+      if (priceStr && priceStr !== '') {
+        const numStr = priceStr.replace('억', '').trim()
+        const eokValue = parseFloat(numStr)
+        // 억원 단위를 만원 단위로 변환 (월세는 만원 단위로 처리)
+        return eokValue * 10000
+      }
+    }
+
+    // Default priority for aggregate data: sale > jeonse > rent
+    const saleEok = property.sale_max_price_eok
+    if (saleEok && saleEok !== '') {
+      const numStr = saleEok.replace('억', '').trim()
+      return parseFloat(numStr)
+    }
+    const jeonseEok = property.jeonse_max_price_eok
+    if (jeonseEok && jeonseEok !== '') {
+      const numStr = jeonseEok.replace('억', '').trim()
+      return parseFloat(numStr)
+    }
+    const rentEok = property.rent_max_price_eok
+    if (rentEok && rentEok !== '') {
+      const numStr = rentEok.replace('억', '').trim()
+      const eokValue = parseFloat(numStr)
+      // 억원 단위를 만원 단위로 변환
+      return eokValue * 10000
+    }
+    return undefined
+  }
+
+  // Handle individual property data with raw price fields
   if (transactionFilter === "매매") {
     const price = property.매매_최고가 || property.매매_최저가
     return price ? parseFloat(price) / 10000 : undefined // Convert 만원 to 억원
@@ -283,37 +399,89 @@ function calculateAveragePricesByTransaction(properties: any[]): {
 } {
   const result: any = {}
 
-  // 매매
-  const salePrices = properties
-    .map(p => {
-      const price = p.매매_최고가 || p.매매_최저가
-      return price ? parseFloat(price) / 10000 : 0
-    })
-    .filter(p => p > 0)
-  if (salePrices.length > 0) {
-    result.매매 = salePrices.reduce((sum, p) => sum + p, 0) / salePrices.length
-  }
+  // Check if properties are aggregate data
+  const isAggregateData = properties.length > 0 &&
+    (properties[0].property_type === "동 최저가" || properties[0].property_type === "구 최저가")
 
-  // 전세
-  const jeonsePrices = properties
-    .map(p => {
-      const price = p.전세_최고가 || p.전세_최저가
-      return price ? parseFloat(price) / 10000 : 0
-    })
-    .filter(p => p > 0)
-  if (jeonsePrices.length > 0) {
-    result.전세 = jeonsePrices.reduce((sum, p) => sum + p, 0) / jeonsePrices.length
-  }
+  if (isAggregateData) {
+    // For aggregate data, use *_eok fields
+    const salePrices = properties
+      .map(p => {
+        const priceStr = p.sale_max_price_eok
+        if (priceStr && priceStr !== '') {
+          const numStr = priceStr.replace('억', '').trim()
+          return parseFloat(numStr)
+        }
+        return 0
+      })
+      .filter(p => p > 0)
+    if (salePrices.length > 0) {
+      result.매매 = salePrices.reduce((sum, p) => sum + p, 0) / salePrices.length
+    }
 
-  // 월세
-  const monthlyPrices = properties
-    .map(p => {
-      const price = p.월세_최고가 || p.월세_최저가
-      return price ? parseFloat(price) : 0
-    })
-    .filter(p => p > 0)
-  if (monthlyPrices.length > 0) {
-    result.월세 = monthlyPrices.reduce((sum, p) => sum + p, 0) / monthlyPrices.length
+    const jeonsePrices = properties
+      .map(p => {
+        const priceStr = p.jeonse_max_price_eok
+        if (priceStr && priceStr !== '') {
+          const numStr = priceStr.replace('억', '').trim()
+          return parseFloat(numStr)
+        }
+        return 0
+      })
+      .filter(p => p > 0)
+    if (jeonsePrices.length > 0) {
+      result.전세 = jeonsePrices.reduce((sum, p) => sum + p, 0) / jeonsePrices.length
+    }
+
+    const monthlyPrices = properties
+      .map(p => {
+        const priceStr = p.rent_max_price_eok
+        if (priceStr && priceStr !== '') {
+          const numStr = priceStr.replace('억', '').trim()
+          const eokValue = parseFloat(numStr)
+          // 억원 단위를 만원 단위로 변환 (1억 = 10,000만원)
+          return eokValue * 10000
+        }
+        return 0
+      })
+      .filter(p => p > 0)
+    if (monthlyPrices.length > 0) {
+      result.월세 = monthlyPrices.reduce((sum, p) => sum + p, 0) / monthlyPrices.length
+    }
+  } else {
+    // For individual property data, use raw price fields
+    // 매매
+    const salePrices = properties
+      .map(p => {
+        const price = p.매매_최고가 || p.매매_최저가
+        return price ? parseFloat(price) / 10000 : 0
+      })
+      .filter(p => p > 0)
+    if (salePrices.length > 0) {
+      result.매매 = salePrices.reduce((sum, p) => sum + p, 0) / salePrices.length
+    }
+
+    // 전세
+    const jeonsePrices = properties
+      .map(p => {
+        const price = p.전세_최고가 || p.전세_최저가
+        return price ? parseFloat(price) / 10000 : 0
+      })
+      .filter(p => p > 0)
+    if (jeonsePrices.length > 0) {
+      result.전세 = jeonsePrices.reduce((sum, p) => sum + p, 0) / jeonsePrices.length
+    }
+
+    // 월세
+    const monthlyPrices = properties
+      .map(p => {
+        const price = p.월세_최고가 || p.월세_최저가
+        return price ? parseFloat(price) : 0
+      })
+      .filter(p => p > 0)
+    if (monthlyPrices.length > 0) {
+      result.월세 = monthlyPrices.reduce((sum, p) => sum + p, 0) / monthlyPrices.length
+    }
   }
 
   return result
@@ -408,7 +576,7 @@ export function getOfficeMarkerStyle(count: number, zoomLevel: number = 7) {
 }
 
 // Enhanced detailed property marker with Leaflet-inspired popup design
-export function createDetailedMarkerContent(property: any): string {
+export function createDetailedMarkerContent(property: any, transactionFilter: string = "전체"): string {
   // Handle both new Property interface and legacy property format
   const name = property.name || property.단지명 || 'Unknown Property';
   const district = property.district || property.구 || '';
@@ -433,23 +601,37 @@ export function createDetailedMarkerContent(property: any): string {
     }
   } else {
     // Legacy format - use actual CSV data fields
-    const saleHigh = property.매매_최고가_억원;
-    const saleLow = property.매매_최저가_억원;
-    const rentHigh = property.전세_최고가_억원;
-    const rentLow = property.전세_최저가_억원;
+    const saleHighEok = property.sale_max_price_eok;
+    const saleLowEok = property.sale_min_price_eok;
+    const jeonseHighEok = property.jeonse_max_price_eok;
+    const jeonseLowEok = property.jeonse_min_price_eok;
     // Use raw 월세 values in 만원 units, not the formatted _억원 strings
-    const monthlyHigh = property.월세_최고가;
-    const monthlyLow = property.월세_최저가;
+    const monthlyHigh = property.rent_max_price;
+    const monthlyLow = property.rent_min_price;
 
-    // Show price ranges when available, prioritize sales > jeonse > monthly
-    if (saleHigh && saleHigh !== '' && saleHigh !== '0') {
-      primaryPrice = saleLow !== saleHigh ? `${saleLow}~${saleHigh}억` : `${saleHigh}억`;
+    const isValidEok = (price: any) => price && price !== '' && price !== '0';
+    const isValidManwon = (price: any) => price && price !== '' && price !== '0' && parseFloat(price) > 0;
+
+    // Show price based on transactionFilter
+    if (transactionFilter === "매매" && isValidEok(saleHighEok)) {
+      primaryPrice = saleLowEok !== saleHighEok ? `${saleLowEok}~${saleHighEok}` : `${saleHighEok}`;
       priceType = '매매';
-    } else if (rentHigh && rentHigh !== '' && rentHigh !== '0') {
-      primaryPrice = rentLow !== rentHigh ? `${rentLow}~${rentHigh}억` : `${rentHigh}억`;
+    } else if (transactionFilter === "전세" && isValidEok(jeonseHighEok)) {
+      primaryPrice = jeonseLowEok !== jeonseHighEok ? `${jeonseLowEok}~${jeonseHighEok}` : `${jeonseHighEok}`;
       priceType = '전세';
-    } else if (monthlyHigh && monthlyHigh !== '' && monthlyHigh !== '0') {
+    } else if (transactionFilter === "월세" && isValidManwon(monthlyHigh)) {
       // Format monthly rent properly from raw 만원 values
+      const highPrice = parseFloat(monthlyHigh);
+      const lowPrice = parseFloat(monthlyLow || monthlyHigh); // fallback to high if low is missing
+      primaryPrice = lowPrice !== highPrice ? `${formatMonthlyPrice(lowPrice)}~${formatMonthlyPrice(highPrice)}` : formatMonthlyPrice(highPrice);
+      priceType = '월세';
+    } else if (isValidEok(saleHighEok)) { // Default priority when filter is "전체"
+      primaryPrice = saleLowEok !== saleHighEok ? `${saleLowEok}~${saleHighEok}` : `${saleHighEok}`;
+      priceType = '매매';
+    } else if (isValidEok(jeonseHighEok)) {
+      primaryPrice = jeonseLowEok !== jeonseHighEok ? `${jeonseLowEok}~${jeonseHighEok}` : `${jeonseHighEok}`;
+      priceType = '전세';
+    } else if (isValidManwon(monthlyHigh)) {
       const highPrice = parseFloat(monthlyHigh);
       const lowPrice = parseFloat(monthlyLow || monthlyHigh);
       primaryPrice = lowPrice !== highPrice ? `${formatMonthlyPrice(lowPrice)}~${formatMonthlyPrice(highPrice)}` : formatMonthlyPrice(highPrice);
@@ -459,6 +641,7 @@ export function createDetailedMarkerContent(property: any): string {
       priceType = '';
     }
   }
+
 
   // Area information
   const areaInfo = property.area?.summary || property.면적요약 || '';
@@ -507,24 +690,39 @@ export function createClusterMarkerContent(cluster: Cluster, style: any, transac
 
   // Naver-style dong cluster display with blue/green/orange colors
   if (cluster.count > 1) {
-    // Build detailed price text with all transaction types
+    // Build detailed price text based on transaction filter
     const priceDetails: string[] = [];
 
-    if (cluster.averagePricesByTransaction?.매매) {
+    // 필터에 따라 선택된 거래 유형의 가격만 표시
+    if (transactionFilter === "매매" && cluster.averagePricesByTransaction?.매매) {
       const price = cluster.averagePricesByTransaction.매매;
       const text = price % 1 === 0 ? `매매 ${Math.round(price)}억` : `매매 ${price.toFixed(1)}억`;
       priceDetails.push(text);
-    }
-
-    if (cluster.averagePricesByTransaction?.전세) {
+    } else if (transactionFilter === "전세" && cluster.averagePricesByTransaction?.전세) {
       const price = cluster.averagePricesByTransaction.전세;
       const text = price % 1 === 0 ? `전세 ${Math.round(price)}억` : `전세 ${price.toFixed(1)}억`;
       priceDetails.push(text);
-    }
-
-    if (cluster.averagePricesByTransaction?.월세) {
+    } else if (transactionFilter === "월세" && cluster.averagePricesByTransaction?.월세) {
       const price = cluster.averagePricesByTransaction.월세;
       priceDetails.push(`월세 ${formatMonthlyPrice(price)}`);
+    } else if (transactionFilter === "전체") {
+      // "전체" 필터일 때만 모든 가격 표시
+      if (cluster.averagePricesByTransaction?.매매) {
+        const price = cluster.averagePricesByTransaction.매매;
+        const text = price % 1 === 0 ? `매매 ${Math.round(price)}억` : `매매 ${price.toFixed(1)}억`;
+        priceDetails.push(text);
+      }
+
+      if (cluster.averagePricesByTransaction?.전세) {
+        const price = cluster.averagePricesByTransaction.전세;
+        const text = price % 1 === 0 ? `전세 ${Math.round(price)}억` : `전세 ${price.toFixed(1)}억`;
+        priceDetails.push(text);
+      }
+
+      if (cluster.averagePricesByTransaction?.월세) {
+        const price = cluster.averagePricesByTransaction.월세;
+        priceDetails.push(`월세 ${formatMonthlyPrice(price)}`);
+      }
     }
 
     // Build property type breakdown
@@ -550,15 +748,50 @@ export function createClusterMarkerContent(cluster: Cluster, style: any, transac
       });
     }
 
-    // Main display price (based on active filter)
-    let avgPriceText = '정보없음';
-    if (cluster.averagePrice) {
-      if (transactionFilter === "월세") {
-        avgPriceText = formatMonthlyPrice(cluster.averagePrice);
-      } else {
-        const eok = cluster.averagePrice;
-        avgPriceText = eok % 1 === 0 ? `${Math.round(eok)}억` : `${eok.toFixed(1)}억`;
+    // Main display price (based on active filter with fallback to sale price)
+    let avgPriceText = '';
+
+    // 필터에 따라 해당하는 가격 표시, 없으면 매매가로 폴백
+    if (transactionFilter === "매매") {
+      if (cluster.averagePricesByTransaction?.매매) {
+        const price = cluster.averagePricesByTransaction.매매;
+        avgPriceText = price % 1 === 0 ? `${Math.round(price)}억` : `${price.toFixed(1)}억`;
       }
+    } else if (transactionFilter === "전세") {
+      if (cluster.averagePricesByTransaction?.전세) {
+        const price = cluster.averagePricesByTransaction.전세;
+        avgPriceText = price % 1 === 0 ? `${Math.round(price)}억` : `${price.toFixed(1)}억`;
+      } else if (cluster.averagePricesByTransaction?.매매) {
+        // 전세가 없으면 매매가로 폴백
+        const price = cluster.averagePricesByTransaction.매매;
+        avgPriceText = price % 1 === 0 ? `${Math.round(price)}억` : `${price.toFixed(1)}억`;
+      }
+    } else if (transactionFilter === "월세") {
+      if (cluster.averagePricesByTransaction?.월세) {
+        const price = cluster.averagePricesByTransaction.월세;
+        avgPriceText = formatMonthlyPrice(price);
+      } else if (cluster.averagePricesByTransaction?.매매) {
+        // 월세가 없으면 매매가로 폴백
+        const price = cluster.averagePricesByTransaction.매매;
+        avgPriceText = price % 1 === 0 ? `${Math.round(price)}억` : `${price.toFixed(1)}억`;
+      }
+    } else if (transactionFilter === "전체") {
+      // "전체" 필터일 때는 우선순위: 매매 > 전세 > 월세
+      if (cluster.averagePricesByTransaction?.매매) {
+        const price = cluster.averagePricesByTransaction.매매;
+        avgPriceText = price % 1 === 0 ? `${Math.round(price)}억` : `${price.toFixed(1)}억`;
+      } else if (cluster.averagePricesByTransaction?.전세) {
+        const price = cluster.averagePricesByTransaction.전세;
+        avgPriceText = price % 1 === 0 ? `${Math.round(price)}억` : `${price.toFixed(1)}억`;
+      } else if (cluster.averagePricesByTransaction?.월세) {
+        const price = cluster.averagePricesByTransaction.월세;
+        avgPriceText = formatMonthlyPrice(price);
+      }
+    }
+
+    // 가격 정보가 없으면 마커를 표시하지 않음
+    if (!avgPriceText) {
+      return '';
     }
 
     // Display name based on cluster level (only district and dong)
@@ -586,8 +819,10 @@ export function createClusterMarkerContent(cluster: Cluster, style: any, transac
       else if (cluster.averagePrice >= 15) bgColor = '#34c759'; // Green for medium
     }
 
-    // Build tooltip content
-    const tooltipContent = `거래 유형별:\n${priceDetails.join('\n') || '정보없음'}\n\n부동산 유형별:\n${propertyTypeDetails.join('\n') || '정보없음'}`;
+    // Build tooltip content only with available price info
+    const tooltipContent = priceDetails.length > 0
+      ? `가격 정보:\n${priceDetails.join('\n')}`
+      : '가격 정보 없음';
 
     return `
       <div style="
@@ -613,11 +848,6 @@ export function createClusterMarkerContent(cluster: Cluster, style: any, transac
         <div style="font-size: 16px; font-weight: 700; letter-spacing: -0.5px;">
           ${avgPriceText}
         </div>
-        ${priceDetails.length > 0 ? `
-        <div style="font-size: 9px; margin-top: 4px; opacity: 0.9; border-top: 1px solid rgba(255,255,255,0.3); padding-top: 3px;">
-          ${priceDetails.slice(0, 2).join(' | ')}
-        </div>
-        ` : ''}
         <div style="
           position: absolute;
           bottom: -4px;
