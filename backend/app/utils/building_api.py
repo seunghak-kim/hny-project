@@ -271,10 +271,10 @@ class TransactionPriceAPI(BaseAPIClient):
         'offi_trade': 'RTMSDataSvcOffiTrade/getRTMSDataSvcOffiTrade',
         'offi_rent': 'RTMSDataSvcOffiRent/getRTMSDataSvcOffiRent',
         
-        # 연립다세대
+        # 연립다세대(houses?)
         'rh_trade': 'RTMSDataSvcRHTrade/getRTMSDataSvcRHTrade',
-        
-        # 단독/다가구
+        'rh_rent' : 'RTMSDataSvcRHRent/getRTMSDataSvcRHRent',
+        # 단독/다가구(villa?)
         'sh_trade': 'RTMSDataSvcSHTrade/getRTMSDataSvcSHTrade',
         'sh_rent': 'RTMSDataSvcSHRent/getRTMSDataSvcSHRent',
     }
@@ -288,7 +288,7 @@ class TransactionPriceAPI(BaseAPIClient):
         
         config = APIConfig(
             service_key=service_key,
-            base_url="http://apis.data.go.kr/1613000",
+            base_url="https://apis.data.go.kr/1613000",
             response_format=response_format
         )
         super().__init__(config)
@@ -371,13 +371,20 @@ class TransactionPriceAPI(BaseAPIClient):
             self, lawd_cd, deal_ymd, num_of_rows, page_no, debug
         )
     
-    def get_rh_trade_data(self, lawd_cd: str, deal_ymd: str, num_of_rows: str = "100", 
+    def get_rh_trade_data(self, lawd_cd: str, deal_ymd: str, num_of_rows: str = "100",
                          page_no: str = "1", debug: bool = False) -> Dict:
         """연립다세대 매매 실거래가 조회"""
         return self._create_standard_method('rh_trade', '연립다세대 매매 실거래가')(
             self, lawd_cd, deal_ymd, num_of_rows, page_no, debug
         )
-    
+
+    def get_rh_rent_data(self, lawd_cd: str, deal_ymd: str, num_of_rows: str = "100",
+                        page_no: str = "1", debug: bool = False) -> Dict:
+        """연립다세대 전월세 실거래가 조회"""
+        return self._create_standard_method('rh_rent', '연립다세대 전월세 실거래가')(
+            self, lawd_cd, deal_ymd, num_of_rows, page_no, debug
+        )
+
     def get_sh_trade_data(self, lawd_cd: str, deal_ymd: str, num_of_rows: str = "100", 
                          page_no: str = "1", debug: bool = False) -> Dict:
         """단독/다가구 매매 실거래가 조회"""
@@ -408,6 +415,7 @@ class TransactionPriceAPI(BaseAPIClient):
             'offi_trade': self.get_offi_trade_data,
             'offi_rent': self.get_offi_rent_data,
             'rh_trade': self.get_rh_trade_data,
+            'rh_rent': self.get_rh_rent_data,
             'sh_trade': self.get_sh_trade_data,
             'sh_rent': self.get_sh_rent_data,
         }

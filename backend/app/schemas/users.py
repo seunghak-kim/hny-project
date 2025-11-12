@@ -108,13 +108,13 @@ class SocialAuthResponse(SocialAuthBase):
 
 # ===== UserFavorite Schemas =====
 class UserFavoriteCreate(BaseModel):
-    real_estate_id: int
+    building_id: int
 
 
 class UserFavoriteResponse(BaseModel):
     id: int
     user_id: int
-    real_estate_id: int
+    building_id: int
     created_at: datetime
 
     class Config:

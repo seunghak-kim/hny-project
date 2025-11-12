@@ -1,13 +1,13 @@
 from pydantic import BaseModel, Field
-from datetime import datetime 
+from datetime import datetime
 from decimal import Decimal
 
 # TrustScore Schemas
 
 class TrustScoreBase(BaseModel):
-    real_estate_id: int = Field(..., description="부동산ID")
+    building_id: int = Field(..., description="건물 ID")
     score: Decimal = Field(..., ge=0, le=100, decimal_places=2,
-                            description="부동산 매물 신뢰도점수")
+                            description="건물 신뢰도 점수")
     verification_notes: str|None = Field(None, description="검증 내용")
 
 
@@ -15,8 +15,8 @@ class TrustScoreCreate(TrustScoreBase):
     pass
 
 class TrustScoreUpdate(BaseModel):
-    score: Decimal|None = Field(None, ge=0, le=100, decimal_places=2, 
-                                description="부동산 매물 신뢰점수")
+    score: Decimal|None = Field(None, ge=0, le=100, decimal_places=2,
+                                description="건물 신뢰도 점수")
     verification_notes: str|None = Field(None, description="검증 내용")
     
 class TrustScoreResponse(TrustScoreBase):

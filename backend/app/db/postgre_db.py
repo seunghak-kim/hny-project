@@ -4,7 +4,7 @@ from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import sessionmaker
 from app.core.config import settings
 
-# Sync Engine (기존 코드 호환성)
+# Sync Engine 
 # Use sqlalchemy_url property which ensures proper URL format
 database_url = settings.sqlalchemy_url if hasattr(settings, 'sqlalchemy_url') else settings.DATABASE_URL
 engine = create_engine(database_url, pool_pre_ping=True)

@@ -101,14 +101,14 @@ class UserFavorite(Base):
     __tablename__ = "user_favorites"
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False, comment="사용자 ID")
-    real_estate_id = Column(Integer, ForeignKey("real_estates.id"), nullable=False, comment="부동산 ID")
+    building_id = Column(Integer, ForeignKey("buildings.id"), nullable=False, comment="건물 ID")
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), comment="생성일")
 
     # Relationships
     user = relationship("User", back_populates="favorites")
-    real_estate = relationship("RealEstate")
+    building = relationship("Building")
 
     # Indexes
     __table_args__ = (
-        Index('idx_user_real_estate', 'user_id', 'real_estate_id', unique=True),
+        Index('idx_user_building', 'user_id', 'building_id', unique=True),
     )
