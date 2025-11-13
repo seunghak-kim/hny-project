@@ -36,6 +36,9 @@ from .realestate_terminology import RealEstateTerminologyTool
 # Real Estate Search (PostgreSQL)
 from .real_estate_search_tool import RealEstateSearchTool
 
+# Bank Loan Search (PostgreSQL)
+from .bank_loan_search_tool import BankLoanSearchTool
+
 # =========================================================================
 # Backward Compatibility Aliases
 # =========================================================================
@@ -52,10 +55,8 @@ try:
 except ImportError:
     HybridLegalSearch = None
 
-# LoanProductTool placeholder 유지
-class LoanProductTool:
-    """Placeholder for LoanProductTool"""
-    pass
+# LoanProductTool - BankLoanSearchTool로 대체
+LoanProductTool = BankLoanSearchTool
 
 # =========================================================================
 # Exports
@@ -83,6 +84,7 @@ __all__ = [
     "RealEstateTerminologyTool",
     "RealEstateTerminology",  # Alias
     "RealEstateSearchTool",
+    "BankLoanSearchTool",
 
     # Backward compatibility
     "HybridLegalSearch",

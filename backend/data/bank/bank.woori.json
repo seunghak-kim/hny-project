@@ -1,0 +1,1834 @@
+[{
+  "_id": {
+    "$oid": "68db9e7689c43cae44515320"
+  },
+  "metadata": {
+    "product_id": "WOORI-mortgage-WON-01",
+    "bank_name": "우리은행",
+    "product_name": "우리WON주택대출",
+    "product_category": "비대면",
+    "last_updated": "2025-09-17",
+    "source_document_url": "https://spot.wooribank.com/pot/Dream?withyou=POLON0053",
+    "summary": "은행 방문이나 서류제출 없이 스마트폰으로 간편하게 신청 가능한 비대면 주택담보대출 상품"
+  },
+  "content_chunks": [
+    {
+      "chunk_id": "WOORI-mortgage-WON-01-C01",
+      "category": "자격조건",
+      "content_text": "소득금액증명원 또는 근로소득원천징수영수증 스크래핑을 통해 소득 확인이 가능한 고객. 본인 명의의 휴대폰 및 공동인증서(구 공인인증서) 보유. 본인 단독 또는 배우자와 공동명의로 주택을 소유한 경우. 단, 공동명의인 경우 배우자가 공동인증서를 보유해야 함. 무주택 또는 1주택 세대. (단, 구입자금 용도인 경우 일시적 2주택 허용 후 처분 조건)",
+      "keywords": [
+        "소득증빙",
+        "공동인증서",
+        "단독명의",
+        "공동명의",
+        "무주택",
+        "1주택"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-mortgage-WON-01-C02",
+      "category": "대상주택",
+      "content_text": "본인 또는 배우자와 공동명의로 소유한 아파트, 연립주택, 다세대주택. (주거용 오피스텔 제외)",
+      "keywords": [
+        "아파트",
+        "연립주택",
+        "다세대주택"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-mortgage-WON-01-C03",
+      "category": "대출한도",
+      "content_text": "최대 5억원. 담보인정비율(LTV), 총부채상환비율(DTI) 등 규제 범위 내에서 담보 가격 및 소득 금액에 따라 차등 적용.",
+      "keywords": [
+        "최대 5억원",
+        "LTV",
+        "DTI",
+        "담보인정비율"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-mortgage-WON-01-C04",
+      "category": "대출기간_상환방식",
+      "content_text": "대출기간: 최장 40년 (만 39세 이하 또는 신혼부부) 또는 35년. 상환방식: 원리금균등분할상환, 원금균등분할상환. 거치기간 설정 불가.",
+      "keywords": [
+        "최장 40년",
+        "원리금균등분할상환",
+        "원금균등분할상환"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-mortgage-WON-01-C05",
+      "category": "대출금리",
+      "content_text": "기준금리(금융채, COFIX) + 가산금리 - 우대금리. 우대금리는 거래실적(급여이체, 신용카드 사용 등) 및 비대면 신청 등에 따라 최대 연 0.9%p 적용 가능. 최종금리는 개인의 신용상황 및 대출조건에 따라 변동될 수 있음.",
+      "keywords": [
+        "기준금리",
+        "가산금리",
+        "우대금리",
+        "거래실적우대"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-mortgage-WON-01-C06",
+      "category": "중도상환수수료",
+      "content_text": "대출 실행일로부터 3년 이내 상환 시 발생. 상환금액 × 수수료율(고정금리 1.4%, 변동금리 1.2%) × (잔존기간 ÷ 대출기간). 매년 대출원금의 10% 이내 상환 시 면제.",
+      "keywords": [
+        "중도상환수수료",
+        "3년",
+        "수수료율",
+        "면제조건"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-mortgage-WON-01-C07",
+      "category": "필요서류",
+      "content_text": "서류 제출 없음. 공동인증서를 통해 스크래핑 방식으로 자동 제출 (소득증명원, 주민등록등본, 가족관계증명서 등)",
+      "keywords": [
+        "서류 없음",
+        "스크래핑",
+        "공동인증서",
+        "비대면"
+      ]
+    }
+  ]
+},
+{
+  "_id": {
+    "$oid": "68db9e7689c43cae44515321"
+  },
+  "metadata": {
+    "product_id": "WOORI-mortgage-refi-01",
+    "bank_name": "우리은행",
+    "product_name": "우리WON주택대출(갈아타기)",
+    "product_category": "비대면",
+    "last_updated": "2025-09-17",
+    "source_document_url": "https://spot.wooribank.com/pot/Dream?withyou=POLON0053",
+    "summary": "더 낮은 금리로 기존 주택담보대출을 갈아탈 수 있는 비대면 대환대출 상품"
+  },
+  "content_chunks": [
+    {
+      "chunk_id": "WOORI-mortgage-refi-01-C01",
+      "category": "자격조건",
+      "content_text": "다른 금융기관의 주택담보대출을 보유하고 3개월 이상 정상적으로 상환 중인 고객. 스크래핑을 통한 소득 및 재직 확인이 가능한 고객. 본인 단독 또는 배우자 공동 소유 아파트를 담보로 제공하는 고객. 1주택 세대이거나, 처분조건부 일시적 2주택 세대.",
+      "keywords": [
+        "대환대출",
+        "갈아타기",
+        "1주택",
+        "스크래핑"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-mortgage-refi-01-C02",
+      "category": "대상주택",
+      "content_text": "KB시세 조회가 가능한 본인 소유의 아파트 (배우자 공동명의 포함)",
+      "keywords": [
+        "아파트",
+        "KB시세"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-mortgage-refi-01-C03",
+      "category": "대출한도",
+      "content_text": "기존 대출 잔액 범위 내에서 최대 5억원. LTV, DTI 등 규제 비율 및 담보가액, 소득금액에 따라 한도 산정.",
+      "keywords": [
+        "대환",
+        "기존대출 잔액",
+        "최대 5억원"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-mortgage-refi-01-C04",
+      "category": "대출기간_상환방식",
+      "content_text": "대출기간: 최장 40년. 상환방식: 원(리)금균등분할상환. 거치기간 없음.",
+      "keywords": [
+        "최장 40년",
+        "원리금균등분할상환",
+        "분할상환"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-mortgage-refi-01-C05",
+      "category": "대출금리",
+      "content_text": "기준금리 + 가산금리 - 우대금리. 비대면 우대 및 거래실적 우대 적용 가능. 최종금리는 개인신용평점 및 대출조건에 따라 결정됨.",
+      "keywords": [
+        "금리",
+        "우대금리",
+        "대환대출"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-mortgage-refi-01-C06",
+      "category": "중도상환수수료",
+      "content_text": "대출 실행 후 3년 내 상환 시 부과. 상환원금 × 수수료율(1.2%~1.4%) × (잔존기간/대출기간). 매년 대출원금의 10%까지 상환 시 면제.",
+      "keywords": [
+        "중도상환수수료",
+        "3년",
+        "면제"
+      ]
+    }
+  ]
+},
+{
+  "_id": {
+    "$oid": "68db9e7689c43cae44515322"
+  },
+  "metadata": {
+    "product_id": "WOORI-mortgage-refi-02",
+    "bank_name": "우리은행",
+    "product_name": "우리WON주택대출(오피스텔-갈아타기)",
+    "product_category": "비대면",
+    "last_updated": "2025-09-17",
+    "source_document_url": "https://spot.wooribank.com/pot/Dream?withyou=POLON0053",
+    "summary": "주거용 오피스텔 담보대출을 보유한 고객을 위한 비대면 대환대출 전용 상품"
+  },
+  "content_chunks": [
+    {
+      "chunk_id": "WOORI-mortgage-refi-02-C01",
+      "category": "자격조건",
+      "content_text": "타 금융기관의 주거용 오피스텔 담보대출을 3개월 이상 정상 상환중인 고객. 스크래핑을 통해 소득 및 재직서류 제출이 가능한 고객. 본인 소유의 주거용 오피스텔을 담보로 제공하는 고객.",
+      "keywords": [
+        "오피스텔",
+        "대환대출",
+        "갈아타기",
+        "비대면"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-mortgage-refi-02-C02",
+      "category": "대상주택",
+      "content_text": "KB시세 조회가 가능한 본인 명의의 주거용 오피스텔.",
+      "keywords": [
+        "주거용 오피스텔",
+        "KB시세"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-mortgage-refi-02-C03",
+      "category": "대출한도",
+      "content_text": "기존 오피스텔 담보대출 잔액 범위 내에서 최대 2억원.",
+      "keywords": [
+        "최대 2억원",
+        "대환",
+        "오피스텔"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-mortgage-refi-02-C04",
+      "category": "대출기간_상환방식",
+      "content_text": "대출기간: 10년 ~ 35년. 상환방식: 원(리)금균등분할상환.",
+      "keywords": [
+        "최장 35년",
+        "원리금균등분할상환"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-mortgage-refi-02-C05",
+      "category": "대출금리",
+      "content_text": "기준금리(신규 COFIX 등) + 가산금리 - 우대금리. 비대면 거래실적 등에 따라 우대금리 차등 적용.",
+      "keywords": [
+        "대출금리",
+        "COFIX",
+        "우대금리"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-mortgage-refi-02-C06",
+      "category": "중도상환수수료",
+      "content_text": "3년 이내 상환 시 적용. 상환금액 × 수수료율 × 잔존일수/대출기간. 매년 최초 대출금액의 10%까지는 면제.",
+      "keywords": [
+        "중도상환수수료",
+        "면제조건"
+      ]
+    }
+  ]
+},
+{
+  "_id": {
+    "$oid": "68db9e7689c43cae44515323"
+  },
+  "metadata": {
+    "product_id": "WOORI-mortgage-platform-01",
+    "bank_name": "우리은행",
+    "product_name": "우리 플랫폼 WON주택대출",
+    "product_category": "비대면",
+    "last_updated": "2025-09-17",
+    "source_document_url": "https://spot.wooribank.com/pot/Dream?withyou=POLON0053",
+    "summary": "대출비교 플랫폼을 통해 신청하는 전용 주택담보대출 상품"
+  },
+  "content_chunks": [
+    {
+      "chunk_id": "WOORI-mortgage-platform-01-C01",
+      "category": "자격조건",
+      "content_text": "대출비교 플랫폼을 통해 대출을 신청한 고객. 스크래핑을 통한 소득증빙이 가능한 직장인 또는 사업소득자. 본인 또는 배우자 공동명의 아파트를 소유한 고객.",
+      "keywords": [
+        "대출비교플랫폼",
+        "스크래핑",
+        "공동명의"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-mortgage-platform-01-C02",
+      "category": "대상주택",
+      "content_text": "본인 또는 배우자와 공동명의로 소유한 아파트 (KB시세 조회 가능).",
+      "keywords": [
+        "아파트",
+        "KB시세",
+        "공동명의"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-mortgage-platform-01-C03",
+      "category": "대출한도",
+      "content_text": "최대 10억원. LTV, DSR 등 규제 한도 내에서 담보가액 및 소득에 따라 결정.",
+      "keywords": [
+        "최대 10억원",
+        "LTV",
+        "DSR"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-mortgage-platform-01-C04",
+      "category": "대출기간_상환방식",
+      "content_text": "대출기간: 최장 40년. 상환방식: 원리금균등분할상환. 거치기간 설정 불가.",
+      "keywords": [
+        "최장 40년",
+        "원리금균등분할상환"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-mortgage-platform-01-C05",
+      "category": "대출금리",
+      "content_text": "기준금리 + 가산금리 - 우대금리. 대출비교 플랫폼 전용 우대금리 및 거래실적 우대금리 적용 가능.",
+      "keywords": [
+        "플랫폼 전용",
+        "우대금리",
+        "기준금리"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-mortgage-platform-01-C06",
+      "category": "중도상환수수료",
+      "content_text": "3년 이내 상환 시 상환금액의 1.2%~1.4% 이내에서 잔존기간에 따라 차등 부과. 대출원금의 10% 범위 내 상환 시 면제.",
+      "keywords": [
+        "중도상환수수료",
+        "3년",
+        "차등부과"
+      ]
+    }
+  ]
+},
+{
+  "_id": {
+    "$oid": "68db9e7689c43cae44515324"
+  },
+  "metadata": {
+    "product_id": "WOORI-mortgage-apartment-01",
+    "bank_name": "우리은행",
+    "product_name": "우리아파트론(일반자금)",
+    "product_category": "영업점",
+    "last_updated": "2025-09-17",
+    "source_document_url": "https://spot.wooribank.com/pot/Dream?withyou=POLON0052",
+    "summary": "아파트를 담보로 자금용도 제한 없이 생활안정자금 등을 대출받는 영업점 신청 상품"
+  },
+  "content_chunks": [
+    {
+      "chunk_id": "WOORI-mortgage-apartment-01-C01",
+      "category": "자격조건",
+      "content_text": "본인 소유의 아파트를 담보로 제공하고, 소득증빙이 가능한 고객. 주택보유수, DSR 등 정부의 가계대출 규제를 충족해야 함.",
+      "keywords": [
+        "아파트 담보",
+        "소득증빙",
+        "DSR"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-mortgage-apartment-01-C02",
+      "category": "대상주택",
+      "content_text": "전국의 모든 아파트 (단, 감정평가 및 권리관계에 이상이 없는 경우)",
+      "keywords": [
+        "아파트",
+        "감정평가"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-mortgage-apartment-01-C03",
+      "category": "대출한도",
+      "content_text": "담보평가금액, LTV, DSR 및 연간소득 범위 내에서 산출. 생활안정자금 목적의 경우 연간 한도(통상 1억원) 제한을 받을 수 있음.",
+      "keywords": [
+        "LTV",
+        "DSR",
+        "생활안정자금"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-mortgage-apartment-01-C04",
+      "category": "대출기간_상환방식",
+      "content_text": "대출기간: 최장 40년. 상환방식: 원(리)금균등분할상환, 만기일시상환(대출기간 10년 이내), 혼합상환(거치기간+분할상환) 등 선택 가능.",
+      "keywords": [
+        "최장 40년",
+        "분할상환",
+        "만기일시상환",
+        "거치기간"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-mortgage-apartment-01-C05",
+      "category": "대출금리",
+      "content_text": "기준금리(COFIX, 금융채) + 가산금리 - 우대금리. 급여이체, 신용카드, 자동이체 등 거래실적에 따라 우대금리 최대 1.0%p까지 적용.",
+      "keywords": [
+        "COFIX",
+        "가산금리",
+        "거래실적우대"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-mortgage-apartment-01-C06",
+      "category": "중도상환수수료",
+      "content_text": "3년 이내 상환 시, 상환원금에 대하여 기간별로 차등화된 수수료율(최대 1.4%) 적용. 매년 대출금액의 10%까지 상환 면제.",
+      "keywords": [
+        "중도상환수수료",
+        "수수료율",
+        "면제"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-mortgage-apartment-01-C07",
+      "category": "필요서류",
+      "content_text": "신분증, 등기권리증(또는 매매계약서), 주민등록등본 및 초본, 인감증명서, 인감도장, 소득증빙서류(근로소득원천징수영수증 등), 재직증명서 등",
+      "keywords": [
+        "필요서류",
+        "등기권리증",
+        "인감증명서",
+        "소득증빙서류"
+      ]
+    }
+  ]
+},
+{
+  "_id": {
+    "$oid": "68db9e7689c43cae44515325"
+  },
+  "metadata": {
+    "product_id": "WOORI-mortgage-apartment-02",
+    "bank_name": "우리은행",
+    "product_name": "우리아파트론(월상환액고정형)",
+    "product_category": "영업점",
+    "last_updated": "2025-09-17",
+    "source_document_url": "https://spot.wooribank.com/pot/Dream?withyou=POLON0052",
+    "summary": "금리상승기에도 월 상환 부담을 고정시켜 안정적인 자금 계획을 세울 수 있는 주택담보대출"
+  },
+  "content_chunks": [
+    {
+      "chunk_id": "WOORI-mortgage-apartment-02-C01",
+      "category": "자격조건",
+      "content_text": "아파트를 담보로 제공하는 고객으로, 향후 금리 변동에 따른 월 상환액 증가 리스크를 줄이고 싶은 고객. 소득증빙 및 신용도 요건 충족 필요.",
+      "keywords": [
+        "월상환액 고정",
+        "금리변동 리스크",
+        "소득증빙"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-mortgage-apartment-02-C02",
+      "category": "대출특징",
+      "content_text": "최초 5년간 매월 상환하는 원리금 상환액을 고정. 금리가 상승하더라도 5년간은 월 상환액이 동일하게 유지되며, 금리 하락 시에는 원금 상환이 더 많이 이루어지는 구조. 5년 주기로 월 상환액이 재산정됨.",
+      "keywords": [
+        "5년주기",
+        "월상환액 고정",
+        "금리상승기"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-mortgage-apartment-02-C03",
+      "category": "대출한도",
+      "content_text": "담보가액 및 LTV, DSR 규제 범위 내에서 결정.",
+      "keywords": [
+        "LTV",
+        "DSR",
+        "담보평가"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-mortgage-apartment-02-C04",
+      "category": "대출기간_상환방식",
+      "content_text": "대출기간: 10년 이상 최장 40년. 상환방식: 월상환액고정 원리금분할상환방식.",
+      "keywords": [
+        "최장 40년",
+        "월상환액고정"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-mortgage-apartment-02-C05",
+      "category": "대출금리",
+      "content_text": "기준금리(금융채 5년물 등) + 가산금리 - 우대금리. 금리 변동주기는 6개월 또는 1년이지만, 월 상환액은 5년간 고정.",
+      "keywords": [
+        "월상환액 고정",
+        "금융채 5년물",
+        "우대금리"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-mortgage-apartment-02-C06",
+      "category": "중도상환수수료",
+      "content_text": "대출 취급 후 3년까지 적용되며, 상환금액에 대해 최대 1.4%의 수수료율을 잔존기간에 따라 차등 적용.",
+      "keywords": [
+        "중도상환수수료",
+        "3년"
+      ]
+    }
+  ]
+},
+{
+  "_id": {
+    "$oid": "68db9e7689c43cae44515326"
+  },
+  "metadata": {
+    "product_id": "WOORI-mortgage-property-01",
+    "bank_name": "우리은행",
+    "product_name": "우리부동산론(일반자금)",
+    "product_category": "영업점",
+    "last_updated": "2025-09-17",
+    "source_document_url": "https://spot.wooribank.com/pot/Dream?withyou=POLON0052",
+    "summary": "아파트 외 연립주택, 다세대주택, 단독주택 등 일반 부동산을 담보로 하는 대출 상품"
+  },
+  "content_chunks": [
+    {
+      "chunk_id": "WOORI-mortgage-property-01-C01",
+      "category": "자격조건",
+      "content_text": "주택(단독, 다가구, 연립, 다세대), 주거용 오피스텔 등 부동산을 담보로 제공하고 소득증빙이 가능한 개인 고객.",
+      "keywords": [
+        "부동산 담보",
+        "소득증빙",
+        "개인고객"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-mortgage-property-01-C02",
+      "category": "대상주택",
+      "content_text": "아파트, 연립주택, 다세대주택, 단독주택, 다가구주택, 주거용 오피스텔 등. (단, 토지 및 상가는 별도 상품으로 취급)",
+      "keywords": [
+        "단독주택",
+        "다가구",
+        "연립",
+        "다세대",
+        "오피스텔"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-mortgage-property-01-C03",
+      "category": "대출한도",
+      "content_text": "담보 감정가액을 기준으로 LTV, DSR 등 관련 규제 범위 내에서 결정.",
+      "keywords": [
+        "감정가액",
+        "LTV",
+        "DSR"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-mortgage-property-01-C04",
+      "category": "대출기간_상환방식",
+      "content_text": "대출기간: 최장 40년. 상환방식: 분할상환, 만기일시상환(10년 이내), 혼합상환방식 등 고객의 자금계획에 따라 선택 가능.",
+      "keywords": [
+        "최장 40년",
+        "만기일시상환",
+        "분할상환"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-mortgage-property-01-C05",
+      "category": "대출금리",
+      "content_text": "기준금리 + 개인별 신용등급 및 담보조건에 따른 가산금리 - 거래실적에 따른 우대금리.",
+      "keywords": [
+        "대출금리",
+        "신용등급",
+        "우대금리"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-mortgage-property-01-C06",
+      "category": "중도상환수수료",
+      "content_text": "3년 이내 원금 상환 시, 잔존기간에 따라 차등적인 수수료율(최대 1.4%) 적용. 매년 최초 대출금의 10%까지는 수수료 없이 상환 가능.",
+      "keywords": [
+        "중도상환수수료",
+        "10% 면제"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-mortgage-property-01-C07",
+      "category": "필요서류",
+      "content_text": "신분증, 등기권리증, 인감증명서 및 인감도장, 주민등록등초본, 소득 및 재직증명서류, 부동산 공시가격 확인서 등",
+      "keywords": [
+        "등기권리증",
+        "인감증명서",
+        "소득증명서류"
+      ]
+    }
+  ]
+},
+{
+  "_id": {
+    "$oid": "68db9e7689c43cae44515327"
+  },
+  "metadata": {
+    "product_id": "WOORI-mortgage-steppingstone-01",
+    "bank_name": "우리은행",
+    "product_name": "스마트징검다리론",
+    "product_category": "비대면",
+    "last_updated": "2025-09-17",
+    "source_document_url": "https://spot.wooribank.com/pot/Dream?withyou=POLON0053",
+    "summary": "전세자금대출을 이용 중인 고객이 거주 중인 주택을 구입하게 될 경우, 해당 주택을 담보로 전환하는 비대면 대출"
+  },
+  "content_chunks": [
+    {
+      "chunk_id": "WOORI-mortgage-steppingstone-01-C01",
+      "category": "자격조건",
+      "content_text": "우리은행 전세자금대출을 이용 중인 고객. 임대차계약 만기 1개월 이내에 임차주택에 대한 매매계약을 체결한 고객. 스크래핑을 통한 소득 및 재직 확인이 가능한 고객. 본인 단독명의로 소유권 이전등기를 하는 경우.",
+      "keywords": [
+        "전세대출",
+        "주택구입",
+        "담보전환",
+        "징검다리"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-mortgage-steppingstone-01-C02",
+      "category": "대상주택",
+      "content_text": "현재 전세자금대출의 목적물인 아파트, 연립주택, 다세대주택 (KB시세 조회 가능 주택).",
+      "keywords": [
+        "임차주택",
+        "아파트",
+        "연립",
+        "다세대"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-mortgage-steppingstone-01-C03",
+      "category": "대출한도",
+      "content_text": "기존 전세자금대출 잔액 이상으로, 담보인정비율(LTV) 등 규제 범위 내에서 최대 5억원.",
+      "keywords": [
+        "전세대출 잔액",
+        "담보전환",
+        "최대 5억원"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-mortgage-steppingstone-01-C04",
+      "category": "대출기간_상환방식",
+      "content_text": "대출기간: 최장 40년. 상환방식: 원리금균등분할상환.",
+      "keywords": [
+        "최장 40년",
+        "원리금균등분할상환"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-mortgage-steppingstone-01-C05",
+      "category": "대출금리",
+      "content_text": "기준금리(COFIX 등) + 가산금리 - 우대금리. 비대면 신청 및 거래실적에 따라 우대.",
+      "keywords": [
+        "대출금리",
+        "비대면 우대"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-mortgage-steppingstone-01-C06",
+      "category": "중도상환수수료",
+      "content_text": "3년 내 상환 시 부과. 상환금액 × 수수료율(최대 1.4%) × 잔존기간/대출기간. 매년 대출원금 10% 이내 상환 시 면제.",
+      "keywords": [
+        "중도상환수수료",
+        "3년",
+        "면제"
+      ]
+    }
+  ]
+},
+{
+  "_id": {
+    "$oid": "68db9e7689c43cae44515328"
+  },
+  "metadata": {
+    "product_id": "WOORI-mortgage-movein-01",
+    "bank_name": "우리은행",
+    "product_name": "우리WON입주자금대출",
+    "product_category": "비대면",
+    "last_updated": "2025-09-17",
+    "source_document_url": "https://spot.wooribank.com/pot/Dream?withyou=POLON0053",
+    "summary": "신규 분양 아파트의 잔금 납부를 위해 비대면으로 신청하는 입주자금 전용 대출"
+  },
+  "content_chunks": [
+    {
+      "chunk_id": "WOORI-mortgage-movein-01-C01",
+      "category": "자격조건",
+      "content_text": "분양계약서 상 본인 단독 수분양자. 우리은행과 협약된 사업장의 입주예정자. 스크래핑을 통해 소득증빙서류 제출이 가능한 고객.",
+      "keywords": [
+        "입주자금",
+        "잔금대출",
+        "분양아파트",
+        "수분양자"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-mortgage-movein-01-C02",
+      "category": "대상주택",
+      "content_text": "우리은행과 대출 협약이 체결된 신규 분양 아파트 단지.",
+      "keywords": [
+        "협약 사업장",
+        "신규 분양",
+        "아파트"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-mortgage-movein-01-C03",
+      "category": "대출한도",
+      "content_text": "분양가액 및 담보가액을 기준으로 LTV, DSR 규제 한도 내에서 결정.",
+      "keywords": [
+        "분양가",
+        "잔금",
+        "LTV",
+        "DSR"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-mortgage-movein-01-C04",
+      "category": "대출기간_상환방식",
+      "content_text": "대출기간: 최장 40년. 상환방식: 원리금균등분할상환. (거치기간 1년 설정 가능)",
+      "keywords": [
+        "최장 40년",
+        "원리금균등분할상환",
+        "거치기간"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-mortgage-movein-01-C05",
+      "category": "대출금리",
+      "content_text": "기준금리 + 가산금리 - 우대금리. 비대면 채널 이용 및 은행 거래 실적에 따라 우대금리 적용.",
+      "keywords": [
+        "입주자금",
+        "잔금대출",
+        "우대금리"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-mortgage-movein-01-C06",
+      "category": "중도상환수수료",
+      "content_text": "3년 이내 상환 시 최대 1.4%의 수수료율이 잔존기간에 따라 차등 적용.",
+      "keywords": [
+        "중도상환수수료",
+        "차등 적용"
+      ]
+    }
+  ]
+},
+{
+  "_id": {
+    "$oid": "68db9e7689c43cae44515329"
+  },
+  "metadata": {
+    "product_id": "WOORI-jeonse-won-hug-01",
+    "bank_name": "우리은행",
+    "product_name": "우리WON전세대출(주택도시보증)",
+    "product_category": "비대면",
+    "last_updated": "2025-09-17",
+    "source_document_url": "https://spot.wooribank.com/pot/Dream?withyou=POLON0053",
+    "summary": "영업점 방문 없이 스마트폰으로 간편하게 신청하는 주택도시보증공사 보증서 담보 전세대출"
+  },
+  "content_chunks": [
+    {
+      "chunk_id": "WOORI-jeonse-won-hug-01-C01",
+      "category": "자격조건",
+      "content_text": "임대차계약을 체결하고 임차보증금의 5% 이상을 지급한 고객. 본인 및 배우자(결혼예정자 포함)가 무주택 또는 1주택 이내인 고객 (1주택자의 경우 부부합산 연소득 1억원 이하 및 보유주택 시가 9억원 이하). 주택도시보증공사 보증서 발급이 가능한 고객.",
+      "keywords": [
+        "무주택",
+        "1주택",
+        "주택도시보증공사",
+        "HUG",
+        "임대차계약"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-jeonse-won-hug-01-C02",
+      "category": "대상주택",
+      "content_text": "아파트, 연립, 다세대, 주거용 오피스텔, 단독/다가구주택. 임차보증금이 수도권 7억원, 그 외 지역 5억원 이하인 주택.",
+      "keywords": [
+        "아파트",
+        "오피스텔",
+        "단독주택",
+        "다가구주택",
+        "임차보증금"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-jeonse-won-hug-01-C03",
+      "category": "대출한도",
+      "content_text": "최대 4.5억원. 임차보증금의 80% 이내. 단, 다가구주택의 경우 최대 5천만원.",
+      "keywords": [
+        "최대 4.5억원",
+        "임차보증금 80%"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-jeonse-won-hug-01-C04",
+      "category": "대출기간_상환방식",
+      "content_text": "1년 이상 3년 이내 (임대차계약 만기일과 일치). 만기일시상환 방식. 임대차계약 연장 시 최장 10년까지 연장 가능.",
+      "keywords": [
+        "만기일시상환",
+        "최장 10년"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-jeonse-won-hug-01-C05",
+      "category": "대출금리",
+      "content_text": "기준금리(신규취급액 COFIX 6개월/12개월) + 가산금리 - 우대금리. 우대금리는 최대 연 0.8% (급여/연금이체, 우리카드 이용, WON뱅킹 이용 등)",
+      "keywords": [
+        "COFIX",
+        "가산금리",
+        "우대금리"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-jeonse-won-hug-01-C06",
+      "category": "중도상환수수료",
+      "content_text": "중도상환해약금 = 중도상환금액 × 해약금요율(0.6%) × (잔존기간 ÷ 대출기간). 단, 대출 실행일로부터 3년 경과 시 면제.",
+      "keywords": [
+        "중도상환수수료",
+        "0.6%"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-jeonse-won-hug-01-C07",
+      "category": "필요서류",
+      "content_text": "스크래핑을 통해 자동 제출: 주민등록등본, 가족관계증명서, 혼인관계증명서, 소득금액증명원, 건강보험자격득실확인서 등. 직접 촬영 제출: 확정일자부 임대차계약서, 임차보증금 5% 이상 지급 영수증.",
+      "keywords": [
+        "스크래핑",
+        "임대차계약서",
+        "소득증빙"
+      ]
+    }
+  ]
+},
+{
+  "_id": {
+    "$oid": "68db9e7689c43cae4451532a"
+  },
+  "metadata": {
+    "product_id": "WOORI-jeonse-smart-sgi-02",
+    "bank_name": "우리은행",
+    "product_name": "우리스마트전세론(서울보증)",
+    "product_category": "비대면",
+    "last_updated": "2025-09-17",
+    "source_document_url": "https://spot.wooribank.com/pot/Dream?withyou=POLON0053",
+    "summary": "인터넷 또는 스마트폰으로 신청하고 서울보증보험 보증서로 받는 비대면 전세대출"
+  },
+  "content_chunks": [
+    {
+      "chunk_id": "WOORI-jeonse-smart-sgi-02-C01",
+      "category": "자격조건",
+      "content_text": "부동산중개업소를 통해 임대차계약을 체결하고 임차보증금의 5% 이상을 지급한 고객. 현 직장 1년 이상 근무 중인 직장인 또는 소득 증빙이 가능한 개인사업자. 본인 및 배우자 무주택 또는 1주택(부부합산소득 1억 이하 및 보유주택가액 9억 이하) 고객. 서울보증보험 보증서 발급 가능 고객.",
+      "keywords": [
+        "직장인",
+        "개인사업자",
+        "서울보증보험",
+        "SGI"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-jeonse-smart-sgi-02-C02",
+      "category": "대상주택",
+      "content_text": "아파트, 주거용 오피스텔. 임차보증금 제한 없음.",
+      "keywords": [
+        "아파트",
+        "오피스텔",
+        "보증금 제한 없음"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-jeonse-smart-sgi-02-C03",
+      "category": "대출한도",
+      "content_text": "최대 5억원. 임차보증금의 80% 이내.",
+      "keywords": [
+        "최대 5억원",
+        "임차보증금 80%"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-jeonse-smart-sgi-02-C04",
+      "category": "대출기간_상환방식",
+      "content_text": "1년 이상 2년 이내 (임대차계약 만기일과 일치). 만기일시상환 방식.",
+      "keywords": [
+        "만기일시상환",
+        "임대차계약기간"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-jeonse-smart-sgi-02-C05",
+      "category": "대출금리",
+      "content_text": "기준금리(신규취급액 COFIX 6개월/12개월) + 가산금리 - 우대금리. 우대금리는 최대 연 0.8% (급여/연금이체, 우리카드 이용, WON뱅킹 이용 등)",
+      "keywords": [
+        "COFIX",
+        "우대금리"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-jeonse-smart-sgi-02-C06",
+      "category": "중도상환수수료",
+      "content_text": "중도상환해약금 = 중도상환금액 × 해약금요율(0.6%) × (잔존기간 ÷ 대출기간). 단, 대출 실행일로부터 3년 경과 시 면제.",
+      "keywords": [
+        "중도상환수수료",
+        "0.6%"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-jeonse-smart-sgi-02-C07",
+      "category": "필요서류",
+      "content_text": "공동인증서(구 공인인증서)를 통한 스크래핑 자동 제출. 확정일자부 임대차계약서(사본) 및 계약금영수증(사본)은 이미지 파일로 제출.",
+      "keywords": [
+        "공동인증서",
+        "스크래핑",
+        "임대차계약서"
+      ]
+    }
+  ]
+},
+{
+  "_id": {
+    "$oid": "68db9e7689c43cae4451532b"
+  },
+  "metadata": {
+    "product_id": "WOORI-jeonse-hf-03",
+    "bank_name": "우리은행",
+    "product_name": "우리전세론(주택금융보증)",
+    "product_category": "영업점",
+    "last_updated": "2025-09-17",
+    "source_document_url": "https://spot.wooribank.com/pot/Dream?withyou=POLON0052",
+    "summary": "한국주택금융공사(HF)의 보증서를 담보로 전세자금을 지원하는 영업점 신청 상품"
+  },
+  "content_chunks": [
+    {
+      "chunk_id": "WOORI-jeonse-hf-03-C01",
+      "category": "자격조건",
+      "content_text": "임대차계약을 체결하고 임차보증금의 5% 이상 지급한 고객. 부부합산 1주택 이하 보유자 (보유주택 9억원 초과 시 제외, 부부합산 소득 1억원 초과 시 제외). 한국주택금융공사 보증서 발급 요건 충족 고객.",
+      "keywords": [
+        "1주택",
+        "한국주택금융공사",
+        "HF"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-jeonse-hf-03-C02",
+      "category": "대상주택",
+      "content_text": "임차보증금이 수도권 7억원, 그 외 지역 5억원 이하인 모든 주택 및 주거용 오피스텔.",
+      "keywords": [
+        "주택",
+        "오피스텔",
+        "임차보증금"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-jeonse-hf-03-C03",
+      "category": "대출한도",
+      "content_text": "최대 2.22억원. 임차보증금의 80% 이내.",
+      "keywords": [
+        "최대 2.22억원",
+        "임차보증금 80%"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-jeonse-hf-03-C04",
+      "category": "대출기간_상환방식",
+      "content_text": "1년 이상 2년 이내 (임대차계약 종료일까지). 만기일시상환 방식. 임대차계약 연장 시 최장 10년까지 연장 가능.",
+      "keywords": [
+        "만기일시상환",
+        "최장 10년"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-jeonse-hf-03-C05",
+      "category": "대출금리",
+      "content_text": "기준금리(신규취급액 COFIX 6개월/12개월) + 가산금리 - 우대금리. 우대금리는 최대 연 1.0% (급여이체, 우리카드, 자동이체, 부동산 전자계약 등)",
+      "keywords": [
+        "COFIX",
+        "가산금리",
+        "우대금리"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-jeonse-hf-03-C06",
+      "category": "중도상환수수료",
+      "content_text": "중도상환해약금 = 중도상환금액 × 해약금요율(0.6%) × (잔존기간 ÷ 대출기간). 단, 대출 실행일로부터 3년 경과 시 면제.",
+      "keywords": [
+        "중도상환수수료",
+        "0.6%"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-jeonse-hf-03-C07",
+      "category": "필요서류",
+      "content_text": "신분증, 확정일자부 임대차계약서, 임차보증금 5% 이상 지급 영수증, 주민등록등본, 재직 및 소득증빙서류, 등기사항전부증명서 등.",
+      "keywords": [
+        "신분증",
+        "임대차계약서",
+        "소득증빙"
+      ]
+    }
+  ]
+},
+{
+  "_id": {
+    "$oid": "68db9e7689c43cae4451532c"
+  },
+  "metadata": {
+    "product_id": "WOORI-jeonse-youth-custom-04",
+    "bank_name": "우리은행",
+    "product_name": "우리 청년맞춤형 전세대출",
+    "product_category": "영업점",
+    "last_updated": "2025-09-17",
+    "source_document_url": "https://spot.wooribank.com/pot/Dream?withyou=POLON0052",
+    "summary": "주택도시기금과 연계하여 만 19세 이상 34세 이하 청년의 주거 안정을 위한 전용 전세대출"
+  },
+  "content_chunks": [
+    {
+      "chunk_id": "WOORI-jeonse-youth-custom-04-C01",
+      "category": "자격조건",
+      "content_text": "만 19세 이상 34세 이하의 무주택 세대주(예비 세대주 포함). 부부합산 연소득 7천만원 이하. 순자산가액 3.61억원 이하. 주택도시보증공사(HUG) 또는 한국주택금융공사(HF) 보증서 발급 가능 고객.",
+      "keywords": [
+        "청년",
+        "만 34세 이하",
+        "무주택",
+        "주택도시기금"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-jeonse-youth-custom-04-C02",
+      "category": "대상주택",
+      "content_text": "임차전용면적 85㎡ 이하 주택 (주거용 오피스텔 포함). 임차보증금 5억원 이하 (만 25세 미만 단독세대주는 3억원 이하).",
+      "keywords": [
+        "전용면적 85㎡",
+        "임차보증금 5억원"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-jeonse-youth-custom-04-C03",
+      "category": "대출한도",
+      "content_text": "최대 1억원. 임차보증금의 90% 이내.",
+      "keywords": [
+        "최대 1억원",
+        "임차보증금 90%"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-jeonse-youth-custom-04-C04",
+      "category": "대출기간_상환방식",
+      "content_text": "2년 (4회 연장, 최장 10년 이용 가능). 만기일시상환 방식.",
+      "keywords": [
+        "만기일시상환",
+        "최장 10년"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-jeonse-youth-custom-04-C05",
+      "category": "대출금리",
+      "content_text": "연 2%대 고정금리 (소득 및 보증금에 따라 차등 적용). 국토교통부 고시에 따른 변동금리.",
+      "keywords": [
+        "고정금리",
+        "주택도시기금"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-jeonse-youth-custom-04-C06",
+      "category": "중도상환수수료",
+      "content_text": "면제.",
+      "keywords": [
+        "중도상환수수료",
+        "면제"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-jeonse-youth-custom-04-C07",
+      "category": "필요서류",
+      "content_text": "신분증, 주민등록등본, 확정일자부 임대차계약서, 임차보증금 5% 이상 지급 영수증, 소득 및 재직증빙서류, 가족관계증명서 등.",
+      "keywords": [
+        "임대차계약서",
+        "소득증빙",
+        "주민등록등본"
+      ]
+    }
+  ]
+},
+{
+  "_id": {
+    "$oid": "68db9e7689c43cae4451532d"
+  },
+  "metadata": {
+    "product_id": "WOORI-monthly-youth-custom-05",
+    "bank_name": "우리은행",
+    "product_name": "우리 청년맞춤형 월세대출",
+    "product_category": "영업점",
+    "last_updated": "2025-09-17",
+    "source_document_url": "https://spot.wooribank.com/pot/Dream?withyou=POLON0052",
+    "summary": "주거급여 수급대상이 아닌 청년층의 월세 부담 완화를 위한 주택도시기금 월세대출 상품"
+  },
+  "content_chunks": [
+    {
+      "chunk_id": "WOORI-monthly-youth-custom-05-C01",
+      "category": "자격조건",
+      "content_text": "만 19세 이상 34세 이하의 무주택 단독 세대주. 부모소득 6천만원 이하 및 본인 연소득 2천만원 이하. 주택도시기금 대출 대상이 아닌 자.",
+      "keywords": [
+        "청년",
+        "월세",
+        "무주택",
+        "단독세대주"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-monthly-youth-custom-05-C02",
+      "category": "대상주택",
+      "content_text": "임차전용면적 60㎡ 이하 주택. 임차보증금 1억원 및 월세 60만원 이하.",
+      "keywords": [
+        "전용면적 60㎡",
+        "보증금 1억",
+        "월세 60만원"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-monthly-youth-custom-05-C03",
+      "category": "대출한도",
+      "content_text": "최대 1,200만원 (월 50만원 이내).",
+      "keywords": [
+        "최대 1,200만원",
+        "월 50만원"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-monthly-youth-custom-05-C04",
+      "category": "대출기간_상환방식",
+      "content_text": "최장 10년 (2년 단위 4회 연장). 만기일시상환 방식.",
+      "keywords": [
+        "만기일시상환",
+        "최장 10년"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-monthly-youth-custom-05-C05",
+      "category": "대출금리",
+      "content_text": "보증금 1억 이하: 연 1.5% 고정금리. 보증금 1억 초과: 연 2.5% 고정금리.",
+      "keywords": [
+        "고정금리",
+        "월세대출"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-monthly-youth-custom-05-C06",
+      "category": "중도상환수수료",
+      "content_text": "면제.",
+      "keywords": [
+        "중도상환수수료",
+        "면제"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-monthly-youth-custom-05-C07",
+      "category": "필요서류",
+      "content_text": "신분증, 주민등록등본, 확정일자부 임대차계약서, 임대인 통장사본, 소득확인서류, 가족관계증명서.",
+      "keywords": [
+        "임대차계약서",
+        "소득증빙",
+        "월세"
+      ]
+    }
+  ]
+},
+{
+  "_id": {
+    "$oid": "68db9e7689c43cae4451532e"
+  },
+  "metadata": {
+    "product_id": "WOORI-jeonse-ansim-hug-06",
+    "bank_name": "우리은행",
+    "product_name": "우리전세론-전세금안심대출(HUG)",
+    "product_category": "영업점",
+    "last_updated": "2025-09-17",
+    "source_document_url": "https://spot.wooribank.com/pot/Dream?withyou=POLON0052",
+    "summary": "전세보증금 반환보증과 전세대출 보증을 결합한 주택도시보증공사(HUG)의 보증서 담보 상품"
+  },
+  "content_chunks": [
+    {
+      "chunk_id": "WOORI-jeonse-ansim-hug-06-C01",
+      "category": "자격조건",
+      "content_text": "임대차계약을 체결하고 임차보증금의 5% 이상을 지급한 고객. 본인 및 배우자가 무주택 또는 1주택 이내인 고객 (1주택자는 부부합산소득 1억 이하 및 보유주택 시가 9억 이하). 주택도시보증공사 전세보증금반환보증 및 전세대출특약보증 가입이 가능한 고객.",
+      "keywords": [
+        "전세금반환보증",
+        "무주택",
+        "1주택",
+        "HUG"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-jeonse-ansim-hug-06-C02",
+      "category": "대상주택",
+      "content_text": "아파트, 연립, 다세대, 주거용 오피스텔, 단독/다가구주택. 임차보증금이 수도권 7억원, 그 외 지역 5억원 이하인 주택.",
+      "keywords": [
+        "아파트",
+        "오피스텔",
+        "다가구주택",
+        "보증금 7억"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-jeonse-ansim-hug-06-C03",
+      "category": "대출한도",
+      "content_text": "최대 4.5억원. 전세보증금의 80% 이내.",
+      "keywords": [
+        "최대 4.5억원",
+        "보증금 80%"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-jeonse-ansim-hug-06-C04",
+      "category": "대출기간_상환방식",
+      "content_text": "최대 25개월 (임대차계약 만기일 후 1개월 경과일 이내). 만기일시상환 방식.",
+      "keywords": [
+        "만기일시상환",
+        "25개월"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-jeonse-ansim-hug-06-C05",
+      "category": "대출금리",
+      "content_text": "기준금리(신규취급액 COFIX 6개월/12개월) + 가산금리 - 우대금리. 우대금리는 최대 연 1.0% (급여이체, 우리카드, 자동이체, 부동산 전자계약 등)",
+      "keywords": [
+        "COFIX",
+        "우대금리"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-jeonse-ansim-hug-06-C06",
+      "category": "중도상환수수료",
+      "content_text": "중도상환해약금 = 중도상환금액 × 해약금요율(0.6%) × (잔존기간 ÷ 대출기간). 단, 대출 실행일로부터 3년 경과 시 면제.",
+      "keywords": [
+        "중도상환수수료",
+        "0.6%"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-jeonse-ansim-hug-06-C07",
+      "category": "필요서류",
+      "content_text": "신분증, 확정일자부 임대차계약서, 계약금영수증, 주민등록등본, 가족관계증명서, 재직 및 소득증빙서류, 등기사항전부증명서 등.",
+      "keywords": [
+        "전세금반환보증",
+        "임대차계약서",
+        "소득증빙"
+      ]
+    }
+  ]
+},
+{
+  "_id": {
+    "$oid": "68db9e7689c43cae4451532f"
+  },
+  "metadata": {
+    "product_id": "WOORI-jeonse-sgi-public-07",
+    "bank_name": "우리은행",
+    "product_name": "우리전세론(서울보증-공공주택)",
+    "product_category": "영업점",
+    "last_updated": "2025-09-17",
+    "source_document_url": "https://spot.wooribank.com/pot/Dream?withyou=POLON0052",
+    "summary": "LH공사, SH공사 등 공공주택사업자와 임대차계약을 체결한 고객을 위한 서울보증보험 연계 전세대출"
+  },
+  "content_chunks": [
+    {
+      "chunk_id": "WOORI-jeonse-sgi-public-07-C01",
+      "category": "자격조건",
+      "content_text": "공공주택사업자(LH, SH, 지방공사 등)와 임대차계약을 체결하고 보증금을 납부하려는 고객. 서울보증보험의 개인금융신용보험증권 발급이 가능한 고객.",
+      "keywords": [
+        "공공주택",
+        "LH",
+        "SH",
+        "서울보증보험"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-jeonse-sgi-public-07-C02",
+      "category": "대상주택",
+      "content_text": "공공주택사업자가 공급하는 국민임대주택, 공공임대주택, 장기전세주택 등.",
+      "keywords": [
+        "국민임대주택",
+        "공공임대주택",
+        "장기전세"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-jeonse-sgi-public-07-C03",
+      "category": "대출한도",
+      "content_text": "최대 5억원. 임차보증금의 80% 이내.",
+      "keywords": [
+        "최대 5억원",
+        "임차보증금 80%"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-jeonse-sgi-public-07-C04",
+      "category": "대출기간_상환방식",
+      "content_text": "1년 이상 2년 이내 (임대차계약 기간 내). 만기일시상환 방식.",
+      "keywords": [
+        "만기일시상환",
+        "공공임대"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-jeonse-sgi-public-07-C05",
+      "category": "대출금리",
+      "content_text": "기준금리(신규취급액 COFIX 6개월/12개월) + 가산금리 - 우대금리. 우대금리는 최대 연 1.0% 적용.",
+      "keywords": [
+        "COFIX",
+        "우대금리",
+        "공공주택"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-jeonse-sgi-public-07-C06",
+      "category": "중도상환수수료",
+      "content_text": "중도상환해약금 = 중도상환금액 × 해약금요율(0.6%) × (잔존기간 ÷ 대출기간). 단, 대출 실행일로부터 3년 경과 시 면제.",
+      "keywords": [
+        "중도상환수수료",
+        "0.6%"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-jeonse-sgi-public-07-C07",
+      "category": "필요서류",
+      "content_text": "신분증, 임대차계약서, 보증금 납부 영수증, 주민등록등본, 재직 및 소득증빙서류.",
+      "keywords": [
+        "임대차계약서",
+        "공공주택사업자"
+      ]
+    }
+  ]
+},
+{
+  "_id": {
+    "$oid": "68db9e7689c43cae44515330"
+  },
+  "metadata": {
+    "product_id": "WOORI-jeonse-sgi-general-08",
+    "bank_name": "우리은행",
+    "product_name": "우리전세론(서울보증-일반)",
+    "product_category": "영업점",
+    "last_updated": "2025-09-17",
+    "source_document_url": "https://spot.wooribank.com/pot/Dream?withyou=POLON0052",
+    "summary": "소득증빙이 가능한 모든 고객을 대상으로 하는 서울보증보험 연계 범용 전세대출 상품"
+  },
+  "content_chunks": [
+    {
+      "chunk_id": "WOORI-jeonse-sgi-general-08-C01",
+      "category": "자격조건",
+      "content_text": "임대차계약을 체결하고 소득증빙이 가능한 모든 고객. 서울보증보험의 개인금융신용보험증권 발급이 가능한 고객.",
+      "keywords": [
+        "소득증빙",
+        "서울보증보험",
+        "SGI"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-jeonse-sgi-general-08-C02",
+      "category": "대상주택",
+      "content_text": "아파트, 연립, 다세대, 주거용 오피스텔 등 모든 주택. 임차보증금 제한 없음.",
+      "keywords": [
+        "아파트",
+        "오피스텔",
+        "보증금 제한 없음"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-jeonse-sgi-general-08-C03",
+      "category": "대출한도",
+      "content_text": "최대 5억원. 임차보증금의 80% 이내.",
+      "keywords": [
+        "최대 5억원",
+        "보증금 80%"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-jeonse-sgi-general-08-C04",
+      "category": "대출기간_상환방식",
+      "content_text": "1년 이상 2년 이내 (임대차계약 기간 내). 만기일시상환 방식.",
+      "keywords": [
+        "만기일시상환"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-jeonse-sgi-general-08-C05",
+      "category": "대출금리",
+      "content_text": "기준금리(신규취급액 COFIX 6개월/12개월) + 가산금리 - 우대금리. 우대금리는 최대 연 1.0% 적용.",
+      "keywords": [
+        "COFIX",
+        "우대금리"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-jeonse-sgi-general-08-C06",
+      "category": "중도상환수수료",
+      "content_text": "중도상환해약금 = 중도상환금액 × 해약금요율(0.6%) × (잔존기간 ÷ 대출기간). 단, 대출 실행일로부터 3년 경과 시 면제.",
+      "keywords": [
+        "중도상환수수료",
+        "0.6%"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-jeonse-sgi-general-08-C07",
+      "category": "필요서류",
+      "content_text": "신분증, 확정일자부 임대차계약서, 계약금영수증, 주민등록등본, 재직 및 소득증빙서류, 등기사항전부증명서.",
+      "keywords": [
+        "임대차계약서",
+        "소득증빙"
+      ]
+    }
+  ]
+},
+{
+  "_id": {
+    "$oid": "68db9e7689c43cae44515331"
+  },
+  "metadata": {
+    "product_id": "WOORI-homeloan-didimdol-01",
+    "bank_name": "우리은행",
+    "product_name": "내집마련 디딤돌대출",
+    "product_category": "정부지원(주택도시기금)",
+    "last_updated": "2025-09-17",
+    "source_document_url": "https://spot.wooribank.com/pot/Dream?withyou=POLON0052&cc=c010528:c010531;c012425:c012399&PRD_CD=P020000127",
+    "summary": "정부지원 저금리로 무주택 서민의 내 집 마련을 지원하는 주택도시기금 대출상품"
+  },
+  "content_chunks": [
+    {
+      "chunk_id": "WOORI-homeloan-didimdol-01-C01",
+      "category": "자격조건",
+      "content_text": "대출 신청일 현재 민법상 성년인 세대주로서, 세대주를 포함한 세대원 전원이 무주택인 자. 부부합산 연소득 6천만원 이하 (단, 생애최초 주택구입자, 신혼가구, 2자녀 이상 가구는 7천만원, 신혼가구 8.5천만원까지) 및 순자산가액 5.06억원 이하인 고객. 대출신청인과 배우자의 합산 순자산 가액은 부동산, 일반자산, 자동차, 금융자산을 포함하며 금융부채 및 일반부채를 차감하여 산정.",
+      "keywords": [
+        "무주택",
+        "세대주",
+        "부부합산소득",
+        "순자산가액",
+        "생애최초",
+        "신혼가구"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-homeloan-didimdol-01-C02",
+      "category": "대상주택",
+      "content_text": "주거 전용면적이 85㎡(수도권을 제외한 도시지역이 아닌 읍 또는 면 지역은 100㎡) 이하인 주택으로, 담보주택의 평가액이 5억원(신혼가구/2자녀 이상 가구는 6억원) 이하인 주택.",
+      "keywords": [
+        "전용면적 85㎡",
+        "주택가격 5억원",
+        "아파트",
+        "연립",
+        "다세대",
+        "단독주택"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-homeloan-didimdol-01-C03",
+      "category": "대출한도",
+      "content_text": "최대 2.5억원 이내 (단, 생애최초 주택구입자는 3억원, 신혼가구 및 2자녀 이상 가구는 4억원 이내). LTV 최대 70%(생애최초 80%), DTI 60% 이내에서 산정. 매매(분양)가격을 초과할 수 없음.",
+      "keywords": [
+        "최대 4억원",
+        "LTV 70%",
+        "DTI 60%",
+        "생애최초"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-homeloan-didimdol-01-C04",
+      "category": "대출기간_상환방식",
+      "content_text": "대출기간은 10년, 15년, 20년, 30년 중 선택 가능. 상환방식은 원리금균등분할상환, 원금균등분할상환, 체증식분할상환 방식이 있으며 1년 거치기간 설정 가능.",
+      "keywords": [
+        "10년",
+        "15년",
+        "20년",
+        "30년",
+        "원리금균등분할상환",
+        "원금균등분할상환"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-homeloan-didimdol-01-C05",
+      "category": "대출금리",
+      "content_text": "연 2.85% ~ 4.15% (2025년 9월 기준, 소득수준 및 대출만기에 따라 차등 적용). 청약(종합)저축 가입, 부동산 전자계약, 신혼가구, 다자녀/2자녀/1자녀 가구 등에 따라 추가 우대금리 적용 가능. 최종 금리가 연 1.5% 미만일 경우 연 1.5%로 적용.",
+      "keywords": [
+        "고정금리",
+        "변동금리",
+        "소득수준별 차등",
+        "우대금리"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-homeloan-didimdol-01-C06",
+      "category": "중도상환수수료",
+      "content_text": "대출 실행일로부터 3년 이내에 상환 시, 경과일수에 따라 1.2% 한도 내에서 부과. (잔여일수 / 대출기간) * 1.2%",
+      "keywords": [
+        "중도상환수수료",
+        "3년 이내",
+        "1.2%"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-homeloan-didimdol-01-C07",
+      "category": "필요서류",
+      "content_text": "본인 신분증, 주민등록등본, 가족관계증명서, 소득증빙서류(원천징수영수증 등), 재직증빙서류(건강보험자격득실확인서 등), 매매계약서, 등기사항전부증명서, 인감증명서 및 인감도장.",
+      "keywords": [
+        "신분증",
+        "소득증빙",
+        "재직증빙",
+        "매매계약서"
+      ]
+    }
+  ]
+},
+{
+  "_id": {
+    "$oid": "68db9e7689c43cae44515332"
+  },
+  "metadata": {
+    "product_id": "WOORI-homeloan-newborn-didimdol-01",
+    "bank_name": "우리은행",
+    "product_name": "신생아특례 디딤돌대출",
+    "product_category": "정부지원(주택도시기금)",
+    "last_updated": "2025-09-17",
+    "source_document_url": "https://nhuf.molit.go.kr/FP/FP05/FP0502/FP05020101.jsp",
+    "summary": "신생아 출산 가구의 주거안정을 위해 주택구입자금을 저금리로 지원하는 특례 대출상품"
+  },
+  "content_chunks": [
+    {
+      "chunk_id": "WOORI-homeloan-newborn-didimdol-01-C01",
+      "category": "자격조건",
+      "content_text": "대출접수일 기준 2년 내 출산('23.1.1. 이후 출생아부터 적용)한 무주택 세대주. 부부합산 연소득 1.3억원 이하 및 순자산가액 4.69억원 이하인 고객. 1주택자의 경우 대환 대출 신청 가능.",
+      "keywords": [
+        "신생아",
+        "출산가구",
+        "무주택",
+        "부부합산소득 1.3억",
+        "대환대출"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-homeloan-newborn-didimdol-01-C02",
+      "category": "대상주택",
+      "content_text": "주거 전용면적이 85㎡(수도권을 제외한 도시지역이 아닌 읍 또는 면 지역은 100㎡) 이하인 주택으로, 담보주택의 평가액이 9억원 이하인 주택.",
+      "keywords": [
+        "전용면적 85㎡",
+        "주택가격 9억원"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-homeloan-newborn-didimdol-01-C03",
+      "category": "대출한도",
+      "content_text": "최대 5억원 이내. LTV 70%(생애최초 80%), DTI 60% 이내에서 산정. 매매(분양)가격을 초과할 수 없음.",
+      "keywords": [
+        "최대 5억원",
+        "LTV 70%",
+        "DTI 60%"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-homeloan-newborn-didimdol-01-C04",
+      "category": "대출기간_상환방식",
+      "content_text": "10년, 15년, 20년, 30년 중 선택 가능. 상환방식은 원리금균등, 원금균등, 체증식 분할상환. 1년 거치 가능.",
+      "keywords": [
+        "10년",
+        "15년",
+        "20년",
+        "30년",
+        "분할상환"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-homeloan-newborn-didimdol-01-C05",
+      "category": "대출금리",
+      "content_text": "연 1.8% ~ 4.5% (소득수준에 따라 5년간 특례금리 적용). 추가 출산 시 1명당 특례 기간 5년 연장 가능(최장 15년). 특례 종료 후 소득수준에 따라 금리 변동.",
+      "keywords": [
+        "특례금리",
+        "소득별 차등",
+        "추가 출산",
+        "금리 연장"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-homeloan-newborn-didimdol-01-C06",
+      "category": "중도상환수수료",
+      "content_text": "대출 실행일로부터 3년 이내 상환 시, 경과일수에 따라 1.2% 한도 내에서 부과.",
+      "keywords": [
+        "중도상환수수료",
+        "3년 이내",
+        "1.2%"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-homeloan-newborn-didimdol-01-C07",
+      "category": "필요서류",
+      "content_text": "신분증, 주민등록등본, 가족관계증명서(출생증명서 등 신생아 확인서류), 소득 및 재직 증빙서류, 매매계약서, 등기사항전부증명서.",
+      "keywords": [
+        "출생증명서",
+        "소득증빙",
+        "매매계약서"
+      ]
+    }
+  ]
+},
+{
+  "_id": {
+    "$oid": "68db9e7689c43cae44515333"
+  },
+  "metadata": {
+    "product_id": "WOORI-homeloan-bogeumjari-01",
+    "bank_name": "우리은행",
+    "product_name": "u-보금자리론",
+    "product_category": "주택금융공사",
+    "last_updated": "2025-09-17",
+    "source_document_url": "https://spot.wooribank.com/pot/Dream?withyou=POLON0052&cc=c010528:c010531;c012425:c012399&PRD_CD=P020000108",
+    "summary": "한국주택금융공사가 취급하는 장기 고정금리 주택담보대출 상품으로, 금리 변동 위험 없이 안정적인 상환 계획 가능"
+  },
+  "content_chunks": [
+    {
+      "chunk_id": "WOORI-homeloan-bogeumjari-01-C01",
+      "category": "자격조건",
+      "content_text": "민법상 성년인 대한민국 국민. 무주택자 또는 1주택자(처분조건부). 부부합산 연소득 7천만원 이하 (신혼가구 8.5천만원 이하).",
+      "keywords": [
+        "무주택",
+        "1주택자",
+        "부부합산소득"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-homeloan-bogeumjari-01-C02",
+      "category": "대상주택",
+      "content_text": "부동산 등기부등본상 주택으로 실제 주거용으로 사용되는 아파트, 연립, 다세대, 단독주택. 대출승인일 현재 담보주택의 평가액이 6억원 이하.",
+      "keywords": [
+        "주택가격 6억원",
+        "아파트",
+        "단독주택"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-homeloan-bogeumjari-01-C03",
+      "category": "대출한도",
+      "content_text": "최대 3.6억원 (다자녀가구 4억원, 생애최초 주택구입자 4.2억원). LTV 최대 70%(생애최초 80%), DTI 최대 60% 이내.",
+      "keywords": [
+        "최대 4.2억원",
+        "LTV 70%",
+        "DTI 60%"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-homeloan-bogeumjari-01-C04",
+      "category": "대출기간_상환방식",
+      "content_text": "10년, 15년, 20년, 30년, 40년, 50년 중 선택. 상환방식은 원리금균등, 원금균등, 체증식 분할상환. 거치기간 없음.",
+      "keywords": [
+        "최장 50년",
+        "고정금리",
+        "분할상환"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-homeloan-bogeumjari-01-C05",
+      "category": "대출금리",
+      "content_text": "연 4%대의 고정금리 (한국주택금융공사 홈페이지에 매월 고시). 사회적배려층, 신혼가구, 다자녀가구 등 우대금리 적용 가능.",
+      "keywords": [
+        "고정금리",
+        "장기대출",
+        "우대금리"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-homeloan-bogeumjari-01-C06",
+      "category": "중도상환수수료",
+      "content_text": "최초 대출일로부터 3년까지 적용되며, 3년 이내 상환 시 잔여일수에 따라 최대 0.7%의 수수료 부과.",
+      "keywords": [
+        "중도상환수수료",
+        "3년 이내",
+        "0.7%"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-homeloan-bogeumjari-01-C07",
+      "category": "필요서류",
+      "content_text": "신분증, 주민등록등본, 가족관계증명서, 혼인관계증명서(해당 시), 소득증빙서류, 재직증명서, 매매계약서, 등기권리증, 인감증명서 및 인감도장.",
+      "keywords": [
+        "소득증빙",
+        "재직증빙",
+        "매매계약서",
+        "등기권리증"
+      ]
+    }
+  ]
+},
+{
+  "_id": {
+    "$oid": "68db9e7689c43cae44515334"
+  },
+  "metadata": {
+    "product_id": "WOORI-reverse-mortgage-01",
+    "bank_name": "우리은행",
+    "product_name": "주택연금대출(내집연금3종세트)",
+    "product_category": "주택금융공사",
+    "last_updated": "2025-09-17",
+    "source_document_url": "https://spot.wooribank.com/pot/jcc?withyou=POLON0056&__ID=c010358&PRD_CD=P020000203",
+    "summary": "보유 주택을 담보로 맡기고 평생 혹은 일정기간 동안 매월 연금방식으로 노후생활자금을 지급받는 대출(역모기지론)"
+  },
+  "content_chunks": [
+    {
+      "chunk_id": "WOORI-reverse-mortgage-01-C01",
+      "category": "자격조건",
+      "content_text": "주택소유자 또는 배우자가 만 55세 이상. 부부 기준 공시가격 등 12억원 이하 주택 소유자. 다주택자도 합산 가격이 12억원 이하면 가능.",
+      "keywords": [
+        "만 55세 이상",
+        "공시가격 12억원",
+        "역모기지"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-reverse-mortgage-01-C02",
+      "category": "대상주택",
+      "content_text": "아파트, 단독주택, 다세대, 연립주택, 주거용 오피스텔 등. 지방자치단체에 신고된 노인복지주택 포함.",
+      "keywords": [
+        "주택",
+        "주거용 오피스텔",
+        "노인복지주택"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-reverse-mortgage-01-C03",
+      "category": "대출한도",
+      "content_text": "한국주택금융공사가 발급하는 주택담보노후연금보증서 상의 금액에 따라 결정. 연령과 주택가격에 따라 월지급금이 산정됨.",
+      "keywords": [
+        "월지급금",
+        "주택가격",
+        "연령",
+        "주택담보노후연금보증서"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-reverse-mortgage-01-C04",
+      "category": "지급방식",
+      "content_text": "종신지급방식(평생 지급), 확정기간방식(일정 기간만 지급), 대출상환방식, 우대방식 등 다양한 방식 중 선택 가능.",
+      "keywords": [
+        "종신지급",
+        "확정기간",
+        "대출상환",
+        "우대방식"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-reverse-mortgage-01-C05",
+      "category": "대출금리",
+      "content_text": "3개월 변동금리(CD금리 기준) 또는 6개월 변동금리(신규취급액기준 COFIX 기준) 적용.",
+      "keywords": [
+        "변동금리",
+        "CD금리",
+        "COFIX"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-reverse-mortgage-01-C06",
+      "category": "보증료",
+      "content_text": "초기보증료(주택가격의 1.5%)와 연보증료(보증잔액의 연 0.75%)를 납부해야 함.",
+      "keywords": [
+        "초기보증료",
+        "연보증료"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-reverse-mortgage-01-C07",
+      "category": "필요서류",
+      "content_text": "신분증, 주민등록등본(과거주소변동 포함, 2부), 가족관계증명서(상세, 2부), 인감증명서(2부), 인감도장, 전입세대열람원, 등기권리증.",
+      "keywords": [
+        "신분증",
+        "주민등록등본",
+        "가족관계증명서",
+        "인감증명서"
+      ]
+    }
+  ]
+},
+{
+  "_id": {
+    "$oid": "68db9e7689c43cae44515335"
+  },
+  "metadata": {
+    "product_id": "WOORI-officetelloan-fund-01",
+    "bank_name": "우리은행",
+    "product_name": "오피스텔구입자금대출(주택도시기금)",
+    "product_category": "정부지원(주택도시기금)",
+    "last_updated": "2025-09-17",
+    "source_document_url": "https://svc.wooribank.com/svc/Dream?withyou=HBFLN0029",
+    "summary": "근로자 및 서민에게 주거용 오피스텔 구입자금을 저금리로 지원하는 주택도시기금 대출상품"
+  },
+  "content_chunks": [
+    {
+      "chunk_id": "WOORI-officetelloan-fund-01-C01",
+      "category": "자격조건",
+      "content_text": "부부합산 연소득 6천만원 이하 및 순자산가액 4.88억원 이하인 무주택 세대주 (만 30세 미만 단독세대주 제외).",
+      "keywords": [
+        "무주택",
+        "세대주",
+        "부부합산소득 6천만원",
+        "순자산가액"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-officetelloan-fund-01-C02",
+      "category": "대상주택",
+      "content_text": "주거용 오피스텔로 전용면적 60㎡ 이하. 담보 오피스텔의 평가액이 3억원 이하.",
+      "keywords": [
+        "주거용 오피스텔",
+        "전용면적 60㎡",
+        "가격 3억원"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-officetelloan-fund-01-C03",
+      "category": "대출한도",
+      "content_text": "최고 7,500만원 이내. LTV 70%, DTI 60% 이내에서 산정. 단, 실제 소요자금(매매가격-임대보증금) 이내.",
+      "keywords": [
+        "최대 7500만원",
+        "LTV 70%",
+        "DTI 60%"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-officetelloan-fund-01-C04",
+      "category": "대출기간_상환방식",
+      "content_text": "2년 만기일시상환. 2년 단위로 9회 연장 가능하여 최장 20년까지 이용 가능. 기한 연장 시 최초대출금의 10% 이상 상환 또는 금리 0.1% 가산.",
+      "keywords": [
+        "만기일시상환",
+        "최장 20년",
+        "기한연장"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-officetelloan-fund-01-C05",
+      "category": "대출금리",
+      "content_text": "연 2.6% ~ 3.1% (소득수준에 따라 차등 적용, 국토교통부 고시 변동금리). 다자녀가구, 다문화가구, 장애인가구 등 우대금리 적용 가능.",
+      "keywords": [
+        "변동금리",
+        "소득별 차등",
+        "우대금리"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-officetelloan-fund-01-C06",
+      "category": "중도상환수수료",
+      "content_text": "대출 실행일로부터 3년 이내 상환 시, 경과일수에 따라 1.2% 한도 내에서 부과.",
+      "keywords": [
+        "중도상환수수료",
+        "3년 이내",
+        "1.2%"
+      ]
+    },
+    {
+      "chunk_id": "WOORI-officetelloan-fund-01-C07",
+      "category": "필요서류",
+      "content_text": "신분증, 주민등록등본, 소득 및 재직증빙서류, 매매계약서, 등기사항전부증명서, 인감증명서 및 인감도장. 추가로 건축물대장, 평면도 등 오피스텔 관련 서류 필요.",
+      "keywords": [
+        "소득증빙",
+        "매매계약서",
+        "건축물대장"
+      ]
+    }
+  ]
+}]

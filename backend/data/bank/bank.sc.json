@@ -1,0 +1,939 @@
+[{
+  "_id": {
+    "$oid": "68db9e8089c43cae44515337"
+  },
+  "metadata": {
+    "product_id": "SC-mortgage-FirstHomeLoan-01",
+    "bank_name": "SC제일은행",
+    "product_name": "퍼스트홈론",
+    "product_category": "주택담보대출",
+    "last_updated": "2025-09-17",
+    "source_document_url": "https://www.standardchartered.co.kr/np/kr/pl/loan/mortgage/FirstHomeLoan.jsp",
+    "summary": "아파트, 연립, 다세대, 단독주택, 주거용 오피스텔 등 다양한 종류의 주택을 담보로 하는 SC제일은행의 대표적인 주택담보대출 상품입니다."
+  },
+  "content_chunks": [
+    {
+      "chunk_id": "SC-mortgage-FirstHomeLoan-01-C01",
+      "category": "자격조건",
+      "content_text": "만 19세 이상 소득증빙이 가능한 고객으로, 담보로 제공하는 주택(건물)의 소유권을 보유(예정)하고 개인신용평가시스템(CSS)에 의해 대출 자격이 부여된 고객.",
+      "keywords": [
+        "소득증빙",
+        "주택 소유",
+        "CSS",
+        "대출 자격"
+      ]
+    },
+    {
+      "chunk_id": "SC-mortgage-FirstHomeLoan-01-C02",
+      "category": "대상주택",
+      "content_text": "아파트, 연립, 다세대, 단독주택, 주거용 오피스텔",
+      "keywords": [
+        "아파트",
+        "연립",
+        "다세대",
+        "단독주택",
+        "주거용 오피스텔"
+      ]
+    },
+    {
+      "chunk_id": "SC-mortgage-FirstHomeLoan-01-C03",
+      "category": "대출한도",
+      "content_text": "담보 평가 가격 및 고객의 신용도, 소득 수준, 담보 대출 비율(LTV) 등을 종합적으로 고려하여 산정됩니다. 주택 시세의 최대 70%까지 가능합니다.",
+      "keywords": [
+        "담보 평가",
+        "신용도",
+        "소득",
+        "LTV"
+      ]
+    },
+    {
+      "chunk_id": "SC-mortgage-FirstHomeLoan-01-C04",
+      "category": "대출기간_상환방식",
+      "content_text": "최장 40년(거치기간 없음)까지 가능하며, 상환 방식은 원리금균등분할상환입니다.",
+      "keywords": [
+        "40년",
+        "원리금균등분할상환"
+      ]
+    },
+    {
+      "chunk_id": "SC-mortgage-FirstHomeLoan-01-C05",
+      "category": "대출금리",
+      "content_text": "기준금리(COFIX 또는 금융채 금리)에 가산금리가 더해져 결정됩니다. 가산금리는 고객의 신용등급, 대출 기간, 상환 방식 등에 따라 차등 적용됩니다. 우대금리 조건 충족 시 추가 금리 인하가 가능합니다.",
+      "keywords": [
+        "COFIX",
+        "금융채",
+        "가산금리",
+        "우대금리"
+      ]
+    },
+    {
+      "chunk_id": "SC-mortgage-FirstHomeLoan-01-C06",
+      "category": "중도상환수수료",
+      "content_text": "대출 실행일로부터 3년 이내 상환 시 적용되며, 상환 원금에 대해 최대 1.4%의 수수료율이 적용됩니다. (잔존기간에 따라 차등 적용)",
+      "keywords": [
+        "중도상환수수료",
+        "3년",
+        "1.4%"
+      ]
+    },
+    {
+      "chunk_id": "SC-mortgage-FirstHomeLoan-01-C07",
+      "category": "필요서류",
+      "content_text": "신분증, 주민등록등본 및 초본, 가족관계증명서, 인감증명서, 등기권리증, 소득증빙서류(근로소득원천징수영수증 등), 재직증명서, 매매계약서 등",
+      "keywords": [
+        "신분증",
+        "소득증빙서류",
+        "재직증명서",
+        "매매계약서"
+      ]
+    }
+  ]
+},
+{
+  "_id": {
+    "$oid": "68db9e8089c43cae44515338"
+  },
+  "metadata": {
+    "product_id": "SC-mortgage-FixedRate-01",
+    "bank_name": "SC제일은행",
+    "product_name": "순수장기고정금리 주택담보대출",
+    "product_category": "주택담보대출",
+    "last_updated": "2025-09-17",
+    "source_document_url": "https://www.standardchartered.co.kr/np/kr/pl/loan/mortgage/ViewPureLongTermFixedRateMortgage.jsp",
+    "summary": "대출 기간 동안 금리가 고정되어 있어 금리 변동 위험 없이 안정적인 자금 계획을 세울 수 있는 주택담보대출 상품입니다."
+  },
+  "content_chunks": [
+    {
+      "chunk_id": "SC-mortgage-FixedRate-01-C01",
+      "category": "자격조건",
+      "content_text": "주택을 담보로 제공하고 SC제일은행의 심사 기준을 통과한 고객. 소득증빙이 가능한 만 19세 이상 내국인.",
+      "keywords": [
+        "주택담보",
+        "소득증빙",
+        "심사 기준"
+      ]
+    },
+    {
+      "chunk_id": "SC-mortgage-FixedRate-01-C02",
+      "category": "대상주택",
+      "content_text": "공부상(등기사항전부증명서 등) 주택으로 분류되는 아파트, 연립, 다세대, 단독주택",
+      "keywords": [
+        "아파트",
+        "주택"
+      ]
+    },
+    {
+      "chunk_id": "SC-mortgage-FixedRate-01-C03",
+      "category": "대출한도",
+      "content_text": "담보 평가액, LTV(담보인정비율), DTI(총부채상환비율) 및 은행 심사 기준에 따라 산정됩니다. 최소 1천만원 이상부터 가능합니다.",
+      "keywords": [
+        "LTV",
+        "DTI",
+        "담보 평가액"
+      ]
+    },
+    {
+      "chunk_id": "SC-mortgage-FixedRate-01-C04",
+      "category": "대출기간_상환방식",
+      "content_text": "10년, 15년, 20년, 30년 중 선택 가능하며, 상환 방식은 원리금균등분할상환입니다.",
+      "keywords": [
+        "고정기간",
+        "원리금균등분할상환"
+      ]
+    },
+    {
+      "chunk_id": "SC-mortgage-FixedRate-01-C05",
+      "category": "대출금리",
+      "content_text": "약정 기간 동안 금리가 변동되지 않는 고정금리 상품입니다. 국고채 금리 등을 기준으로 산정되며, 신용등급 등에 따라 차등 적용됩니다.",
+      "keywords": [
+        "고정금리"
+      ]
+    },
+    {
+      "chunk_id": "SC-mortgage-FixedRate-01-C06",
+      "category": "중도상환수수료",
+      "content_text": "대출 실행 후 3년 이내 상환 시, 상환 원금의 최대 1.4% 이내에서 잔존기간에 따라 슬라이딩 방식으로 부과됩니다.",
+      "keywords": [
+        "중도상환수수료",
+        "슬라이딩 방식"
+      ]
+    },
+    {
+      "chunk_id": "SC-mortgage-FixedRate-01-C07",
+      "category": "필요서류",
+      "content_text": "본인 신분증, 등기권리증, 인감증명서, 주민등록등본, 소득 및 재직 증빙서류, 매매계약서(필요시) 등",
+      "keywords": [
+        "필요서류",
+        "등기권리증",
+        "소득증빙"
+      ]
+    }
+  ]
+},
+{
+  "_id": {
+    "$oid": "68db9e8089c43cae44515339"
+  },
+  "metadata": {
+    "product_id": "SC-mortgage-NewFixedRate-01",
+    "bank_name": "SC제일은행",
+    "product_name": "New 순수장기고정금리 주택담보대출",
+    "product_category": "주택담보대출",
+    "last_updated": "2025-09-17",
+    "source_document_url": "https://www.standardchartered.co.kr/np/kr/pl/loan/mortgage/ViewPureLongTermFixedRateMortgage.jsp",
+    "summary": "'순수장기고정금리 주택담보대출'의 리뉴얼 상품으로, 대출 조건 및 금리 등이 시장 상황에 맞게 일부 변경되거나 개선된 상품입니다."
+  },
+  "content_chunks": [
+    {
+      "chunk_id": "SC-mortgage-NewFixedRate-01-C01",
+      "category": "자격조건",
+      "content_text": "기존 '순수장기고정금리 주택담보대출'과 유사하나, 소득 및 주택 보유 수 등 최신 금융 정책에 따른 심사 기준이 적용될 수 있습니다. 만 19세 이상 소득 증빙이 가능한 고객.",
+      "keywords": [
+        "심사 기준",
+        "소득 증빙",
+        "금융 정책"
+      ]
+    },
+    {
+      "chunk_id": "SC-mortgage-NewFixedRate-01-C02",
+      "category": "대상주택",
+      "content_text": "아파트 및 기타 공동주택, 단독주택 등 주거용 부동산",
+      "keywords": [
+        "아파트",
+        "주거용 부동산"
+      ]
+    },
+    {
+      "chunk_id": "SC-mortgage-NewFixedRate-01-C03",
+      "category": "대출한도",
+      "content_text": "정부의 부동산 정책(LTV, DSR) 및 은행의 내부 심사 기준에 따라 개인별 차등 적용됩니다.",
+      "keywords": [
+        "LTV",
+        "DSR",
+        "부동산 정책"
+      ]
+    },
+    {
+      "chunk_id": "SC-mortgage-NewFixedRate-01-C04",
+      "category": "대출기간_상환방식",
+      "content_text": "10년~30년의 장기 고정금리 기간 설정이 가능하며, 원리금균등분할상환 방식이 기본입니다.",
+      "keywords": [
+        "장기 고정금리",
+        "원리금균등분할상환"
+      ]
+    },
+    {
+      "chunk_id": "SC-mortgage-NewFixedRate-01-C05",
+      "category": "대출금리",
+      "content_text": "금융시장 및 은행의 조달금리에 따라 결정되는 고정금리로, 대출 약정 시점의 금리가 만기까지 유지됩니다. 상품 프로모션 등에 따라 추가 우대금리가 제공될 수 있습니다.",
+      "keywords": [
+        "고정금리",
+        "조달금리",
+        "우대금리"
+      ]
+    },
+    {
+      "chunk_id": "SC-mortgage-NewFixedRate-01-C06",
+      "category": "중도상환수수료",
+      "content_text": "3년 이내 상환 시 최대 1.4%의 수수료율이 적용되며, 기간에 따라 점차 감소하는 슬라이딩 방식입니다.",
+      "keywords": [
+        "중도상환수수료",
+        "3년"
+      ]
+    },
+    {
+      "chunk_id": "SC-mortgage-NewFixedRate-01-C07",
+      "category": "필요서류",
+      "content_text": "신분증, 주민등록등본, 인감증명서, 등기권리증, 소득증빙서류(원천징수영수증, 소득금액증명원 등), 재직증명서",
+      "keywords": [
+        "필요서류",
+        "소득금액증명원"
+      ]
+    }
+  ]
+},
+{
+  "_id": {
+    "$oid": "68db9e8089c43cae4451533a"
+  },
+  "metadata": {
+    "product_id": "SC-mortgage-Bogeumjari-01",
+    "bank_name": "SC제일은행",
+    "product_name": "한국주택금융공사 t-보금자리론",
+    "product_category": "주택담보대출",
+    "last_updated": "2025-09-17",
+    "source_document_url": "https://www.hf.go.kr/",
+    "summary": "한국주택금융공사(HF)의 정책모기지 상품으로, SC제일은행을 포함한 금융기관에서 위탁 판매하는 장기 고정금리 주택담보대출입니다."
+  },
+  "content_chunks": [
+    {
+      "chunk_id": "SC-mortgage-Bogeumjari-01-C01",
+      "category": "자격조건",
+      "content_text": "부부합산 연소득 7천만원 이하(신혼/다자녀 등 우대 가구는 소득 요건 완화), 무주택자 또는 1주택자(처분조건부)를 대상으로 합니다. 주택가격은 6억원 이하여야 합니다. 상세 자격은 한국주택금융공사 규정에 따릅니다.",
+      "keywords": [
+        "한국주택금융공사",
+        "정책모기지",
+        "무주택자",
+        "부부합산소득"
+      ]
+    },
+    {
+      "chunk_id": "SC-mortgage-Bogeumjari-01-C02",
+      "category": "대상주택",
+      "content_text": "부동산 등기부등본상 주택으로 아파트, 연립, 다세대, 단독주택. (주거용 오피스텔 제외)",
+      "keywords": [
+        "주택",
+        "6억원 이하"
+      ]
+    },
+    {
+      "chunk_id": "SC-mortgage-Bogeumjari-01-C03",
+      "category": "대출한도",
+      "content_text": "최대 3.6억원(생애최초 주택구입자 등 우대 시 4.2억원) 이내에서 LTV(최대 70%, 규제지역별 차등) 및 DTI(최대 60%)를 적용하여 산정됩니다.",
+      "keywords": [
+        "최대 3.6억원",
+        "LTV",
+        "DTI"
+      ]
+    },
+    {
+      "chunk_id": "SC-mortgage-Bogeumjari-01-C04",
+      "category": "대출기간_상환방식",
+      "content_text": "10년, 15년, 20년, 30년, 40년, 50년 중 선택 가능하며, 원리금균등, 원금균등, 체증식 분할상환 방식 중에서 선택할 수 있습니다.",
+      "keywords": [
+        "장기분할상환",
+        "체증식"
+      ]
+    },
+    {
+      "chunk_id": "SC-mortgage-Bogeumjari-01-C05",
+      "category": "대출금리",
+      "content_text": "한국주택금융공사에서 매월 고시하는 고정금리가 적용됩니다. 사회적배려층, 신혼가구, 다자녀가구 등에 대한 우대금리가 적용될 수 있습니다.",
+      "keywords": [
+        "고정금리",
+        "정책금리",
+        "우대금리"
+      ]
+    },
+    {
+      "chunk_id": "SC-mortgage-Bogeumjari-01-C06",
+      "category": "중도상환수수료",
+      "content_text": "3년 이내 상환 시 최대 1.2%의 수수료가 부과되며, 잔존기간에 따라 슬라이딩 방식으로 차감됩니다.",
+      "keywords": [
+        "중도상환수수료",
+        "1.2%"
+      ]
+    },
+    {
+      "chunk_id": "SC-mortgage-Bogeumjari-01-C07",
+      "category": "필요서류",
+      "content_text": "신분증, 주민등록등본, 가족관계증명서, 소득증빙서류, 재직증명서, 매매계약서, 등기사항전부증명서 등 (한국주택금융공사 신청 시 안내)",
+      "keywords": [
+        "필요서류",
+        "한국주택금융공사"
+      ]
+    }
+  ]
+},
+{
+  "_id": {
+    "$oid": "68db9e8089c43cae4451533b"
+  },
+  "metadata": {
+    "product_id": "SC-mortgage-Ansim-01",
+    "bank_name": "SC제일은행",
+    "product_name": "안심전환적격대출",
+    "product_category": "주택담보대출",
+    "last_updated": "2025-09-17",
+    "source_document_url": "https://www.hf.go.kr/",
+    "summary": "금리상승기에 변동금리 주택담보대출을 고정금리로 대환해주는 정책 금융상품입니다. 정부가 특정 기간에 한시적으로 공급하며, SC제일은행 등에서 취급합니다. (현재는 판매 중단 상태일 수 있음)"
+  },
+  "content_chunks": [
+    {
+      "chunk_id": "SC-mortgage-Ansim-01-C01",
+      "category": "자격조건",
+      "content_text": "기존 변동금리 주택담보대출 보유자 중 부부합산 소득, 주택가격 요건(예: 시가 4억원 이하)을 충족하는 1주택자. 공급 시기별로 자격 요건이 상이합니다.",
+      "keywords": [
+        "대환대출",
+        "변동금리",
+        "1주택자",
+        "정책금융"
+      ]
+    },
+    {
+      "chunk_id": "SC-mortgage-Ansim-01-C02",
+      "category": "대상주택",
+      "content_text": "공급 시점의 정부 정책에 따라 결정된 일정 가격 이하의 주택.",
+      "keywords": [
+        "주택가격 요건"
+      ]
+    },
+    {
+      "chunk_id": "SC-mortgage-Ansim-01-C03",
+      "category": "대출한도",
+      "content_text": "기존 대출 잔액 범위 내에서 최대 2.5억원 등 한도가 정해져 있으며, LTV 70% 및 DTI 60% 이내에서 운영됩니다.",
+      "keywords": [
+        "대환 한도",
+        "기존 대출 잔액"
+      ]
+    },
+    {
+      "chunk_id": "SC-mortgage-Ansim-01-C04",
+      "category": "대출기간_상환방식",
+      "content_text": "10년~30년 만기, 원리금균등분할상환 방식이 일반적입니다.",
+      "keywords": [
+        "장기상환",
+        "원리금균등"
+      ]
+    },
+    {
+      "chunk_id": "SC-mortgage-Ansim-01-C05",
+      "category": "대출금리",
+      "content_text": "정부가 고시하는 장기, 고정금리가 적용됩니다. 시장 금리보다 낮은 수준으로 책정되는 것이 특징입니다.",
+      "keywords": [
+        "고정금리",
+        "저금리"
+      ]
+    },
+    {
+      "chunk_id": "SC-mortgage-Ansim-01-C06",
+      "category": "중도상환수수료",
+      "content_text": "3년 이내 상환 시 최대 1.2% 이내에서 슬라이딩 방식으로 부과됩니다.",
+      "keywords": [
+        "중도상환수수료"
+      ]
+    },
+    {
+      "chunk_id": "SC-mortgage-Ansim-01-C07",
+      "category": "필요서류",
+      "content_text": "기존 대출 금융거래확인서, 신분증, 주민등록등본, 소득/재직 증빙서류, 등기사항전부증명서 등",
+      "keywords": [
+        "금융거래확인서",
+        "대환 서류"
+      ]
+    }
+  ]
+},
+{
+  "_id": {
+    "$oid": "68db9e8089c43cae4451533c"
+  },
+  "metadata": {
+    "product_id": "SC-mortgage-MortgageOne-01",
+    "bank_name": "SC제일은행",
+    "product_name": "모기지원",
+    "product_category": "주택담보대출",
+    "last_updated": "2025-09-17",
+    "source_document_url": "https://www.standardchartered.co.kr/np/kr/pl/loan/mortgage/MortgageOne.jsp",
+    "summary": "주택담보대출과 신용대출(한도대출)을 결합한 상품으로, 담보가액의 최대 90%까지 한도를 설정하여 필요할 때마다 자유롭게 입출금할 수 있는 편리한 상품입니다."
+  },
+  "content_chunks": [
+    {
+      "chunk_id": "SC-mortgage-MortgageOne-01-C01",
+      "category": "자격조건",
+      "content_text": "아파트를 소유하고 있으며, 소득 증빙이 가능한 고객 중 은행의 신용평가 결과 대출이 적격한 고객.",
+      "keywords": [
+        "아파트 소유",
+        "소득 증빙"
+      ]
+    },
+    {
+      "chunk_id": "SC-mortgage-MortgageOne-01-C02",
+      "category": "대상주택",
+      "content_text": "KB시세 조회가 가능한 아파트",
+      "keywords": [
+        "아파트",
+        "KB시세"
+      ]
+    },
+    {
+      "chunk_id": "SC-mortgage-MortgageOne-01-C03",
+      "category": "대출한도",
+      "content_text": "담보 제공 아파트 시세의 최대 90% 이내에서 담보대출 한도(LTV 적용)를 차감한 금액만큼 신용한도를 부여합니다. 개인의 신용도에 따라 차등 적용됩니다.",
+      "keywords": [
+        "결합한도",
+        "최대 90%",
+        "신용한도"
+      ]
+    },
+    {
+      "chunk_id": "SC-mortgage-MortgageOne-01-C04",
+      "category": "대출기간_상환방식",
+      "content_text": "대출 기간은 1년 단위로 최장 10년까지 연장 가능하며, 만기일시상환(마이너스통장) 방식입니다.",
+      "keywords": [
+        "만기일시상환",
+        "마이너스통장"
+      ]
+    },
+    {
+      "chunk_id": "SC-mortgage-MortgageOne-01-C05",
+      "category": "대출금리",
+      "content_text": "기준금리(CD금리 또는 COFIX)에 연동하는 변동금리 상품으로, 가산금리는 고객 신용도에 따라 차등 적용됩니다.",
+      "keywords": [
+        "변동금리",
+        "CD금리",
+        "가산금리"
+      ]
+    },
+    {
+      "chunk_id": "SC-mortgage-MortgageOne-01-C06",
+      "category": "중도상환수수료",
+      "content_text": "면제. (단, 기본 담보대출 부분은 별도 규정 적용)",
+      "keywords": [
+        "중도상환수수료 면제"
+      ]
+    },
+    {
+      "chunk_id": "SC-mortgage-MortgageOne-01-C07",
+      "category": "필요서류",
+      "content_text": "신분증, 주민등록등본, 등기권리증, 인감증명서, 소득 및 재직 증빙서류 등",
+      "keywords": [
+        "필요서류"
+      ]
+    }
+  ]
+},
+{
+  "_id": {
+    "$oid": "68db9e8089c43cae4451533d"
+  },
+  "metadata": {
+    "product_id": "SC-mortgage-InterestRelief-01",
+    "bank_name": "SC제일은행",
+    "product_name": "퍼스트이자안심대출",
+    "product_category": "주택담보대출",
+    "last_updated": "2025-09-17",
+    "source_document_url": "https://www.standardchartered.co.kr/np/kr/pl/loan/mortgage/FirstInterestReliefLoan.jsp",
+    "summary": "최초 3년 또는 5년 동안은 고정금리가 적용되고, 이후에는 변동금리로 전환되는 혼합금리형 주택담보대출 상품입니다. 초기 이자 부담을 줄이고 싶은 고객에게 유리합니다."
+  },
+  "content_chunks": [
+    {
+      "chunk_id": "SC-mortgage-InterestRelief-01-C01",
+      "category": "자격조건",
+      "content_text": "주택을 담보로 제공하는 만 19세 이상 내국인으로, 소득증빙이 가능하고 은행의 심사 기준을 충족하는 고객.",
+      "keywords": [
+        "주택담보",
+        "소득증빙"
+      ]
+    },
+    {
+      "chunk_id": "SC-mortgage-InterestRelief-01-C02",
+      "category": "대상주택",
+      "content_text": "아파트, 연립, 다세대, 단독주택 등 주거용 주택",
+      "keywords": [
+        "주거용 주택"
+      ]
+    },
+    {
+      "chunk_id": "SC-mortgage-InterestRelief-01-C03",
+      "category": "대출한도",
+      "content_text": "담보가액 및 LTV, DSR 규제 범위 내에서 고객의 소득과 신용도에 따라 결정됩니다.",
+      "keywords": [
+        "LTV",
+        "DSR"
+      ]
+    },
+    {
+      "chunk_id": "SC-mortgage-InterestRelief-01-C04",
+      "category": "대출기간_상환방식",
+      "content_text": "최장 35년까지 가능하며, 상환 방식은 원리금균등분할상환입니다.",
+      "keywords": [
+        "최장 35년",
+        "원리금균등분할상환"
+      ]
+    },
+    {
+      "chunk_id": "SC-mortgage-InterestRelief-01-C05",
+      "category": "대출금리",
+      "content_text": "최초 3년 또는 5년간은 고정금리가 적용되며, 이후 기간은 COFIX 등 기준금리에 연동된 변동금리로 전환되는 혼합금리(금리상한형) 방식입니다.",
+      "keywords": [
+        "혼합금리",
+        "고정금리",
+        "변동금리"
+      ]
+    },
+    {
+      "chunk_id": "SC-mortgage-InterestRelief-01-C06",
+      "category": "중도상환수수료",
+      "content_text": "3년 이내 상환 시 최대 1.4%의 수수료가 슬라이딩 방식으로 부과됩니다.",
+      "keywords": [
+        "중도상환수수료"
+      ]
+    },
+    {
+      "chunk_id": "SC-mortgage-InterestRelief-01-C07",
+      "category": "필요서류",
+      "content_text": "신분증, 주민등록등본, 인감증명서, 등기권리증, 소득 및 재직 증명서류, 매매계약서 등",
+      "keywords": [
+        "필요서류"
+      ]
+    }
+  ]
+},
+{
+  "_id": {
+    "$oid": "68db9e8089c43cae4451533e"
+  },
+  "metadata": {
+    "product_id": "SC-jeonse-FirstGuarantee-01",
+    "bank_name": "SC제일은행",
+    "product_name": "퍼스트전세보증론",
+    "product_category": "전세자금대출",
+    "last_updated": "2025-09-17",
+    "source_document_url": "https://www.standardchartered.co.kr/np/kr/pl/loan/jeonse/FirstJeonseGuaranteeLoan.jsp",
+    "summary": "한국주택금융공사(HF)의 보증서를 담보로 하여 전세자금을 지원하는 대출 상품으로, 임차보증금 반환까지 보장받을 수 있는 안정성이 특징입니다."
+  },
+  "content_chunks": [
+    {
+      "chunk_id": "SC-jeonse-FirstGuarantee-01-C01",
+      "category": "자격조건",
+      "content_text": "임대차 계약을 체결하고 임차보증금의 5% 이상을 지급한 세대주. 부부합산 1주택 이하 보유자로, 한국주택금융공사의 보증서 발급이 가능한 고객.",
+      "keywords": [
+        "한국주택금융공사",
+        "보증서",
+        "세대주",
+        "1주택"
+      ]
+    },
+    {
+      "chunk_id": "SC-jeonse-FirstGuarantee-01-C02",
+      "category": "대상주택",
+      "content_text": "등기사항전부증명서 상 주택으로 분류되는 모든 주택 (아파트, 연립, 다세대, 단독주택, 주거용 오피스텔 등)",
+      "keywords": [
+        "주택",
+        "주거용 오피스텔"
+      ]
+    },
+    {
+      "chunk_id": "SC-jeonse-FirstGuarantee-01-C03",
+      "category": "대출한도",
+      "content_text": "최대 2.22억원 이내에서 임차보증금의 80%까지 가능합니다. (한국주택금융공사 보증 한도 내)",
+      "keywords": [
+        "최대 2.22억원",
+        "임차보증금 80%"
+      ]
+    },
+    {
+      "chunk_id": "SC-jeonse-FirstGuarantee-01-C04",
+      "category": "대출기간_상환방식",
+      "content_text": "최대 2년 (임대차 계약 기간 내), 만기 시 임대차 계약 연장 시 최장 10년까지 연장 가능. 상환 방식은 만기일시상환입니다.",
+      "keywords": [
+        "만기일시상환",
+        "최장 10년"
+      ]
+    },
+    {
+      "chunk_id": "SC-jeonse-FirstGuarantee-01-C05",
+      "category": "대출금리",
+      "content_text": "COFIX 등 기준금리에 가산금리가 더해지며, 신용등급 및 거래실적에 따라 우대금리가 적용될 수 있습니다.",
+      "keywords": [
+        "COFIX",
+        "우대금리"
+      ]
+    },
+    {
+      "chunk_id": "SC-jeonse-FirstGuarantee-01-C06",
+      "category": "중도상환수수료",
+      "content_text": "3년 이내 상환 시 최대 1.0% 이내에서 슬라이딩 방식으로 부과됩니다.",
+      "keywords": [
+        "중도상환수수료",
+        "1.0%"
+      ]
+    },
+    {
+      "chunk_id": "SC-jeonse-FirstGuarantee-01-C07",
+      "category": "필요서류",
+      "content_text": "확정일자부 임대차계약서, 임차보증금 5% 이상 납입 영수증, 신분증, 주민등록등본, 소득 및 재직 증빙서류, 등기사항전부증명서 등",
+      "keywords": [
+        "확정일자부 임대차계약서",
+        "보증금 납입 영수증"
+      ]
+    }
+  ]
+},
+{
+  "_id": {
+    "$oid": "68db9e8089c43cae4451533f"
+  },
+  "metadata": {
+    "product_id": "SC-jeonse-FirstJeonse-01",
+    "bank_name": "SC제일은행",
+    "product_name": "퍼스트전세론",
+    "product_category": "전세자금대출",
+    "last_updated": "2025-09-17",
+    "source_document_url": "https://www.standardchartered.co.kr/np/kr/pl/loan/jeonse/FirstJeonseLoan.jsp",
+    "summary": "SGI서울보증의 보증서를 담보로 하는 전세자금대출 상품으로, 주택금융공사 보증 상품 대비 소득이나 보증금 한도 제한이 완화된 것이 특징입니다."
+  },
+  "content_chunks": [
+    {
+      "chunk_id": "SC-jeonse-FirstJeonse-01-C01",
+      "category": "자격조건",
+      "content_text": "임대차 계약을 체결하고 SGI서울보증의 개인금융신용보험증권 발급이 가능한 고객. 소득증빙이 가능한 만 19세 이상 내국인.",
+      "keywords": [
+        "SGI서울보증",
+        "신용보험증권"
+      ]
+    },
+    {
+      "chunk_id": "SC-jeonse-FirstJeonse-01-C02",
+      "category": "대상주택",
+      "content_text": "아파트, 주상복합, 연립, 다세대, 주거용 오피스텔 등 (단, 임대인이 법인이거나 불법건축물인 경우 등 제한 있음)",
+      "keywords": [
+        "아파트",
+        "주거용 오피스텔"
+      ]
+    },
+    {
+      "chunk_id": "SC-jeonse-FirstJeonse-01-C03",
+      "category": "대출한도",
+      "content_text": "최대 5억원 이내에서 임차보증금의 80%까지 가능합니다.",
+      "keywords": [
+        "최대 5억원"
+      ]
+    },
+    {
+      "chunk_id": "SC-jeonse-FirstJeonse-01-C04",
+      "category": "대출기간_상환방식",
+      "content_text": "임대차 계약 종료일 이내에서 1년 이상 2년 이내로 운용. 만기일시상환 방식.",
+      "keywords": [
+        "만기일시상환",
+        "임대차 계약 기간"
+      ]
+    },
+    {
+      "chunk_id": "SC-jeonse-FirstJeonse-01-C05",
+      "category": "대출금리",
+      "content_text": "기준금리(COFIX 등) + 가산금리 - 우대금리 구조로, 고객 신용도 및 거래 조건에 따라 최종 금리가 결정됩니다.",
+      "keywords": [
+        "변동금리",
+        "가산금리"
+      ]
+    },
+    {
+      "chunk_id": "SC-jeonse-FirstJeonse-01-C06",
+      "category": "중도상환수수료",
+      "content_text": "3년 이내 상환 시 최대 1.0%가 부과되며, 잔존기간에 따라 차감됩니다.",
+      "keywords": [
+        "중도상환수수료"
+      ]
+    },
+    {
+      "chunk_id": "SC-jeonse-FirstJeonse-01-C07",
+      "category": "필요서류",
+      "content_text": "신분증, 확정일자부 임대차계약서, 계약금 영수증, 주민등록등본, 가족관계증명서, 소득증빙서류, 재직증명서 등",
+      "keywords": [
+        "필요서류",
+        "SGI서울보증"
+      ]
+    }
+  ]
+},
+{
+  "_id": {
+    "$oid": "68db9e8089c43cae44515340"
+  },
+  "metadata": {
+    "product_id": "SC-welfare-NewHopeSeed-01",
+    "bank_name": "SC제일은행",
+    "product_name": "새희망홀씨Ⅱ",
+    "product_category": "서민금융",
+    "last_updated": "2025-09-17",
+    "source_document_url": "https://www.standardchartered.co.kr/np/kr/pl/loan/credit/NewHopeSeedLoan.jsp",
+    "summary": "소득이 적거나 신용이 낮아 은행 대출이 어려운 서민 계층을 위한 서민금융진흥원의 대표적인 정책서민금융 신용대출 상품입니다."
+  },
+  "content_chunks": [
+    {
+      "chunk_id": "SC-welfare-NewHopeSeed-01-C01",
+      "category": "자격조건",
+      "content_text": "연소득 3,500만원 이하인 자, 또는 개인신용평점 하위 20%에 해당하면서 연소득 4,500만원 이하인 자. 재직기간 3개월 이상 근로자, 사업기간 6개월 이상 자영업자 등.",
+      "keywords": [
+        "서민금융",
+        "저소득",
+        "저신용"
+      ]
+    },
+    {
+      "chunk_id": "SC-welfare-NewHopeSeed-01-C02",
+      "category": "대출한도",
+      "content_text": "최대 3,500만원. 은행의 심사 기준 및 상환 능력에 따라 한도는 차등 적용됩니다.",
+      "keywords": [
+        "최대 3,500만원"
+      ]
+    },
+    {
+      "chunk_id": "SC-welfare-NewHopeSeed-01-C03",
+      "category": "대출기간_상환방식",
+      "content_text": "최장 5년 이내, 원리금균등분할상환 방식입니다.",
+      "keywords": [
+        "원리금균등분할상환",
+        "5년"
+      ]
+    },
+    {
+      "chunk_id": "SC-welfare-NewHopeSeed-01-C04",
+      "category": "대출금리",
+      "content_text": "연 10.5% 이내에서 은행이 자율적으로 결정합니다. 성실상환자, 사회적 취약계층 등에 대해 금리 우대 혜택이 있습니다.",
+      "keywords": [
+        "연 10.5% 이하",
+        "금리우대"
+      ]
+    },
+    {
+      "chunk_id": "SC-welfare-NewHopeSeed-01-C05",
+      "category": "중도상환수수료",
+      "content_text": "면제.",
+      "keywords": [
+        "중도상환수수료 면제"
+      ]
+    },
+    {
+      "chunk_id": "SC-welfare-NewHopeSeed-01-C06",
+      "category": "필요서류",
+      "content_text": "신분증, 주민등록등본, 소득증빙서류(근로소득원천징수영수증, 소득금액증명원 등), 재직증명서 또는 사업자등록증명원",
+      "keywords": [
+        "필요서류",
+        "소득증빙"
+      ]
+    }
+  ]
+},
+{
+  "_id": {
+    "$oid": "68db9e8089c43cae44515341"
+  },
+  "metadata": {
+    "product_id": "SC-welfare-Sunshine15-01",
+    "bank_name": "SC제일은행",
+    "product_name": "햇살론15",
+    "product_category": "서민금융",
+    "last_updated": "2025-09-17",
+    "source_document_url": "https://www.kinfa.or.kr/product/sunshineLoan15.do",
+    "summary": "서민금융진흥원의 보증을 통해 지원되는 고금리 대안자금 상품으로, 불법사금융 피해를 막고 제도권 금융 이용이 어려운 최저신용자를 지원하기 위한 정책서민금융 상품입니다."
+  },
+  "content_chunks": [
+    {
+      "chunk_id": "SC-welfare-Sunshine15-01-C01",
+      "category": "자격조건",
+      "content_text": "개인신용평점 하위 20% 이하이면서 연소득 3,500만원 이하(또는 4,500만원 이하)인 자. 서민금융진흥원 보증 심사를 통과해야 합니다.",
+      "keywords": [
+        "최저신용자",
+        "서민금융진흥원",
+        "정책서민금융"
+      ]
+    },
+    {
+      "chunk_id": "SC-welfare-Sunshine15-01-C02",
+      "category": "대출한도",
+      "content_text": "최대 2,000만원.",
+      "keywords": [
+        "최대 2,000만원"
+      ]
+    },
+    {
+      "chunk_id": "SC-welfare-Sunshine15-01-C03",
+      "category": "대출기간_상환방식",
+      "content_text": "3년 또는 5년 중 선택 가능하며, 원리금균등분할상환 방식입니다.",
+      "keywords": [
+        "원리금균등분할상환"
+      ]
+    },
+    {
+      "chunk_id": "SC-welfare-Sunshine15-01-C04",
+      "category": "대출금리",
+      "content_text": "연 15.9% (단일금리). 단, 성실상환 시 매년 금리가 인하됩니다. (3년 선택 시 3.0%p씩, 5년 선택 시 1.5%p씩 인하)",
+      "keywords": [
+        "연 15.9%",
+        "성실상환",
+        "금리인하"
+      ]
+    },
+    {
+      "chunk_id": "SC-welfare-Sunshine15-01-C05",
+      "category": "중도상환수수료",
+      "content_text": "면제.",
+      "keywords": [
+        "중도상환수수료 면제"
+      ]
+    },
+    {
+      "chunk_id": "SC-welfare-Sunshine15-01-C06",
+      "category": "필요서류",
+      "content_text": "신분증, 주민등록등본, 소득 및 재직(사업) 증빙서류. 서민금융진흥원 앱을 통한 신청 또는 은행 방문 신청.",
+      "keywords": [
+        "필요서류"
+      ]
+    }
+  ]
+},
+{
+  "_id": {
+    "$oid": "68db9e8089c43cae44515342"
+  },
+  "metadata": {
+    "product_id": "SC-welfare-Sunshine119-01",
+    "bank_name": "SC제일은행",
+    "product_name": "햇살론119 (정식명칭: 소액생계비대출)",
+    "product_category": "서민금융",
+    "last_updated": "2025-09-17",
+    "source_document_url": "https://www.kinfa.or.kr/product/miniCostLoan.do",
+    "summary": "'햇살론119'는 통용되는 명칭으로, 서민금융진흥원의 정식 상품명은 '소액생계비대출'입니다. 불법사금융에 노출되기 쉬운 연체자, 무소득자 등 신용 취약계층에게 긴급 생계비를 지원하는 정책 상품입니다."
+  },
+  "content_chunks": [
+    {
+      "chunk_id": "SC-welfare-Sunshine119-01-C01",
+      "category": "자격조건",
+      "content_text": "신용평점 하위 20% 이하이면서 연소득 3,500만원 이하인 자. 연체자, 무소득자도 신청 가능하나, 서민금융진흥원 상담 및 심사가 필수입니다.",
+      "keywords": [
+        "소액생계비대출",
+        "연체자",
+        "무소득자",
+        "신용취약계층"
+      ]
+    },
+    {
+      "chunk_id": "SC-welfare-Sunshine119-01-C02",
+      "category": "대출한도",
+      "content_text": "최초 50만원, 최대 100만원. 의료, 주거, 교육비 등 특정 용도로 사용 시 최초 이용 시에도 100만원까지 가능합니다.",
+      "keywords": [
+        "소액대출",
+        "최대 100만원"
+      ]
+    },
+    {
+      "chunk_id": "SC-welfare-Sunshine119-01-C03",
+      "category": "대출기간_상환방식",
+      "content_text": "1년 만기일시상환. 중도상환 가능하며, 성실상환 시 만기 연장이 검토될 수 있습니다.",
+      "keywords": [
+        "만기일시상환",
+        "1년"
+      ]
+    },
+    {
+      "chunk_id": "SC-welfare-Sunshine119-01-C04",
+      "category": "대출금리",
+      "content_text": "연 15.9%. 단, 6개월 성실상환 시 3.0%p, 추가 6개월 성실상환 시 3.0%p 금리 인하로 최저 연 9.9%까지 가능. 금융교육 이수 시 0.5%p 우대금리 적용.",
+      "keywords": [
+        "연 15.9%",
+        "성실상환",
+        "금리인하"
+      ]
+    },
+    {
+      "chunk_id": "SC-welfare-Sunshine119-01-C05",
+      "category": "중도상환수수료",
+      "content_text": "면제.",
+      "keywords": [
+        "중도상환수수료 면제"
+      ]
+    },
+    {
+      "chunk_id": "SC-welfare-Sunshine119-01-C06",
+      "category": "신청방법",
+      "content_text": "서민금융진흥원 앱 또는 전국 서민금융통합지원센터 방문을 통해 상담 및 신청. SC제일은행은 대출금 지급을 실행하는 협약 은행 중 하나입니다.",
+      "keywords": [
+        "서민금융진흥원",
+        "서민금융통합지원센터"
+      ]
+    }
+  ]
+}]
