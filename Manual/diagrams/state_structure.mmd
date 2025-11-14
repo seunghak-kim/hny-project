@@ -1,0 +1,307 @@
+---
+title: HolmesNyangz State Structure (Class Diagram)
+---
+classDiagram
+    %% ============================================================================
+    %% Main Supervisor State (최상위 State)
+    %% ============================================================================
+    class MainSupervisorState {
+        +string query
+        +string session_id
+        +string chat_session_id
+        +string request_id
+        +string current_phase
+        +List~string~ active_teams
+        +List~string~ completed_teams
+        +List~string~ failed_teams
+        +Dict team_results
+        +Dict aggregated_results
+        +Dict final_response
+        +datetime start_time
+        +datetime end_time
+        +float total_execution_time
+        +List~string~ error_log
+        +string status
+        +int user_id
+        +List loaded_memories
+        +Dict user_preferences
+        +string memory_load_time
+
+        %% References to other states
+        +PlanningState planning_state
+        +Dict search_team_state
+        +Dict document_team_state
+        +Dict analysis_team_state
+        +Dict execution_plan
+    }
+
+    %% ============================================================================
+    %% Planning State
+    %% ============================================================================
+    class PlanningState {
+        +string raw_query
+        +Dict analyzed_intent
+        +float intent_confidence
+        +List~string~ available_agents
+        +List~string~ available_teams
+        +List~ExecutionStepState~ execution_steps
+        +string execution_strategy
+        +List~List~ parallel_groups
+        +bool plan_validated
+        +List~string~ validation_errors
+        +float estimated_total_time
+    }
+
+    class ExecutionStepState {
+        +string step_id
+        +string step_type
+        +string agent_name
+        +string team
+        +string task
+        +string description
+        +string status
+        +int progress_percentage
+        +string started_at
+        +string completed_at
+        +Dict result
+        +string error
+    }
+
+    %% ============================================================================
+    %% Shared State (모든 팀이 공유)
+    %% ============================================================================
+    class SharedState {
+        +string user_query
+        +string session_id
+        +int user_id
+        +string timestamp
+        +string language
+        +string status
+        +string error_message
+    }
+
+    %% ============================================================================
+    %% Team-Specific States
+    %% ============================================================================
+    class SearchTeamState {
+        +string team_name
+        +string status
+        +Dict shared_context
+        +SearchKeywords keywords
+        +List~string~ search_scope
+        +Dict filters
+        +List~Dict~ legal_results
+        +List~Dict~ real_estate_results
+        +List~Dict~ loan_results
+        +List~Dict~ property_search_results
+        +Dict aggregated_results
+        +int total_results
+        +float search_time
+        +List~string~ sources_used
+        +Dict search_progress
+        +datetime start_time
+        +datetime end_time
+        +string error
+        +string current_search
+        +string execution_strategy
+    }
+
+    class DocumentTeamState {
+        +string team_name
+        +string status
+        +Dict shared_context
+        +string document_type
+        +DocumentTemplate template
+        +DocumentContent document_content
+        +Dict generation_progress
+        +bool review_needed
+        +ReviewResult review_result
+        +string final_document
+        +datetime start_time
+        +datetime end_time
+        +float generation_time
+        +float review_time
+        +string error
+    }
+
+    class AnalysisTeamState {
+        +string team_name
+        +string status
+        +Dict shared_context
+        +string analysis_type
+        +Dict input_data
+        +Dict raw_analysis
+        +Dict metrics
+        +List~string~ insights
+        +Dict report
+        +Dict visualization_data
+        +List~string~ recommendations
+        +float confidence_score
+        +Dict analysis_progress
+        +datetime start_time
+        +datetime end_time
+        +float analysis_time
+        +string error
+    }
+
+    %% ============================================================================
+    %% Supporting Types - Search
+    %% ============================================================================
+    class SearchKeywords {
+        +List~string~ legal
+        +List~string~ real_estate
+        +List~string~ loan
+        +List~string~ general
+    }
+
+    %% ============================================================================
+    %% Supporting Types - Document
+    %% ============================================================================
+    class DocumentTemplate {
+        +string template_id
+        +string template_name
+        +string template_content
+        +List~string~ placeholders
+    }
+
+    class DocumentContent {
+        +string title
+        +string content
+        +Dict metadata
+        +string created_at
+    }
+
+    class ReviewResult {
+        +bool reviewed
+        +string risk_level
+        +List~Dict~ risks
+        +List~string~ recommendations
+        +Dict compliance_check
+    }
+
+    %% ============================================================================
+    %% Supporting Types - Analysis
+    %% ============================================================================
+    class AnalysisMetrics {
+        +float avg_price
+        +float max_price
+        +float min_price
+        +string price_trend
+        +float risk_score
+        +float investment_score
+    }
+
+    class AnalysisInsight {
+        +string insight_type
+        +string content
+        +float confidence
+        +Dict supporting_data
+    }
+
+    class AnalysisReport {
+        +string title
+        +string summary
+        +List~Dict~ sections
+        +AnalysisMetrics metrics
+        +List~AnalysisInsight~ insights
+        +List~string~ recommendations
+    }
+
+    %% ============================================================================
+    %% Standard Result Format (Phase 2)
+    %% ============================================================================
+    class StandardResult {
+        +string agent_name
+        +string status
+        +Dict data
+        +string error
+        +datetime timestamp
+        +to_dict() Dict
+    }
+
+    %% ============================================================================
+    %% State Management Utilities
+    %% ============================================================================
+    class StateManager {
+        +update_step_status(planning_state, step_id, new_status, progress, error) PlanningState$
+        +create_shared_state(query, session_id, user_id, language, timestamp) SharedState$
+        +extract_shared_state(state) SharedState$
+        +merge_team_results(main_state, team_name, team_result) MainSupervisorState$
+        +create_initial_team_state(team_type, shared_state, additional_data) Dict$
+    }
+
+    class StateValidator {
+        +validate_shared_state(state) tuple$
+        +validate_search_state(state) tuple$
+        +validate_document_state(state) tuple$
+        +validate_analysis_state(state) tuple$
+    }
+
+    class StateTransition {
+        +update_status(state, new_status) Dict$
+        +record_error(state, error) Dict$
+        +mark_completed(state, result) Dict$
+    }
+
+    %% ============================================================================
+    %% Relationships
+    %% ============================================================================
+
+    %% Main Supervisor contains other states
+    MainSupervisorState *-- PlanningState : contains
+    MainSupervisorState o-- SearchTeamState : references
+    MainSupervisorState o-- DocumentTeamState : references
+    MainSupervisorState o-- AnalysisTeamState : references
+
+    %% Planning State contains Execution Steps
+    PlanningState *-- ExecutionStepState : contains multiple
+
+    %% Team States contain Shared State
+    SearchTeamState *-- SharedState : shared_context
+    DocumentTeamState *-- SharedState : shared_context
+    AnalysisTeamState *-- SharedState : shared_context
+
+    %% Search Team dependencies
+    SearchTeamState *-- SearchKeywords : keywords
+
+    %% Document Team dependencies
+    DocumentTeamState *-- DocumentTemplate : template
+    DocumentTeamState *-- DocumentContent : document_content
+    DocumentTeamState *-- ReviewResult : review_result
+
+    %% Analysis Team dependencies
+    AnalysisTeamState ..> AnalysisMetrics : uses
+    AnalysisTeamState ..> AnalysisInsight : uses
+    AnalysisTeamState *-- AnalysisReport : report
+    AnalysisReport *-- AnalysisMetrics : metrics
+    AnalysisReport *-- AnalysisInsight : insights
+
+    %% State Management utilities
+    StateManager ..> MainSupervisorState : manages
+    StateManager ..> PlanningState : manages
+    StateManager ..> SharedState : manages
+    StateManager ..> SearchTeamState : creates
+    StateManager ..> DocumentTeamState : creates
+    StateManager ..> AnalysisTeamState : creates
+
+    StateValidator ..> SharedState : validates
+    StateValidator ..> SearchTeamState : validates
+    StateValidator ..> DocumentTeamState : validates
+    StateValidator ..> AnalysisTeamState : validates
+
+    StateTransition ..> MainSupervisorState : transitions
+    StateTransition ..> SearchTeamState : transitions
+    StateTransition ..> DocumentTeamState : transitions
+    StateTransition ..> AnalysisTeamState : transitions
+
+    %% Standard Result (Phase 2)
+    StandardResult ..> MainSupervisorState : future integration
+
+    %% ============================================================================
+    %% Notes
+    %% ============================================================================
+    note for MainSupervisorState "최상위 State - 모든 팀의 State를 관리\n- 병렬 실행 제어\n- 결과 집계\n- Long-term Memory 통합"
+    note for PlanningState "Planning Agent가 생성\n- Intent 분석\n- 실행 계획 수립\n- TODO 관리 (execution_steps)"
+    note for SharedState "모든 팀이 공유하는 최소 State\n- 팀 간 통신의 기본 단위"
+    note for ExecutionStepState "실시간 TODO 관리\n- WebSocket으로 Frontend 전송\n- ProcessFlow 통합"
+    note for StateManager "State 생성 및 변환 유틸리티\n- 팀 결과 병합\n- 상태 업데이트"

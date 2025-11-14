@@ -1,0 +1,636 @@
+[
+  {
+    "id": "article_1",
+    "text": "제1조(목적) 이 규칙은 「부동산 가격공시에 관한 법률」 및 같은 법 시행령에서 위임된 사항과 그 시행에 필요한 사항을 규정함을 목적으로 한다.\n제2장 지가의 공시",
+    "metadata": {
+      "rule_title": "부동산 가격공시에 관한 법률 시행규칙 ( 약칭: 부동산공시법 시행규칙",
+      "rule_number": "제1118호",
+      "enforcement_date": "2022. 3. 30.",
+      "article_number": "제1조",
+      "article_title": "목적",
+      "chapter": "제1장 총칙",
+      "law_references": [
+        "「부동산 가격공시에 관한 법률」"
+      ]
+    }
+  },
+  {
+    "id": "article_2",
+    "text": "제2조(표준지 소유자의 의견제출) 「부동산 가격공시에 관한 법률 시행령」(이하 “영”이라 한다) 제5조제3항에 따른 의견제출은 별지 제1호서식에 따른다.",
+    "metadata": {
+      "rule_title": "부동산 가격공시에 관한 법률 시행규칙 ( 약칭: 부동산공시법 시행규칙",
+      "rule_number": "제1118호",
+      "enforcement_date": "2022. 3. 30.",
+      "article_number": "제2조",
+      "article_title": "표준지 소유자의 의견제출",
+      "chapter": "제2장 지가의 공시",
+      "form_references": [
+        "별지 제1호서식"
+      ],
+      "law_references": [
+        "「부동산 가격공시에 관한 법률 시행령」"
+      ],
+      "is_price_disclosure_related": true
+    }
+  },
+  {
+    "id": "article_3",
+    "text": "제3조(표준지공시지가 조사ㆍ평가보고서) ① 영 제8조제1항에서 “국토교통부령으로 정하는 사항”이란 다음 각 호의 사항을 말한다.\n1. 토지의 소재지, 면적 및 공부상 지목\n2. 지리적 위치\n3. 토지 이용 상황\n4. 「국토의 계획 및 이용에 관한 법률」 제2조제15호에 따른 용도지역(이하 “용도지역”이라 한다)\n5. 주위 환경\n6. 도로 및 교통 환경\n7. 토지 형상 및 지세(地勢)\n② 「부동산 가격공시에 관한 법률」(이하 “법”이라 한다) 제3조제5항에 따라 표준지공시지가 조사ㆍ평가를 의뢰받은 감정평가법인등(「감정평가 및 감정평가사에 관한 법률」 제2조제4호에 따른 감정평가법인등을 말한다)은 영 제8조제1항에 따라 별지 제2호서식의 조사ㆍ평가보고서에 다음 각 호의 서류를 첨부하여 국토교통부장관에게 제출해야 한다.<개정 2020. 6. 24.>\n1. 지역분석조서\n2. 별지 제3호서식에 따라 표준지별로 작성한 표준지 조사사항 및 가격평가의견서\n3. 별지 제4호서식에 따라 작성한 의견청취결과서[영 제8조제2항 및 제3항에 따라 시장ㆍ군수 또는 구청장(자치구의 구청장을 말한다. 이하 같다)의 의견을 들은 결과를 기재한다]\n4. 표준지의 위치를 표시한 도면\n5. 그 밖에 사실 확인에 필요한 서류",
+    "metadata": {
+      "rule_title": "부동산 가격공시에 관한 법률 시행규칙 ( 약칭: 부동산공시법 시행규칙",
+      "rule_number": "제1118호",
+      "enforcement_date": "2022. 3. 30.",
+      "article_number": "제3조",
+      "article_title": "표준지공시지가 조사ㆍ평가보고서",
+      "chapter": "제2장 지가의 공시",
+      "form_references": [
+        "별지 제2호서식",
+        "별지 제3호서식",
+        "별지 제4호서식"
+      ],
+      "law_references": [
+        "「부동산 가격공시에 관한 법률」",
+        "「감정평가 및 감정평가사에 관한 법률」",
+        "「국토의 계획 및 이용에 관한 법률」"
+      ],
+      "decree_references": [
+        "영 제8조"
+      ],
+      "is_price_disclosure_related": true
+    }
+  },
+  {
+    "id": "article_4",
+    "text": "제4조(표준지공시지가 이의신청서) 영 제12조에 따른 이의신청서는 별지 제5호서식과 같다.",
+    "metadata": {
+      "rule_title": "부동산 가격공시에 관한 법률 시행규칙 ( 약칭: 부동산공시법 시행규칙",
+      "rule_number": "제1118호",
+      "enforcement_date": "2022. 3. 30.",
+      "article_number": "제4조",
+      "article_title": "표준지공시지가 이의신청서",
+      "chapter": "제2장 지가의 공시",
+      "form_references": [
+        "별지 제5호서식"
+      ],
+      "decree_references": [
+        "영 제12조"
+      ],
+      "is_price_disclosure_related": true,
+      "is_form_related": true
+    }
+  },
+  {
+    "id": "article_5",
+    "text": "제5조(개별공시지가 확인서의 발급) ① 법 제10조에 따라 결정ㆍ공시된 개별공시지가의 확인을 받으려는 사람은 해당 시장ㆍ군수 또는 구청장에게 개별공시지가의 확인을 신청(전자문서에 의한 신청을 포함한다)할 수 있다. <개정 2020. 6. 24.>\n② 시장ㆍ군수 또는 구청장은 제1항에 따른 신청을 받은 경우에는 신청인에게 확인서를 발급하여야 한다.\n③ 제1항에 따른 확인 신청 및 제2항에 따른 확인서는 별지 제6호서식에 따른다.\n④ 시장ㆍ군수 또는 구청장은 제2항에 따라 확인서를 발급하는 경우에는 해당 시ㆍ군 또는 구(자치구인 구를 말한다)의 조례로 정하는 바에 따라 신청인으로부터 수수료를 받을 수 있다.",
+    "metadata": {
+      "rule_title": "부동산 가격공시에 관한 법률 시행규칙 ( 약칭: 부동산공시법 시행규칙",
+      "rule_number": "제1118호",
+      "enforcement_date": "2022. 3. 30.",
+      "article_number": "제5조",
+      "article_title": "개별공시지가 확인서의 발급",
+      "chapter": "제2장 지가의 공시",
+      "form_references": [
+        "별지 제6호서식"
+      ],
+      "law_article_references": [
+        "법 제10조"
+      ],
+      "is_price_disclosure_related": true,
+      "is_form_related": true
+    }
+  },
+  {
+    "id": "article_6",
+    "text": "제6조(개별공시지가의 검증의뢰) ① 영 제18조제1항에서 “지가현황도면”이란 해당 연도의 산정지가, 전년도의 개별공시지가 및 해당 연도의 표준지공시지가가 필지별로 기재된 도면을 말한다.\n② 영 제18조제1항에서 “지가조사자료”란 개별토지가격의 산정조서 및 그 밖에 토지이용계획에 관한 자료를 말한다.",
+    "metadata": {
+      "rule_title": "부동산 가격공시에 관한 법률 시행규칙 ( 약칭: 부동산공시법 시행규칙",
+      "rule_number": "제1118호",
+      "enforcement_date": "2022. 3. 30.",
+      "article_number": "제6조",
+      "article_title": "개별공시지가의 검증의뢰",
+      "chapter": "제2장 지가의 공시",
+      "decree_references": [
+        "영 제18조"
+      ],
+      "is_price_disclosure_related": true
+    }
+  },
+  {
+    "id": "article_7",
+    "text": "제7조(개별토지 소유자 등의 의견제출) 영 제19조제2항에 따른 개별토지가격에 대한 의견제출은 별지 제7호서식에 따른다.",
+    "metadata": {
+      "rule_title": "부동산 가격공시에 관한 법률 시행규칙 ( 약칭: 부동산공시법 시행규칙",
+      "rule_number": "제1118호",
+      "enforcement_date": "2022. 3. 30.",
+      "article_number": "제7조",
+      "article_title": "개별토지 소유자 등의 의견제출",
+      "chapter": "제2장 지가의 공시",
+      "form_references": [
+        "별지 제7호서식"
+      ],
+      "decree_references": [
+        "영 제19조"
+      ]
+    }
+  },
+  {
+    "id": "article_8",
+    "text": "제8조(개별공시지가 이의신청서) 영 제22조제1항에 따른 이의신청서는 별지 제8호서식과 같다.",
+    "metadata": {
+      "rule_title": "부동산 가격공시에 관한 법률 시행규칙 ( 약칭: 부동산공시법 시행규칙",
+      "rule_number": "제1118호",
+      "enforcement_date": "2022. 3. 30.",
+      "article_number": "제8조",
+      "article_title": "개별공시지가 이의신청서",
+      "chapter": "제2장 지가의 공시",
+      "form_references": [
+        "별지 제8호서식"
+      ],
+      "decree_references": [
+        "영 제22조"
+      ],
+      "is_price_disclosure_related": true,
+      "is_form_related": true
+    }
+  },
+  {
+    "id": "article_9",
+    "text": "제9조(증표 및 허가증) ① 법 제13조제4항(법 제15조제3항, 제16조제7항, 제18조제8항, 제20조제7항 및 제22조제9항에 따라 준용하는 경우를 포함한다. 이하 이 조에서 같다)에 따른 증표는 공무원증, 「감정평가 및 감정평가사에 관한 법률」에 따른 감정평가사 자격증 또는 「한국부동산원법」에 따른 한국부동산원(이하 “부동산원”이라 한다)의 직원증으로 한다. <개정 2020. 12. 11.>\n② 법 제13조제4항에 따른 허가증은 별지 제9호서식과 같다.\n제3장 주택가격의 공시",
+    "metadata": {
+      "rule_title": "부동산 가격공시에 관한 법률 시행규칙 ( 약칭: 부동산공시법 시행규칙",
+      "rule_number": "제1118호",
+      "enforcement_date": "2022. 3. 30.",
+      "article_number": "제9조",
+      "article_title": "증표 및 허가증",
+      "chapter": "제2장 지가의 공시",
+      "form_references": [
+        "별지 제9호서식"
+      ],
+      "law_references": [
+        "「한국부동산원법」",
+        "「감정평가 및 감정평가사에 관한 법률」"
+      ],
+      "law_article_references": [
+        "법 제13조",
+        "법 제15조"
+      ]
+    }
+  },
+  {
+    "id": "article_10",
+    "text": "제10조(표준주택 소유자의 의견제출) 법 제16조제7항에서 준용하는 법 제3조제2항에 따른 표준주택가격에 대한 의견제출은 별지 제10호서식에 따른다.",
+    "metadata": {
+      "rule_title": "부동산 가격공시에 관한 법률 시행규칙 ( 약칭: 부동산공시법 시행규칙",
+      "rule_number": "제1118호",
+      "enforcement_date": "2022. 3. 30.",
+      "article_number": "제10조",
+      "article_title": "표준주택 소유자의 의견제출",
+      "chapter": "제3장 주택가격의 공시",
+      "form_references": [
+        "별지 제10호서식"
+      ],
+      "law_article_references": [
+        "법 제16조",
+        "법 제3조"
+      ],
+      "is_price_disclosure_related": true
+    }
+  },
+  {
+    "id": "article_11",
+    "text": "제11조(표준주택가격 조사ㆍ산정보고서) ① 영 제30조제1항에서 “국토교통부령으로 정하는 사항”이란 다음 각 호의 사항을 말한다.\n1. 주택의 소재지, 공부상 지목 및 대지면적\n2. 주택 대지의 용도지역\n3. 도로접면\n4. 대지 형상\n5. 주건물 구조 및 층수\n6. 「건축법」 제22조에 따른 사용승인(이하 “사용승인”이라 한다)연도\n7. 주위 환경\n② 법 제16조제4항에 따라 표준주택가격 조사ㆍ산정을 의뢰받은 부동산원은 영 제30조제1항에 따라 별지 제11호서식의 조사ㆍ산정보고서에 다음 각 호의 서류를 첨부하여 국토교통부장관에게 제출해야 한다.<개정 2020. 12. 11.>\n1. 지역분석조서\n2. 별지 제12호서식에 따라 표준주택별로 작성한 표준주택 조사사항 및 가격산정의견서\n3. 별지 제13호서식에 따라 작성한 의견청취결과서(영 제30조제2항 및 제3항에 따라 시장ㆍ군수 또는 구청장의 의견을 들은 결과를 기재한다)\n4. 표준주택의 위치를 표시한 도면\n5. 그 밖에 사실 확인에 필요한 서류",
+    "metadata": {
+      "rule_title": "부동산 가격공시에 관한 법률 시행규칙 ( 약칭: 부동산공시법 시행규칙",
+      "rule_number": "제1118호",
+      "enforcement_date": "2022. 3. 30.",
+      "article_number": "제11조",
+      "article_title": "표준주택가격 조사ㆍ산정보고서",
+      "chapter": "제3장 주택가격의 공시",
+      "form_references": [
+        "별지 제13호서식",
+        "별지 제11호서식",
+        "별지 제12호서식"
+      ],
+      "law_references": [
+        "「건축법」"
+      ],
+      "decree_references": [
+        "영 제30조"
+      ],
+      "law_article_references": [
+        "법 제16조"
+      ],
+      "is_price_disclosure_related": true
+    }
+  },
+  {
+    "id": "article_12",
+    "text": "제12조(표준주택가격에 대한 이의신청) 법 제16조제7항에서 준용하는 법 제7조에 따른 표준주택가격에 대한 이의신청은 별지 제14호서식에 따른다.",
+    "metadata": {
+      "rule_title": "부동산 가격공시에 관한 법률 시행규칙 ( 약칭: 부동산공시법 시행규칙",
+      "rule_number": "제1118호",
+      "enforcement_date": "2022. 3. 30.",
+      "article_number": "제12조",
+      "article_title": "표준주택가격에 대한 이의신청",
+      "chapter": "제3장 주택가격의 공시",
+      "form_references": [
+        "별지 제14호서식"
+      ],
+      "law_article_references": [
+        "법 제16조",
+        "법 제7조"
+      ],
+      "is_price_disclosure_related": true,
+      "is_form_related": true
+    }
+  },
+  {
+    "id": "article_13",
+    "text": "제13조(개별주택가격 확인서의 발급) 법 제17조에 따라 결정ㆍ공시된 개별주택가격의 확인에 관하여는 제5조를 준용한다. 이 경우 확인 신청 및 확인서는 별지 제15호서식에 따른다.",
+    "metadata": {
+      "rule_title": "부동산 가격공시에 관한 법률 시행규칙 ( 약칭: 부동산공시법 시행규칙",
+      "rule_number": "제1118호",
+      "enforcement_date": "2022. 3. 30.",
+      "article_number": "제13조",
+      "article_title": "개별주택가격 확인서의 발급",
+      "chapter": "제3장 주택가격의 공시",
+      "form_references": [
+        "별지 제15호서식"
+      ],
+      "law_article_references": [
+        "법 제17조"
+      ],
+      "is_price_disclosure_related": true,
+      "is_form_related": true
+    }
+  },
+  {
+    "id": "article_14",
+    "text": "제14조(개별주택가격의 검증의뢰) ① 영 제36조제1항에서 “가격현황도면”이란 해당 연도에 산정된 개별주택가격, 전년도의 개별주택가격 및 해당 연도의 표준주택가격이 주택별로 기재된 도면을 말한다.\n② 영 제36조제1항에서 “가격조사자료”란 개별주택가격의 산정조서 및 그 밖에 토지이용계획에 관한 자료를 말한다.",
+    "metadata": {
+      "rule_title": "부동산 가격공시에 관한 법률 시행규칙 ( 약칭: 부동산공시법 시행규칙",
+      "rule_number": "제1118호",
+      "enforcement_date": "2022. 3. 30.",
+      "article_number": "제14조",
+      "article_title": "개별주택가격의 검증의뢰",
+      "chapter": "제3장 주택가격의 공시",
+      "decree_references": [
+        "영 제36조"
+      ],
+      "is_price_disclosure_related": true
+    }
+  },
+  {
+    "id": "article_15",
+    "text": "제15조(개별주택 소유자 등의 의견제출) 영 제37조에 따른 개별주택가격에 대한 의견제출은 별지 제16호서식에 따른다.",
+    "metadata": {
+      "rule_title": "부동산 가격공시에 관한 법률 시행규칙 ( 약칭: 부동산공시법 시행규칙",
+      "rule_number": "제1118호",
+      "enforcement_date": "2022. 3. 30.",
+      "article_number": "제15조",
+      "article_title": "개별주택 소유자 등의 의견제출",
+      "chapter": "제3장 주택가격의 공시",
+      "form_references": [
+        "별지 제16호서식"
+      ],
+      "decree_references": [
+        "영 제37조"
+      ],
+      "is_price_disclosure_related": true
+    }
+  },
+  {
+    "id": "article_16",
+    "text": "제16조(개별주택가격에 대한 이의신청) 법 제17조제8항에서 준용하는 법 제7조에 따른 개별주택가격에 대한 이의신청은 별지 제17호서식에 따른다.",
+    "metadata": {
+      "rule_title": "부동산 가격공시에 관한 법률 시행규칙 ( 약칭: 부동산공시법 시행규칙",
+      "rule_number": "제1118호",
+      "enforcement_date": "2022. 3. 30.",
+      "article_number": "제16조",
+      "article_title": "개별주택가격에 대한 이의신청",
+      "chapter": "제3장 주택가격의 공시",
+      "form_references": [
+        "별지 제17호서식"
+      ],
+      "law_article_references": [
+        "법 제7조",
+        "법 제17조"
+      ],
+      "is_price_disclosure_related": true,
+      "is_form_related": true
+    }
+  },
+  {
+    "id": "article_17",
+    "text": "제17조(공동주택가격 확인서의 발급) 법 제18조에 따라 결정ㆍ공시된 공동주택가격의 확인에 관하여는 제5조를 준용한다. 이 경우 확인 신청 및 확인서는 별지 제18호서식에 따른다.",
+    "metadata": {
+      "rule_title": "부동산 가격공시에 관한 법률 시행규칙 ( 약칭: 부동산공시법 시행규칙",
+      "rule_number": "제1118호",
+      "enforcement_date": "2022. 3. 30.",
+      "article_number": "제17조",
+      "article_title": "공동주택가격 확인서의 발급",
+      "chapter": "제3장 주택가격의 공시",
+      "form_references": [
+        "별지 제18호서식"
+      ],
+      "law_article_references": [
+        "법 제18조"
+      ],
+      "is_price_disclosure_related": true,
+      "is_form_related": true
+    }
+  },
+  {
+    "id": "article_18",
+    "text": "제18조(공동주택소유자 등의 의견제출) 영 제42조에 따른 공동주택가격에 대한 의견제출은 별지 제19호서식에 따른다.",
+    "metadata": {
+      "rule_title": "부동산 가격공시에 관한 법률 시행규칙 ( 약칭: 부동산공시법 시행규칙",
+      "rule_number": "제1118호",
+      "enforcement_date": "2022. 3. 30.",
+      "article_number": "제18조",
+      "article_title": "공동주택소유자 등의 의견제출",
+      "chapter": "제3장 주택가격의 공시",
+      "form_references": [
+        "별지 제19호서식"
+      ],
+      "decree_references": [
+        "영 제42조"
+      ]
+    }
+  },
+  {
+    "id": "article_19",
+    "text": "제19조(공동주택가격 조사ㆍ산정보고서) ① 영 제46조제1항에서 “국토교통부령으로 정하는 사항”이란 다음 각 호의 사항을 말한다.\n1. 공동주택의 소재지, 단지명, 동명 및 호명\n2. 공동주택의 면적 및 공시가격\n3. 그 밖에 공동주택가격 조사ㆍ산정에 필요한 사항\n② 법 제18조제6항에 따라 공동주택가격 조사ㆍ산정을 의뢰받은 부동산원은 영 제46조제1항에 따라 개별 공동주택가격 외에 다음 각 호의 사항이 포함된 조사ㆍ산정보고서를 책자 또는 전자정보의 형태로 국토교통부장관에게 제출해야 한다.<개정 2020. 12. 11.>\n1. 공동주택 분포현황\n2. 공동주택가격 변동률\n3. 공동주택가격 총액 및 면적당 단가ㆍ평균가격\n4. 공동주택가격 상위ㆍ하위 현황\n5. 의견제출 및 이의신청 접수현황 및 처리현황\n6. 그 밖에 공동주택가격에 관한 사항",
+    "metadata": {
+      "rule_title": "부동산 가격공시에 관한 법률 시행규칙 ( 약칭: 부동산공시법 시행규칙",
+      "rule_number": "제1118호",
+      "enforcement_date": "2022. 3. 30.",
+      "article_number": "제19조",
+      "article_title": "공동주택가격 조사ㆍ산정보고서",
+      "chapter": "제3장 주택가격의 공시",
+      "decree_references": [
+        "영 제46조"
+      ],
+      "law_article_references": [
+        "법 제18조"
+      ],
+      "is_price_disclosure_related": true
+    }
+  },
+  {
+    "id": "article_20",
+    "text": "제20조(공동주택가격에 대한 이의신청) 법 제18조제8항에서 준용하는 법 제7조에 따른 공동주택가격에 대한 이의신청은 별지 제20호서식에 따른다.\n제4장 비주거용 부동산가격의 공시",
+    "metadata": {
+      "rule_title": "부동산 가격공시에 관한 법률 시행규칙 ( 약칭: 부동산공시법 시행규칙",
+      "rule_number": "제1118호",
+      "enforcement_date": "2022. 3. 30.",
+      "article_number": "제20조",
+      "article_title": "공동주택가격에 대한 이의신청",
+      "chapter": "제3장 주택가격의 공시",
+      "form_references": [
+        "별지 제20호서식"
+      ],
+      "law_article_references": [
+        "법 제18조",
+        "법 제7조"
+      ],
+      "is_price_disclosure_related": true,
+      "is_form_related": true
+    }
+  },
+  {
+    "id": "article_21",
+    "text": "제21조(비주거용 표준부동산 소유자의 의견제출) 법 제20조제7항에서 준용하는 법 제3조제2항에 따른 비주거용 표준부동산가격에 대한 의견제출은 별지 제21호서식에 따른다.",
+    "metadata": {
+      "rule_title": "부동산 가격공시에 관한 법률 시행규칙 ( 약칭: 부동산공시법 시행규칙",
+      "rule_number": "제1118호",
+      "enforcement_date": "2022. 3. 30.",
+      "article_number": "제21조",
+      "article_title": "비주거용 표준부동산 소유자의 의견제출",
+      "chapter": "제4장 비주거용 부동산가격의 공시",
+      "form_references": [
+        "별지 제21호서식"
+      ],
+      "law_article_references": [
+        "법 제3조",
+        "법 제20조"
+      ]
+    }
+  },
+  {
+    "id": "article_22",
+    "text": "제22조(비주거용 표준부동산가격 조사ㆍ산정보고서) ① 영 제53조제1항에서 “국토교통부령으로 정하는 사항”이란 다음 각 호의 사항을 말한다.\n1. 부동산의 소재지, 공부상 지목 및 대지면적\n2. 대지의 용도지역\n3. 도로접면\n4. 대지 형상\n5. 건물 용도 및 연면적\n6. 주건물 구조 및 층수\n7. 사용승인연도\n8. 주위 환경\n② 법 제20조제4항에 따라 비주거용 표준부동산가격의 조사ㆍ산정을 의뢰받은 자는 영 제53조제1항에 따라 별지 제22호서식의 조사ㆍ산정보고서에 다음 각 호의 서류를 첨부하여 국토교통부장관에게 제출하여야 한다.\n1. 지역분석조서\n2. 별지 제23호서식에 따라 비주거용 표준부동산별로 작성한 비주거용 표준부동산 조사사항 및 가격산정의견서\n3. 별지 제24호서식에 따라 작성한 의견청취결과서(영 제53조제2항 및 제3항에 따라 시장ㆍ군수 또는 구청장의 의견을 들은 결과를 기재한다)\n4. 비주거용 표준부동산의 위치를 표시한 도면\n5. 그 밖에 사실 확인에 필요한 서류",
+    "metadata": {
+      "rule_title": "부동산 가격공시에 관한 법률 시행규칙 ( 약칭: 부동산공시법 시행규칙",
+      "rule_number": "제1118호",
+      "enforcement_date": "2022. 3. 30.",
+      "article_number": "제22조",
+      "article_title": "비주거용 표준부동산가격 조사ㆍ산정보고서",
+      "chapter": "제4장 비주거용 부동산가격의 공시",
+      "form_references": [
+        "별지 제23호서식",
+        "별지 제22호서식",
+        "별지 제24호서식"
+      ],
+      "decree_references": [
+        "영 제53조"
+      ],
+      "law_article_references": [
+        "법 제20조"
+      ],
+      "is_price_disclosure_related": true
+    }
+  },
+  {
+    "id": "article_23",
+    "text": "제23조(비주거용 표준부동산가격에 대한 이의신청) 법 제20조제7항에서 준용하는 법 제7조에 따른 비주거용 표준부동산가격에 대한 이의신청은 별지 제25호서식에 따른다.",
+    "metadata": {
+      "rule_title": "부동산 가격공시에 관한 법률 시행규칙 ( 약칭: 부동산공시법 시행규칙",
+      "rule_number": "제1118호",
+      "enforcement_date": "2022. 3. 30.",
+      "article_number": "제23조",
+      "article_title": "비주거용 표준부동산가격에 대한 이의신청",
+      "chapter": "제4장 비주거용 부동산가격의 공시",
+      "form_references": [
+        "별지 제25호서식"
+      ],
+      "law_article_references": [
+        "법 제7조",
+        "법 제20조"
+      ],
+      "is_price_disclosure_related": true,
+      "is_form_related": true
+    }
+  },
+  {
+    "id": "article_24",
+    "text": "제24조(비주거용 개별부동산가격 확인서의 발급) 법 제21조에 따라 결정ㆍ공시된 비주거용 개별부동산가격의 확인에 관하여는 제5조를 준용한다. 이 경우 확인 신청 및 확인서는 별지 제26호서식에 따른다.",
+    "metadata": {
+      "rule_title": "부동산 가격공시에 관한 법률 시행규칙 ( 약칭: 부동산공시법 시행규칙",
+      "rule_number": "제1118호",
+      "enforcement_date": "2022. 3. 30.",
+      "article_number": "제24조",
+      "article_title": "비주거용 개별부동산가격 확인서의 발급",
+      "chapter": "제4장 비주거용 부동산가격의 공시",
+      "form_references": [
+        "별지 제26호서식"
+      ],
+      "law_article_references": [
+        "법 제21조"
+      ],
+      "is_price_disclosure_related": true,
+      "is_form_related": true
+    }
+  },
+  {
+    "id": "article_25",
+    "text": "제25조(비주거용 개별부동산가격의 검증의뢰) ① 영 제60조제1항에서 “가격현황도면”이란 해당 연도에 산정된 비주거용 개별부동산가격, 전년도의 비주거용 개별부동산가격 및 해당 연도의 비주거용 표준부동산가격이 비주거용 부동산별로 기재된 도면을 말한다.\n② 영 제60조제1항에서 “가격조사자료”란 비주거용 개별부동산가격의 산정조서 및 그 밖에 토지이용계획에 관한 자료를 말한다.",
+    "metadata": {
+      "rule_title": "부동산 가격공시에 관한 법률 시행규칙 ( 약칭: 부동산공시법 시행규칙",
+      "rule_number": "제1118호",
+      "enforcement_date": "2022. 3. 30.",
+      "article_number": "제25조",
+      "article_title": "비주거용 개별부동산가격의 검증의뢰",
+      "chapter": "제4장 비주거용 부동산가격의 공시",
+      "decree_references": [
+        "영 제60조"
+      ],
+      "is_price_disclosure_related": true
+    }
+  },
+  {
+    "id": "article_26",
+    "text": "제26조(비주거용 일반부동산 소유자 등의 의견제출) 영 제61조에 따른 비주거용 개별부동산가격에 대한 의견제출은 별지 제27호서식에 따른다.",
+    "metadata": {
+      "rule_title": "부동산 가격공시에 관한 법률 시행규칙 ( 약칭: 부동산공시법 시행규칙",
+      "rule_number": "제1118호",
+      "enforcement_date": "2022. 3. 30.",
+      "article_number": "제26조",
+      "article_title": "비주거용 일반부동산 소유자 등의 의견제출",
+      "chapter": "제4장 비주거용 부동산가격의 공시",
+      "form_references": [
+        "별지 제27호서식"
+      ],
+      "decree_references": [
+        "영 제61조"
+      ]
+    }
+  },
+  {
+    "id": "article_27",
+    "text": "제27조(비주거용 개별부동산가격에 대한 이의신청) 법 제21조제8항에서 준용하는 법 제11조에 따른 비주거용 개별부동산가격에 대한 이의신청은 별지 제28호서식에 따른다.",
+    "metadata": {
+      "rule_title": "부동산 가격공시에 관한 법률 시행규칙 ( 약칭: 부동산공시법 시행규칙",
+      "rule_number": "제1118호",
+      "enforcement_date": "2022. 3. 30.",
+      "article_number": "제27조",
+      "article_title": "비주거용 개별부동산가격에 대한 이의신청",
+      "chapter": "제4장 비주거용 부동산가격의 공시",
+      "form_references": [
+        "별지 제28호서식"
+      ],
+      "law_article_references": [
+        "법 제21조",
+        "법 제11조"
+      ],
+      "is_price_disclosure_related": true,
+      "is_form_related": true
+    }
+  },
+  {
+    "id": "article_28",
+    "text": "제28조(비주거용 집합부동산가격 확인서의 발급) 법 제22조에 따라 결정ㆍ공시된 비주거용 집합부동산가격의 확인에 관하여는 제5조를 준용한다. 이 경우 확인 신청 및 확인서는 별지 제29호서식에 따른다.",
+    "metadata": {
+      "rule_title": "부동산 가격공시에 관한 법률 시행규칙 ( 약칭: 부동산공시법 시행규칙",
+      "rule_number": "제1118호",
+      "enforcement_date": "2022. 3. 30.",
+      "article_number": "제28조",
+      "article_title": "비주거용 집합부동산가격 확인서의 발급",
+      "chapter": "제4장 비주거용 부동산가격의 공시",
+      "form_references": [
+        "별지 제29호서식"
+      ],
+      "law_article_references": [
+        "법 제22조"
+      ],
+      "is_price_disclosure_related": true,
+      "is_form_related": true
+    }
+  },
+  {
+    "id": "article_29",
+    "text": "제29조(비주거용 집합부동산 소유자 등의 의견제출) 영 제66조에 따른 비주거용 집합부동산가격에 대한 의견제출은 별지 제30호서식에 따른다.",
+    "metadata": {
+      "rule_title": "부동산 가격공시에 관한 법률 시행규칙 ( 약칭: 부동산공시법 시행규칙",
+      "rule_number": "제1118호",
+      "enforcement_date": "2022. 3. 30.",
+      "article_number": "제29조",
+      "article_title": "비주거용 집합부동산 소유자 등의 의견제출",
+      "chapter": "제4장 비주거용 부동산가격의 공시",
+      "form_references": [
+        "별지 제30호서식"
+      ],
+      "decree_references": [
+        "영 제66조"
+      ]
+    }
+  },
+  {
+    "id": "article_30",
+    "text": "제30조(비주거용 집합부동산가격 조사ㆍ산정보고서) ① 영 제69조제2항에서 “국토교통부령으로 정하는 사항”이란 다음 각 호의 사항을 말한다.\n1. 비주거용 집합부동산의 소재지, 동명 및 호명\n2. 비주거용 집합부동산의 면적 및 공시가격\n3. 그 밖에 비주거용 집합부동산의 조사ㆍ산정에 필요한 사항\n② 법 제22조제7항에 따라 비주거용 집합부동산가격 조사ㆍ산정을 의뢰받은 자는 영 제69조제2항에 따라 개별 비주거용 집합부동산가격 외에 다음 각 호의 사항이 포함된 조사ㆍ산정보고서를 책자 또는 전자정보의 형태로 국토교통부장관에게 제출하여야 한다.\n1. 비주거용 집합부동산 분포현황\n2. 비주거용 집합부동산가격 변동률\n3. 비주거용 집합부동산가격 총액 및 면적당 단가ㆍ평균가격\n4. 비주거용 집합부동산가격 상위ㆍ하위 현황\n5. 의견제출 및 이의신청 접수현황 및 처리현황\n6. 그 밖에 비주거용 집합부동산가격에 관한 사항",
+    "metadata": {
+      "rule_title": "부동산 가격공시에 관한 법률 시행규칙 ( 약칭: 부동산공시법 시행규칙",
+      "rule_number": "제1118호",
+      "enforcement_date": "2022. 3. 30.",
+      "article_number": "제30조",
+      "article_title": "비주거용 집합부동산가격 조사ㆍ산정보고서",
+      "chapter": "제4장 비주거용 부동산가격의 공시",
+      "decree_references": [
+        "영 제69조"
+      ],
+      "law_article_references": [
+        "법 제22조"
+      ],
+      "is_price_disclosure_related": true
+    }
+  },
+  {
+    "id": "article_31",
+    "text": "제31조(비주거용 집합부동산가격에 대한 이의신청) 법 제22조제9항에서 준용하는 법 제7조에 따른 비주거용 집합부동산가격에 대한 이의신청은 별지 제31호서식에 따른다.",
+    "metadata": {
+      "rule_title": "부동산 가격공시에 관한 법률 시행규칙 ( 약칭: 부동산공시법 시행규칙",
+      "rule_number": "제1118호",
+      "enforcement_date": "2022. 3. 30.",
+      "article_number": "제31조",
+      "article_title": "비주거용 집합부동산가격에 대한 이의신청",
+      "chapter": "제4장 비주거용 부동산가격의 공시",
+      "form_references": [
+        "별지 제31호서식"
+      ],
+      "law_article_references": [
+        "법 제22조",
+        "법 제7조"
+      ],
+      "is_price_disclosure_related": true,
+      "is_form_related": true
+    }
+  },
+  {
+    "id": "article_32",
+    "text": "제32조(자료의 공개) 국토교통부장관은 법 제26조제1항에 따라 표준지공시지가, 표준주택가격 및 공동주택가격의 주요사항에 관한 보고서를 국회에 제출하는 때에 같은 조 제2항에 따라 다음 각 호의 자료를 영 제4조에 따른 부동산공시가격시스템에 게시해야 한다.\n1. 부동산 유형별 종합적인 시세 반영률\n2. 부동산 유형별 공시가격의 조사ㆍ산정 기준 및 절차\n3. 부동산 공시가격 산정에 고려된 용도지역 또는 용도 등 주요 특성 및 현황\n4. 부동산 공시가격 산정에 참고한 인근지역의 실거래가 및 시세자료 등 가격에 관한 자료\n[본조신설 2020. 10. 8.]",
+    "metadata": {
+      "rule_title": "부동산 가격공시에 관한 법률 시행규칙 ( 약칭: 부동산공시법 시행규칙",
+      "rule_number": "제1118호",
+      "enforcement_date": "2022. 3. 30.",
+      "article_number": "제32조",
+      "article_title": "자료의 공개",
+      "chapter": "제4장 비주거용 부동산가격의 공시",
+      "decree_references": [
+        "영 제4조"
+      ],
+      "law_article_references": [
+        "법 제26조"
+      ]
+    }
+  }
+]

@@ -1,0 +1,106 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+embedding_venv/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+# Python library directories (virtualenv, etc.)
+# NOTE: We don't ignore all lib/ because frontend/lib/ is needed
+venv/lib/
+venv/lib64/
+env/lib/
+env/lib64/
+ENV/lib/
+ENV/lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.ruff_cache/
+bge-reranker-v2-m3-ko/
+KURE_v1/
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Data
+# data/sqlite/*.db
+# data/sqlite/*.db-journal
+# data/chroma/
+# data/checkpoints/
+# data/storage/
+# logs/
+
+# Session Database (SQLite)
+backend/data/system/sessions/*.db
+backend/data/system/sessions/*.db-journal
+backend/data/system/sessions/*.db-shm
+backend/data/system/sessions/*.db-wal
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Node.js / React
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+.pnpm-store/
+frontend/dist/
+frontend/build/
+.parcel-cache/
+.next/
+.nuxt/
+.cache/
+
+# Testing
+coverage/
+*.lcov
+.nyc_output/
+
+# Documentation
+docs/_build/
+site/
+
+# Temporary files
+*.tmp
+*.bak
+*.backup
+temp/
+tmp/
+
+# OS files
+Thumbs.db
+Desktop.ini
+
+# Docker
+.dockerignore
+docker-compose.override.yml

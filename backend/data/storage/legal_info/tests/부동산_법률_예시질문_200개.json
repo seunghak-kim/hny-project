@@ -1,0 +1,1444 @@
+{
+  "metadata": {
+    "title": "부동산 법률 관련 예시 질문 200개",
+    "description": "4개 카테고리별 부동산 법률 관련 예시 질문 모음",
+    "total_questions": 200,
+    "categories": 4,
+    "created_date": "2024-12-19",
+    "source": "부동산 법률 청크 파일 기반"
+  },
+  "categories": [
+    {
+      "category_id": "1",
+      "category_name": "1_공통 매매_임대차",
+      "description": "공인중개사법, 부동산 거래신고법, 부동산등기법 관련 질문",
+      "question_count": 50,
+      "questions": [
+        {
+          "id": 1,
+          "question": "공인중개사가 되려면 어떤 자격이 필요한가요?",
+          "related_law": "공인중개사법",
+          "topic": "자격요건",
+          "difficulty": "기초"
+        },
+        {
+          "id": 2,
+          "question": "공인중개사 자격시험에 응시할 수 있는 조건은 무엇인가요?",
+          "related_law": "공인중개사법",
+          "topic": "자격시험",
+          "difficulty": "기초"
+        },
+        {
+          "id": 3,
+          "question": "공인중개사 자격증을 다른 사람에게 대여하는 것이 가능한가요?",
+          "related_law": "공인중개사법",
+          "topic": "금지행위",
+          "difficulty": "기초"
+        },
+        {
+          "id": 4,
+          "question": "중개사무소를 개설하기 위한 등록 요건은 무엇인가요?",
+          "related_law": "공인중개사법",
+          "topic": "등록요건",
+          "difficulty": "중급"
+        },
+        {
+          "id": 5,
+          "question": "공인중개사가 할 수 없는 금지행위에는 어떤 것들이 있나요?",
+          "related_law": "공인중개사법",
+          "topic": "금지행위",
+          "difficulty": "중급"
+        },
+        {
+          "id": 6,
+          "question": "중개보수는 어떻게 정해지나요?",
+          "related_law": "공인중개사법",
+          "topic": "중개보수",
+          "difficulty": "기초"
+        },
+        {
+          "id": 7,
+          "question": "공인중개사가 중개대상물에 대해 설명해야 할 의무사항은 무엇인가요?",
+          "related_law": "공인중개사법",
+          "topic": "설명의무",
+          "difficulty": "중급"
+        },
+        {
+          "id": 8,
+          "question": "거래계약서 작성 시 공인중개사의 의무는 무엇인가요?",
+          "related_law": "공인중개사법",
+          "topic": "계약서작성",
+          "difficulty": "중급"
+        },
+        {
+          "id": 9,
+          "question": "공인중개사의 손해배상책임 보장 의무는 어떻게 되나요?",
+          "related_law": "공인중개사법",
+          "topic": "손해배상책임",
+          "difficulty": "고급"
+        },
+        {
+          "id": 10,
+          "question": "중개사무소 등록증을 분실했을 때 어떻게 해야 하나요?",
+          "related_law": "공인중개사법",
+          "topic": "등록증관리",
+          "difficulty": "기초"
+        },
+        {
+          "id": 11,
+          "question": "공인중개사가 휴업이나 폐업할 때 신고 절차는 어떻게 되나요?",
+          "related_law": "공인중개사법",
+          "topic": "휴업폐업신고",
+          "difficulty": "기초"
+        },
+        {
+          "id": 12,
+          "question": "중개사무소를 다른 지역으로 이전할 때 필요한 절차는 무엇인가요?",
+          "related_law": "공인중개사법",
+          "topic": "사무소이전",
+          "difficulty": "중급"
+        },
+        {
+          "id": 13,
+          "question": "공인중개사가 다른 업무를 겸할 수 있는 범위는 어디까지인가요?",
+          "related_law": "공인중개사법",
+          "topic": "겸업제한",
+          "difficulty": "중급"
+        },
+        {
+          "id": 14,
+          "question": "소속공인중개사와 중개보조원의 차이점은 무엇인가요?",
+          "related_law": "공인중개사법",
+          "topic": "직원구분",
+          "difficulty": "기초"
+        },
+        {
+          "id": 15,
+          "question": "공인중개사가 부동산 거래정보망에 정보를 공개할 때 주의사항은 무엇인가요?",
+          "related_law": "공인중개사법",
+          "topic": "정보공개",
+          "difficulty": "중급"
+        },
+        {
+          "id": 16,
+          "question": "전속중개계약이란 무엇이고 어떤 효력이 있나요?",
+          "related_law": "공인중개사법",
+          "topic": "전속중개계약",
+          "difficulty": "고급"
+        },
+        {
+          "id": 17,
+          "question": "공인중개사가 중개업무 수행 시 지켜야 할 윤리기준은 무엇인가요?",
+          "related_law": "공인중개사법",
+          "topic": "윤리기준",
+          "difficulty": "중급"
+        },
+        {
+          "id": 18,
+          "question": "공인중개사 자격이 취소되는 경우는 어떤 경우인가요?",
+          "related_law": "공인중개사법",
+          "topic": "자격취소",
+          "difficulty": "고급"
+        },
+        {
+          "id": 19,
+          "question": "공인중개사에 대한 업무정지 처분 기준은 무엇인가요?",
+          "related_law": "공인중개사법",
+          "topic": "업무정지",
+          "difficulty": "고급"
+        },
+        {
+          "id": 20,
+          "question": "공인중개사가 계약금 등을 예치할 때 권고할 수 있는 절차는 무엇인가요?",
+          "related_law": "공인중개사법",
+          "topic": "계약금예치",
+          "difficulty": "중급"
+        },
+        {
+          "id": 21,
+          "question": "공인중개사가 인터넷을 통해 중개대상물을 광고할 때 준수해야 할 사항은 무엇인가요?",
+          "related_law": "공인중개사법",
+          "topic": "인터넷광고",
+          "difficulty": "중급"
+        },
+        {
+          "id": 22,
+          "question": "공인중개사가 임대차 중개 시 임차인에게 설명해야 할 의무사항은 무엇인가요?",
+          "related_law": "공인중개사법",
+          "topic": "임대차설명의무",
+          "difficulty": "중급"
+        },
+        {
+          "id": 23,
+          "question": "공인중개사가 중개보조원을 고용할 수 있는 수의 제한은 어떻게 되나요?",
+          "related_law": "공인중개사법",
+          "topic": "중개보조원고용",
+          "difficulty": "중급"
+        },
+        {
+          "id": 24,
+          "question": "공인중개사가 중개의뢰인의 신분을 확인할 수 있는 권한이 있나요?",
+          "related_law": "공인중개사법",
+          "topic": "신분확인",
+          "difficulty": "기초"
+        },
+        {
+          "id": 25,
+          "question": "공인중개사협회의 설립 요건과 역할은 무엇인가요?",
+          "related_law": "공인중개사법",
+          "topic": "협회설립",
+          "difficulty": "고급"
+        },
+        {
+          "id": 26,
+          "question": "부동산 거래계약을 체결한 후 신고해야 하는 기간은 언제까지인가요?",
+          "related_law": "부동산 거래신고 등에 관한 법률",
+          "topic": "신고기간",
+          "difficulty": "기초"
+        },
+        {
+          "id": 27,
+          "question": "부동산 거래신고를 해야 하는 대상은 누구인가요?",
+          "related_law": "부동산 거래신고 등에 관한 법률",
+          "topic": "신고대상",
+          "difficulty": "기초"
+        },
+        {
+          "id": 28,
+          "question": "부동산 거래신고서에 포함되어야 할 필수 사항은 무엇인가요?",
+          "related_law": "부동산 거래신고 등에 관한 법률",
+          "topic": "신고서작성",
+          "difficulty": "중급"
+        },
+        {
+          "id": 29,
+          "question": "부동산 거래신고를 하지 않았을 때의 벌칙은 무엇인가요?",
+          "related_law": "부동산 거래신고 등에 관한 법률",
+          "topic": "벌칙",
+          "difficulty": "중급"
+        },
+        {
+          "id": 30,
+          "question": "부동산 거래가 취소된 경우 신고 취소 절차는 어떻게 되나요?",
+          "related_law": "부동산 거래신고 등에 관한 법률",
+          "topic": "신고취소",
+          "difficulty": "중급"
+        },
+        {
+          "id": 31,
+          "question": "부동산 거래신고 수수료는 얼마나 되나요?",
+          "related_law": "부동산 거래신고 등에 관한 법률",
+          "topic": "수수료",
+          "difficulty": "기초"
+        },
+        {
+          "id": 32,
+          "question": "부동산 거래신고 시 제출해야 하는 서류는 무엇인가요?",
+          "related_law": "부동산 거래신고 등에 관한 법률",
+          "topic": "제출서류",
+          "difficulty": "기초"
+        },
+        {
+          "id": 33,
+          "question": "부동산 거래신고를 할 수 있는 방법은 어떤 것들이 있나요?",
+          "related_law": "부동산 거래신고 등에 관한 법률",
+          "topic": "신고방법",
+          "difficulty": "기초"
+        },
+        {
+          "id": 34,
+          "question": "부동산 거래신고서의 보정 신청은 언제까지 가능한가요?",
+          "related_law": "부동산 거래신고 등에 관한 법률",
+          "topic": "보정신청",
+          "difficulty": "중급"
+        },
+        {
+          "id": 35,
+          "question": "부동산 거래신고서를 잘못 작성했을 때 정정 절차는 어떻게 되나요?",
+          "related_law": "부동산 거래신고 등에 관한 법률",
+          "topic": "정정절차",
+          "difficulty": "중급"
+        },
+        {
+          "id": 36,
+          "question": "부동산 거래신고 후 계약 조건이 변경된 경우 어떻게 해야 하나요?",
+          "related_law": "부동산 거래신고 등에 관한 법률",
+          "topic": "계약변경",
+          "difficulty": "중급"
+        },
+        {
+          "id": 37,
+          "question": "부동산 거래신고 시 거래가격이 실제와 다르게 신고되면 어떤 문제가 있나요?",
+          "related_law": "부동산 거래신고 등에 관한 법률",
+          "topic": "거짓신고",
+          "difficulty": "고급"
+        },
+        {
+          "id": 38,
+          "question": "부동산 거래신고를 면제받을 수 있는 경우는 어떤 경우인가요?",
+          "related_law": "부동산 거래신고 등에 관한 법률",
+          "topic": "신고면제",
+          "difficulty": "중급"
+        },
+        {
+          "id": 39,
+          "question": "부동산 거래신고서 작성 시 주의해야 할 사항은 무엇인가요?",
+          "related_law": "부동산 거래신고 등에 관한 법률",
+          "topic": "작성주의사항",
+          "difficulty": "중급"
+        },
+        {
+          "id": 40,
+          "question": "부동산 거래신고 완료 후 받는 증명서의 용도는 무엇인가요?",
+          "related_law": "부동산 거래신고 등에 관한 법률",
+          "topic": "신고증명서",
+          "difficulty": "기초"
+        },
+        {
+          "id": 41,
+          "question": "부동산 소유권 이전등기를 신청할 때 필요한 서류는 무엇인가요?",
+          "related_law": "부동산등기법",
+          "topic": "이전등기서류",
+          "difficulty": "기초"
+        },
+        {
+          "id": 42,
+          "question": "부동산등기 신청 시 등기수수료는 어떻게 계산되나요?",
+          "related_law": "부동산등기법",
+          "topic": "등기수수료",
+          "difficulty": "기초"
+        },
+        {
+          "id": 43,
+          "question": "부동산등기법상 등기신청의 기한은 언제까지인가요?",
+          "related_law": "부동산등기법",
+          "topic": "등기기한",
+          "difficulty": "기초"
+        },
+        {
+          "id": 44,
+          "question": "부동산등기부등본에 기재되는 주요 사항들은 무엇인가요?",
+          "related_law": "부동산등기법",
+          "topic": "등기부등본",
+          "difficulty": "기초"
+        },
+        {
+          "id": 45,
+          "question": "부동산등기 신청 시 등기원인을 증명하는 서류는 무엇인가요?",
+          "related_law": "부동산등기법",
+          "topic": "등기원인증명서류",
+          "difficulty": "중급"
+        },
+        {
+          "id": 46,
+          "question": "부동산등기법상 등기신청이 각하되는 경우는 어떤 경우인가요?",
+          "related_law": "부동산등기법",
+          "topic": "등기신청각하",
+          "difficulty": "고급"
+        },
+        {
+          "id": 47,
+          "question": "부동산등기 신청 시 필요한 인지세는 얼마나 되나요?",
+          "related_law": "부동산등기법",
+          "topic": "인지세",
+          "difficulty": "기초"
+        },
+        {
+          "id": 48,
+          "question": "부동산등기 신청 후 등기 완료까지 소요되는 기간은 얼마나 되나요?",
+          "related_law": "부동산등기법",
+          "topic": "등기소요기간",
+          "difficulty": "기초"
+        },
+        {
+          "id": 49,
+          "question": "부동산등기부등본을 발급받는 방법과 비용은 어떻게 되나요?",
+          "related_law": "부동산등기법",
+          "topic": "등기부등본발급",
+          "difficulty": "기초"
+        },
+        {
+          "id": 50,
+          "question": "부동산등기법상 등기신청서 작성 시 주의사항은 무엇인가요?",
+          "related_law": "부동산등기법",
+          "topic": "등기신청서작성",
+          "difficulty": "중급"
+        }
+      ]
+    },
+    {
+      "category_id": "2",
+      "category_name": "2_임대차_전세_월세",
+      "description": "주택임대차보호법, 민간임대주택법 관련 질문",
+      "question_count": 50,
+      "questions": [
+        {
+          "id": 51,
+          "question": "주택임대차보호법이 적용되는 주택의 범위는 어떻게 되나요?",
+          "related_law": "주택임대차보호법",
+          "topic": "적용범위",
+          "difficulty": "기초"
+        },
+        {
+          "id": 52,
+          "question": "임차인이 대항력을 취득하려면 어떤 요건을 갖춰야 하나요?",
+          "related_law": "주택임대차보호법",
+          "topic": "대항력",
+          "difficulty": "중급"
+        },
+        {
+          "id": 53,
+          "question": "주택임대차계약의 최소 기간은 얼마나 되나요?",
+          "related_law": "주택임대차보호법",
+          "topic": "계약기간",
+          "difficulty": "기초"
+        },
+        {
+          "id": 54,
+          "question": "임대차계약이 만료되면 자동으로 갱신되나요?",
+          "related_law": "주택임대차보호법",
+          "topic": "계약갱신",
+          "difficulty": "중급"
+        },
+        {
+          "id": 55,
+          "question": "임차인이 계약 갱신을 요구할 수 있는 경우는 언제인가요?",
+          "related_law": "주택임대차보호법",
+          "topic": "갱신요구",
+          "difficulty": "고급"
+        },
+        {
+          "id": 56,
+          "question": "임대인이 계약 갱신을 거절할 수 있는 정당한 사유는 무엇인가요?",
+          "related_law": "주택임대차보호법",
+          "topic": "갱신거절사유",
+          "difficulty": "고급"
+        },
+        {
+          "id": 57,
+          "question": "차임과 보증금의 증감을 청구할 수 있는 조건은 무엇인가요?",
+          "related_law": "주택임대차보호법",
+          "topic": "차임증감청구",
+          "difficulty": "중급"
+        },
+        {
+          "id": 58,
+          "question": "차임 증액 청구의 상한선은 어떻게 되나요?",
+          "related_law": "주택임대차보호법",
+          "topic": "차임증액상한",
+          "difficulty": "중급"
+        },
+        {
+          "id": 59,
+          "question": "보증금에서 우선변제를 받을 수 있는 범위는 어떻게 되나요?",
+          "related_law": "주택임대차보호법",
+          "topic": "우선변제권",
+          "difficulty": "고급"
+        },
+        {
+          "id": 60,
+          "question": "임차권등기명령을 신청할 수 있는 경우는 언제인가요?",
+          "related_law": "주택임대차보호법",
+          "topic": "임차권등기명령",
+          "difficulty": "고급"
+        },
+        {
+          "id": 61,
+          "question": "임차권등기명령의 신청 절차와 필요한 서류는 무엇인가요?",
+          "related_law": "주택임대차보호법",
+          "topic": "임차권등기절차",
+          "difficulty": "고급"
+        },
+        {
+          "id": 62,
+          "question": "임차인이 확정일자를 받아야 하는 이유는 무엇인가요?",
+          "related_law": "주택임대차보호법",
+          "topic": "확정일자",
+          "difficulty": "중급"
+        },
+        {
+          "id": 63,
+          "question": "확정일자를 부여받을 수 있는 기관은 어디인가요?",
+          "related_law": "주택임대차보호법",
+          "topic": "확정일자부여기관",
+          "difficulty": "기초"
+        },
+        {
+          "id": 64,
+          "question": "임대차계약 체결 시 임대인이 제시해야 할 정보는 무엇인가요?",
+          "related_law": "주택임대차보호법",
+          "topic": "정보제시의무",
+          "difficulty": "중급"
+        },
+        {
+          "id": 65,
+          "question": "임차인이 사망했을 때 임차권을 승계할 수 있는 사람은 누구인가요?",
+          "related_law": "주택임대차보호법",
+          "topic": "임차권승계",
+          "difficulty": "고급"
+        },
+        {
+          "id": 66,
+          "question": "임차권 승계 시 필요한 절차는 어떻게 되나요?",
+          "related_law": "주택임대차보호법",
+          "topic": "승계절차",
+          "difficulty": "고급"
+        },
+        {
+          "id": 67,
+          "question": "임대차계약서에 표준계약서 사용이 의무인가요?",
+          "related_law": "주택임대차보호법",
+          "topic": "표준계약서",
+          "difficulty": "기초"
+        },
+        {
+          "id": 68,
+          "question": "임대차보호법에서 금지하는 약정에는 어떤 것들이 있나요?",
+          "related_law": "주택임대차보호법",
+          "topic": "금지약정",
+          "difficulty": "중급"
+        },
+        {
+          "id": 69,
+          "question": "임차인이 보증금을 반환받지 못했을 때 취할 수 있는 조치는 무엇인가요?",
+          "related_law": "주택임대차보호법",
+          "topic": "보증금반환",
+          "difficulty": "중급"
+        },
+        {
+          "id": 70,
+          "question": "임차권이 경매로 소멸되는 경우는 언제인가요?",
+          "related_law": "주택임대차보호법",
+          "topic": "임차권소멸",
+          "difficulty": "고급"
+        },
+        {
+          "id": 71,
+          "question": "주택임대차분쟁조정위원회에 조정을 신청할 수 있는 경우는 언제인가요?",
+          "related_law": "주택임대차보호법",
+          "topic": "분쟁조정",
+          "difficulty": "중급"
+        },
+        {
+          "id": 72,
+          "question": "조정위원회의 조정 신청 절차는 어떻게 되나요?",
+          "related_law": "주택임대차보호법",
+          "topic": "조정신청절차",
+          "difficulty": "중급"
+        },
+        {
+          "id": 73,
+          "question": "조정위원회에서 조정이 성립되면 어떤 효력이 있나요?",
+          "related_law": "주택임대차보호법",
+          "topic": "조정성립효력",
+          "difficulty": "고급"
+        },
+        {
+          "id": 74,
+          "question": "임차인이 월세 전환 시 적용되는 이자율 제한은 어떻게 되나요?",
+          "related_law": "주택임대차보호법",
+          "topic": "월세전환이자율",
+          "difficulty": "중급"
+        },
+        {
+          "id": 75,
+          "question": "임대차계약에서 일시사용을 위한 경우의 예외는 어떻게 되나요?",
+          "related_law": "주택임대차보호법",
+          "topic": "일시사용예외",
+          "difficulty": "중급"
+        },
+        {
+          "id": 76,
+          "question": "미등기 전세계약에도 주택임대차보호법이 적용되나요?",
+          "related_law": "주택임대차보호법",
+          "topic": "전세계약적용",
+          "difficulty": "중급"
+        },
+        {
+          "id": 77,
+          "question": "임차인이 보증금반환청구소송을 제기할 때 소액사건심판법이 적용되나요?",
+          "related_law": "주택임대차보호법",
+          "topic": "소액사건심판법",
+          "difficulty": "고급"
+        },
+        {
+          "id": 78,
+          "question": "임대차계약 체결 시 임대인의 납세증명서 제시 의무는 무엇인가요?",
+          "related_law": "주택임대차보호법",
+          "topic": "납세증명서",
+          "difficulty": "중급"
+        },
+        {
+          "id": 79,
+          "question": "임차인이 확정일자부여기관에 정보제공을 요청할 수 있나요?",
+          "related_law": "주택임대차보호법",
+          "topic": "정보제공요청",
+          "difficulty": "중급"
+        },
+        {
+          "id": 80,
+          "question": "임대차계약에서 임차인의 우선변제권을 보장하는 방법은 무엇인가요?",
+          "related_law": "주택임대차보호법",
+          "topic": "우선변제권보장",
+          "difficulty": "고급"
+        },
+        {
+          "id": 81,
+          "question": "민간임대주택이란 무엇인가요?",
+          "related_law": "민간임대주택에 관한 특별법",
+          "topic": "민간임대주택정의",
+          "difficulty": "기초"
+        },
+        {
+          "id": 82,
+          "question": "민간임대주택의 공급 대상자는 누구인가요?",
+          "related_law": "민간임대주택에 관한 특별법",
+          "topic": "공급대상자",
+          "difficulty": "기초"
+        },
+        {
+          "id": 83,
+          "question": "민간임대주택 입주 자격 요건은 어떻게 되나요?",
+          "related_law": "민간임대주택에 관한 특별법",
+          "topic": "입주자격요건",
+          "difficulty": "중급"
+        },
+        {
+          "id": 84,
+          "question": "민간임대주택의 임대료 산정 기준은 어떻게 되나요?",
+          "related_law": "민간임대주택에 관한 특별법",
+          "topic": "임대료산정",
+          "difficulty": "중급"
+        },
+        {
+          "id": 85,
+          "question": "민간임대주택 계약 기간은 얼마나 되나요?",
+          "related_law": "민간임대주택에 관한 특별법",
+          "topic": "계약기간",
+          "difficulty": "기초"
+        },
+        {
+          "id": 86,
+          "question": "민간임대주택 계약 갱신 조건은 어떻게 되나요?",
+          "related_law": "민간임대주택에 관한 특별법",
+          "topic": "계약갱신",
+          "difficulty": "중급"
+        },
+        {
+          "id": 87,
+          "question": "민간임대주택의 보증금 제한은 어떻게 되나요?",
+          "related_law": "민간임대주택에 관한 특별법",
+          "topic": "보증금제한",
+          "difficulty": "중급"
+        },
+        {
+          "id": 88,
+          "question": "민간임대주택 입주 신청 절차는 어떻게 되나요?",
+          "related_law": "민간임대주택에 관한 특별법",
+          "topic": "입주신청절차",
+          "difficulty": "기초"
+        },
+        {
+          "id": 89,
+          "question": "민간임대주택 입주 자격 심사 기준은 무엇인가요?",
+          "related_law": "민간임대주택에 관한 특별법",
+          "topic": "자격심사기준",
+          "difficulty": "중급"
+        },
+        {
+          "id": 90,
+          "question": "민간임대주택에서 퇴거 사유는 무엇인가요?",
+          "related_law": "민간임대주택에 관한 특별법",
+          "topic": "퇴거사유",
+          "difficulty": "중급"
+        },
+        {
+          "id": 91,
+          "question": "민간임대주택 운영 관리 주체는 누구인가요?",
+          "related_law": "민간임대주택에 관한 특별법",
+          "topic": "운영관리주체",
+          "difficulty": "기초"
+        },
+        {
+          "id": 92,
+          "question": "민간임대주택의 시설 기준은 어떻게 되나요?",
+          "related_law": "민간임대주택에 관한 특별법",
+          "topic": "시설기준",
+          "difficulty": "중급"
+        },
+        {
+          "id": 93,
+          "question": "민간임대주택 입주자의 권리와 의무는 무엇인가요?",
+          "related_law": "민간임대주택에 관한 특별법",
+          "topic": "입주자권리의무",
+          "difficulty": "중급"
+        },
+        {
+          "id": 94,
+          "question": "민간임대주택의 분쟁 해결 절차는 어떻게 되나요?",
+          "related_law": "민간임대주택에 관한 특별법",
+          "topic": "분쟁해결절차",
+          "difficulty": "중급"
+        },
+        {
+          "id": 95,
+          "question": "민간임대주택 공급 계획은 어떻게 수립되나요?",
+          "related_law": "민간임대주택에 관한 특별법",
+          "topic": "공급계획수립",
+          "difficulty": "고급"
+        },
+        {
+          "id": 96,
+          "question": "민간임대주택의 재정 지원 방안은 무엇인가요?",
+          "related_law": "민간임대주택에 관한 특별법",
+          "topic": "재정지원방안",
+          "difficulty": "고급"
+        },
+        {
+          "id": 97,
+          "question": "민간임대주택 입주자 선정 방법은 어떻게 되나요?",
+          "related_law": "민간임대주택에 관한 특별법",
+          "topic": "입주자선정방법",
+          "difficulty": "중급"
+        },
+        {
+          "id": 98,
+          "question": "민간임대주택의 관리비 부담 기준은 어떻게 되나요?",
+          "related_law": "민간임대주택에 관한 특별법",
+          "topic": "관리비부담기준",
+          "difficulty": "중급"
+        },
+        {
+          "id": 99,
+          "question": "민간임대주택에서의 수리 의무는 누가 지나요?",
+          "related_law": "민간임대주택에 관한 특별법",
+          "topic": "수리의무",
+          "difficulty": "중급"
+        },
+        {
+          "id": 100,
+          "question": "민간임대주택의 특별한 보호 조치는 무엇인가요?",
+          "related_law": "민간임대주택에 관한 특별법",
+          "topic": "특별보호조치",
+          "difficulty": "고급"
+        }
+      ]
+    },
+    {
+      "category_id": "3",
+      "category_name": "3_공급_및_관리_매매_분양",
+      "description": "주택법, 공동주택관리법, 건축물분양법 관련 질문",
+      "question_count": 50,
+      "questions": [
+        {
+          "id": 101,
+          "question": "주택법상 주택의 정의는 무엇인가요?",
+          "related_law": "주택법",
+          "topic": "주택정의",
+          "difficulty": "기초"
+        },
+        {
+          "id": 102,
+          "question": "주택사업자가 되려면 어떤 요건을 갖춰야 하나요?",
+          "related_law": "주택법",
+          "topic": "주택사업자요건",
+          "difficulty": "중급"
+        },
+        {
+          "id": 103,
+          "question": "주택사업의 신고 절차는 어떻게 되나요?",
+          "related_law": "주택법",
+          "topic": "주택사업신고",
+          "difficulty": "중급"
+        },
+        {
+          "id": 104,
+          "question": "주택사업계획 승인을 받아야 하는 경우는 언제인가요?",
+          "related_law": "주택법",
+          "topic": "사업계획승인",
+          "difficulty": "고급"
+        },
+        {
+          "id": 105,
+          "question": "주택사업의 착공 신고는 언제 해야 하나요?",
+          "related_law": "주택법",
+          "topic": "착공신고",
+          "difficulty": "중급"
+        },
+        {
+          "id": 106,
+          "question": "주택사업의 완공 신고 절차는 어떻게 되나요?",
+          "related_law": "주택법",
+          "topic": "완공신고",
+          "difficulty": "중급"
+        },
+        {
+          "id": 107,
+          "question": "주택사업자가 준수해야 할 주택 건설 기준은 무엇인가요?",
+          "related_law": "주택법",
+          "topic": "건설기준",
+          "difficulty": "중급"
+        },
+        {
+          "id": 108,
+          "question": "주택사업의 분양 절차는 어떻게 되나요?",
+          "related_law": "주택법",
+          "topic": "분양절차",
+          "difficulty": "중급"
+        },
+        {
+          "id": 109,
+          "question": "주택 분양가격의 산정 기준은 어떻게 되나요?",
+          "related_law": "주택법",
+          "topic": "분양가격산정",
+          "difficulty": "고급"
+        },
+        {
+          "id": 110,
+          "question": "주택 분양 시 분양자금의 관리 방법은 어떻게 되나요?",
+          "related_law": "주택법",
+          "topic": "분양자금관리",
+          "difficulty": "고급"
+        },
+        {
+          "id": 111,
+          "question": "주택사업자가 분양계약을 체결할 때 준수해야 할 사항은 무엇인가요?",
+          "related_law": "주택법",
+          "topic": "분양계약준수사항",
+          "difficulty": "중급"
+        },
+        {
+          "id": 112,
+          "question": "주택 분양 시 분양자금 보호 조치는 무엇인가요?",
+          "related_law": "주택법",
+          "topic": "분양자금보호",
+          "difficulty": "고급"
+        },
+        {
+          "id": 113,
+          "question": "주택사업의 중도금 납부 조건은 어떻게 되나요?",
+          "related_law": "주택법",
+          "topic": "중도금납부",
+          "difficulty": "중급"
+        },
+        {
+          "id": 114,
+          "question": "주택사업에서 잔금 납부 시점은 언제인가요?",
+          "related_law": "주택법",
+          "topic": "잔금납부",
+          "difficulty": "중급"
+        },
+        {
+          "id": 115,
+          "question": "주택사업자가 분양자에게 제공해야 하는 서류는 무엇인가요?",
+          "related_law": "주택법",
+          "topic": "제공서류",
+          "difficulty": "중급"
+        },
+        {
+          "id": 116,
+          "question": "공동주택관리법상 관리주체의 종류는 무엇인가요?",
+          "related_law": "공동주택관리법",
+          "topic": "관리주체종류",
+          "difficulty": "기초"
+        },
+        {
+          "id": 117,
+          "question": "관리주체가 되려면 어떤 요건을 갖춰야 하나요?",
+          "related_law": "공동주택관리법",
+          "topic": "관리주체요건",
+          "difficulty": "중급"
+        },
+        {
+          "id": 118,
+          "question": "관리주체 선정 절차는 어떻게 되나요?",
+          "related_law": "공동주택관리법",
+          "topic": "관리주체선정",
+          "difficulty": "중급"
+        },
+        {
+          "id": 119,
+          "question": "관리주체의 권한과 책임은 무엇인가요?",
+          "related_law": "공동주택관리법",
+          "topic": "관리주체권한책임",
+          "difficulty": "중급"
+        },
+        {
+          "id": 120,
+          "question": "공동주택 관리비의 산정 기준은 어떻게 되나요?",
+          "related_law": "공동주택관리법",
+          "topic": "관리비산정",
+          "difficulty": "중급"
+        },
+        {
+          "id": 121,
+          "question": "관리비의 부과 대상과 납부 의무자는 누구인가요?",
+          "related_law": "공동주택관리법",
+          "topic": "관리비부과대상",
+          "difficulty": "기초"
+        },
+        {
+          "id": 122,
+          "question": "관리비 미납 시 취할 수 있는 조치는 무엇인가요?",
+          "related_law": "공동주택관리법",
+          "topic": "관리비미납조치",
+          "difficulty": "중급"
+        },
+        {
+          "id": 123,
+          "question": "공동주택의 시설물 관리 기준은 어떻게 되나요?",
+          "related_law": "공동주택관리법",
+          "topic": "시설물관리기준",
+          "difficulty": "중급"
+        },
+        {
+          "id": 124,
+          "question": "공동주택의 안전관리 의무는 누가 지나요?",
+          "related_law": "공동주택관리법",
+          "topic": "안전관리의무",
+          "difficulty": "중급"
+        },
+        {
+          "id": 125,
+          "question": "공동주택의 수리 의무와 비용 부담은 어떻게 되나요?",
+          "related_law": "공동주택관리법",
+          "topic": "수리의무비용부담",
+          "difficulty": "중급"
+        },
+        {
+          "id": 126,
+          "question": "공동주택의 청소와 환경관리 기준은 어떻게 되나요?",
+          "related_law": "공동주택관리법",
+          "topic": "청소환경관리",
+          "difficulty": "중급"
+        },
+        {
+          "id": 127,
+          "question": "공동주택의 방화관리 의무는 무엇인가요?",
+          "related_law": "공동주택관리법",
+          "topic": "방화관리의무",
+          "difficulty": "중급"
+        },
+        {
+          "id": 128,
+          "question": "공동주택의 소음관리 기준은 어떻게 되나요?",
+          "related_law": "공동주택관리법",
+          "topic": "소음관리기준",
+          "difficulty": "중급"
+        },
+        {
+          "id": 129,
+          "question": "공동주택에서 금지되는 행위는 무엇인가요?",
+          "related_law": "공동주택관리법",
+          "topic": "금지행위",
+          "difficulty": "기초"
+        },
+        {
+          "id": 130,
+          "question": "공동주택의 공용부분 사용 규칙은 어떻게 되나요?",
+          "related_law": "공동주택관리법",
+          "topic": "공용부분사용규칙",
+          "difficulty": "중급"
+        },
+        {
+          "id": 131,
+          "question": "공동주택의 주차장 관리 방법은 어떻게 되나요?",
+          "related_law": "공동주택관리법",
+          "topic": "주차장관리",
+          "difficulty": "중급"
+        },
+        {
+          "id": 132,
+          "question": "공동주택의 엘리베이터 관리 기준은 어떻게 되나요?",
+          "related_law": "공동주택관리법",
+          "topic": "엘리베이터관리",
+          "difficulty": "중급"
+        },
+        {
+          "id": 133,
+          "question": "공동주택의 화재안전관리 의무는 무엇인가요?",
+          "related_law": "공동주택관리법",
+          "topic": "화재안전관리",
+          "difficulty": "중급"
+        },
+        {
+          "id": 134,
+          "question": "공동주택의 전기안전관리 기준은 어떻게 되나요?",
+          "related_law": "공동주택관리법",
+          "topic": "전기안전관리",
+          "difficulty": "중급"
+        },
+        {
+          "id": 135,
+          "question": "공동주택의 가스안전관리 의무는 무엇인가요?",
+          "related_law": "공동주택관리법",
+          "topic": "가스안전관리",
+          "difficulty": "중급"
+        },
+        {
+          "id": 136,
+          "question": "건축물 분양사업의 신고 절차는 어떻게 되나요?",
+          "related_law": "건축물의 분양에 관한 법률",
+          "topic": "분양사업신고",
+          "difficulty": "중급"
+        },
+        {
+          "id": 137,
+          "question": "건축물 분양사업자가 되려면 어떤 요건을 갖춰야 하나요?",
+          "related_law": "건축물의 분양에 관한 법률",
+          "topic": "분양사업자요건",
+          "difficulty": "중급"
+        },
+        {
+          "id": 138,
+          "question": "건축물 분양계약의 필수 기재사항은 무엇인가요?",
+          "related_law": "건축물의 분양에 관한 법률",
+          "topic": "분양계약기재사항",
+          "difficulty": "중급"
+        },
+        {
+          "id": 139,
+          "question": "건축물 분양가격의 산정 기준은 어떻게 되나요?",
+          "related_law": "건축물의 분양에 관한 법률",
+          "topic": "분양가격산정기준",
+          "difficulty": "고급"
+        },
+        {
+          "id": 140,
+          "question": "건축물 분양 시 분양자금 보호 조치는 무엇인가요?",
+          "related_law": "건축물의 분양에 관한 법률",
+          "topic": "분양자금보호조치",
+          "difficulty": "고급"
+        },
+        {
+          "id": 141,
+          "question": "건축물 분양계약의 해제 조건은 어떻게 되나요?",
+          "related_law": "건축물의 분양에 관한 법률",
+          "topic": "분양계약해제",
+          "difficulty": "고급"
+        },
+        {
+          "id": 142,
+          "question": "건축물 분양사업의 착공 의무는 언제까지인가요?",
+          "related_law": "건축물의 분양에 관한 법률",
+          "topic": "착공의무",
+          "difficulty": "중급"
+        },
+        {
+          "id": 143,
+          "question": "건축물 분양사업의 완공 의무는 언제까지인가요?",
+          "related_law": "건축물의 분양에 관한 법률",
+          "topic": "완공의무",
+          "difficulty": "중급"
+        },
+        {
+          "id": 144,
+          "question": "건축물 분양 시 중도금 납부 조건은 어떻게 되나요?",
+          "related_law": "건축물의 분양에 관한 법률",
+          "topic": "중도금납부조건",
+          "difficulty": "중급"
+        },
+        {
+          "id": 145,
+          "question": "건축물 분양에서 잔금 납부 시점은 언제인가요?",
+          "related_law": "건축물의 분양에 관한 법률",
+          "topic": "잔금납부시점",
+          "difficulty": "중급"
+        },
+        {
+          "id": 146,
+          "question": "건축물 분양사업자가 준수해야 할 건설 기준은 무엇인가요?",
+          "related_law": "건축물의 분양에 관한 법률",
+          "topic": "건설기준준수",
+          "difficulty": "중급"
+        },
+        {
+          "id": 147,
+          "question": "건축물 분양 시 하자보수 의무는 어떻게 되나요?",
+          "related_law": "건축물의 분양에 관한 법률",
+          "topic": "하자보수의무",
+          "difficulty": "중급"
+        },
+        {
+          "id": 148,
+          "question": "건축물 분양계약서에 표준계약서 사용이 의무인가요?",
+          "related_law": "건축물의 분양에 관한 법률",
+          "topic": "표준계약서사용",
+          "difficulty": "기초"
+        },
+        {
+          "id": 149,
+          "question": "건축물 분양사업의 감독 기관은 어디인가요?",
+          "related_law": "건축물의 분양에 관한 법률",
+          "topic": "감독기관",
+          "difficulty": "기초"
+        },
+        {
+          "id": 150,
+          "question": "건축물 분양사업에서 분양자 보호 조치는 무엇인가요?",
+          "related_law": "건축물의 분양에 관한 법률",
+          "topic": "분양자보호조치",
+          "difficulty": "고급"
+        }
+      ]
+    },
+    {
+      "category_id": "4",
+      "category_name": "4_기타",
+      "description": "부동산 가격공시법, 공동주택 분양가격 산정 규칙, 층간소음 규칙, 부동산 용어 관련 질문",
+      "question_count": 50,
+      "questions": [
+        {
+          "id": 151,
+          "question": "표준지공시지가란 무엇인가요?",
+          "related_law": "부동산 가격공시에 관한 법률",
+          "topic": "표준지공시지가정의",
+          "difficulty": "기초"
+        },
+        {
+          "id": 152,
+          "question": "표준지공시지가가 공시되는 시기는 언제인가요?",
+          "related_law": "부동산 가격공시에 관한 법률",
+          "topic": "공시시기",
+          "difficulty": "기초"
+        },
+        {
+          "id": 153,
+          "question": "개별공시지가를 결정하는 기관은 어디인가요?",
+          "related_law": "부동산 가격공시에 관한 법률",
+          "topic": "개별공시지가결정기관",
+          "difficulty": "기초"
+        },
+        {
+          "id": 154,
+          "question": "표준지공시지가에 이의가 있을 때 신청할 수 있는 기간은 언제까지인가요?",
+          "related_law": "부동산 가격공시에 관한 법률",
+          "topic": "이의신청기간",
+          "difficulty": "중급"
+        },
+        {
+          "id": 155,
+          "question": "개별공시지가에 이의신청을 할 때 필요한 서류는 무엇인가요?",
+          "related_law": "부동산 가격공시에 관한 법률",
+          "topic": "이의신청서류",
+          "difficulty": "중급"
+        },
+        {
+          "id": 156,
+          "question": "표준주택가격이란 무엇이고 어떻게 결정되나요?",
+          "related_law": "부동산 가격공시에 관한 법률",
+          "topic": "표준주택가격",
+          "difficulty": "기초"
+        },
+        {
+          "id": 157,
+          "question": "개별주택가격의 결정 기준은 어떻게 되나요?",
+          "related_law": "부동산 가격공시에 관한 법률",
+          "topic": "개별주택가격결정기준",
+          "difficulty": "중급"
+        },
+        {
+          "id": 158,
+          "question": "공동주택가격은 어떻게 산정되나요?",
+          "related_law": "부동산 가격공시에 관한 법률",
+          "topic": "공동주택가격산정",
+          "difficulty": "중급"
+        },
+        {
+          "id": 159,
+          "question": "비주거용 부동산가격의 공시 절차는 어떻게 되나요?",
+          "related_law": "부동산 가격공시에 관한 법률",
+          "topic": "비주거용부동산가격공시",
+          "difficulty": "중급"
+        },
+        {
+          "id": 160,
+          "question": "부동산 가격공시에 사용되는 감정평가법인의 선정 기준은 무엇인가요?",
+          "related_law": "부동산 가격공시에 관한 법률",
+          "topic": "감정평가법인선정기준",
+          "difficulty": "고급"
+        },
+        {
+          "id": 161,
+          "question": "부동산 가격공시위원회의 구성과 역할은 무엇인가요?",
+          "related_law": "부동산 가격공시에 관한 법률",
+          "topic": "가격공시위원회",
+          "difficulty": "중급"
+        },
+        {
+          "id": 162,
+          "question": "표준지공시지가의 효력과 활용 범위는 어떻게 되나요?",
+          "related_law": "부동산 가격공시에 관한 법률",
+          "topic": "표준지공시지가효력",
+          "difficulty": "중급"
+        },
+        {
+          "id": 163,
+          "question": "개별공시지가의 정정이 가능한 경우는 언제인가요?",
+          "related_law": "부동산 가격공시에 관한 법률",
+          "topic": "개별공시지가정정",
+          "difficulty": "중급"
+        },
+        {
+          "id": 164,
+          "question": "부동산 가격공시에 대한 이의신청 처리 기간은 얼마나 되나요?",
+          "related_law": "부동산 가격공시에 관한 법률",
+          "topic": "이의신청처리기간",
+          "difficulty": "중급"
+        },
+        {
+          "id": 165,
+          "question": "표준지공시지가 조사 시 토지 소유자의 의견 수렴 절차는 어떻게 되나요?",
+          "related_law": "부동산 가격공시에 관한 법률",
+          "topic": "토지소유자의견수렴",
+          "difficulty": "중급"
+        },
+        {
+          "id": 166,
+          "question": "부동산 가격공시 정보를 열람할 수 있는 방법은 무엇인가요?",
+          "related_law": "부동산 가격공시에 관한 법률",
+          "topic": "가격공시정보열람",
+          "difficulty": "기초"
+        },
+        {
+          "id": 167,
+          "question": "부동산 가격공시에 사용되는 토지가격비준표란 무엇인가요?",
+          "related_law": "부동산 가격공시에 관한 법률",
+          "topic": "토지가격비준표",
+          "difficulty": "고급"
+        },
+        {
+          "id": 168,
+          "question": "표준지공시지가와 개별공시지가의 관계는 어떻게 되나요?",
+          "related_law": "부동산 가격공시에 관한 법률",
+          "topic": "표준지가개별지가관계",
+          "difficulty": "중급"
+        },
+        {
+          "id": 169,
+          "question": "부동산 가격공시 시 시세 반영률은 어떻게 결정되나요?",
+          "related_law": "부동산 가격공시에 관한 법률",
+          "topic": "시세반영률",
+          "difficulty": "고급"
+        },
+        {
+          "id": 170,
+          "question": "부동산 가격공시에 대한 이의신청이 기각될 때 할 수 있는 조치는 무엇인가요?",
+          "related_law": "부동산 가격공시에 관한 법률",
+          "topic": "이의신청기각조치",
+          "difficulty": "고급"
+        },
+        {
+          "id": 171,
+          "question": "표준지공시지가 조사 시 감정평가법인에게 지급되는 수수료는 어떻게 되나요?",
+          "related_law": "부동산 가격공시에 관한 법률",
+          "topic": "감정평가법인수수료",
+          "difficulty": "고급"
+        },
+        {
+          "id": 172,
+          "question": "부동산 가격공시 정보체계의 구축 목적은 무엇인가요?",
+          "related_law": "부동산 가격공시에 관한 법률",
+          "topic": "가격공시정보체계",
+          "difficulty": "중급"
+        },
+        {
+          "id": 173,
+          "question": "부동산 가격공시위원회 회의록의 공개 범위는 어떻게 되나요?",
+          "related_law": "부동산 가격공시에 관한 법률",
+          "topic": "위원회회의록공개",
+          "difficulty": "중급"
+        },
+        {
+          "id": 174,
+          "question": "부동산 가격공시에 사용되는 적정가격의 개념은 무엇인가요?",
+          "related_law": "부동산 가격공시에 관한 법률",
+          "topic": "적정가격개념",
+          "difficulty": "중급"
+        },
+        {
+          "id": 175,
+          "question": "부동산 가격공시 시 지역 간 형평성은 어떻게 확보되나요?",
+          "related_law": "부동산 가격공시에 관한 법률",
+          "topic": "지역간형평성",
+          "difficulty": "고급"
+        },
+        {
+          "id": 176,
+          "question": "공동주택 분양가격 산정의 기본 원칙은 무엇인가요?",
+          "related_law": "공동주택 분양가격의 산정 등에 관한 규칙",
+          "topic": "분양가격산정원칙",
+          "difficulty": "중급"
+        },
+        {
+          "id": 177,
+          "question": "공동주택 분양가격에 포함되는 비용 항목은 무엇인가요?",
+          "related_law": "공동주택 분양가격의 산정 등에 관한 규칙",
+          "topic": "분양가격포함비용",
+          "difficulty": "중급"
+        },
+        {
+          "id": 178,
+          "question": "공동주택 분양가격 산정 시 적용되는 이익률 기준은 어떻게 되나요?",
+          "related_law": "공동주택 분양가격의 산정 등에 관한 규칙",
+          "topic": "이익률기준",
+          "difficulty": "고급"
+        },
+        {
+          "id": 179,
+          "question": "공동주택 분양가격의 최고 한도는 어떻게 결정되나요?",
+          "related_law": "공동주택 분양가격의 산정 등에 관한 규칙",
+          "topic": "분양가격최고한도",
+          "difficulty": "고급"
+        },
+        {
+          "id": 180,
+          "question": "공동주택 분양가격 산정 시 부대비용의 산정 기준은 어떻게 되나요?",
+          "related_law": "공동주택 분양가격의 산정 등에 관한 규칙",
+          "topic": "부대비용산정기준",
+          "difficulty": "고급"
+        },
+        {
+          "id": 181,
+          "question": "공동주택 분양가격에 영향을 주는 지역별 요인은 무엇인가요?",
+          "related_law": "공동주택 분양가격의 산정 등에 관한 규칙",
+          "topic": "지역별영향요인",
+          "difficulty": "중급"
+        },
+        {
+          "id": 182,
+          "question": "공동주택 분양가격 산정 시 건축비 산정 방법은 어떻게 되나요?",
+          "related_law": "공동주택 분양가격의 산정 등에 관한 규칙",
+          "topic": "건축비산정방법",
+          "difficulty": "고급"
+        },
+        {
+          "id": 183,
+          "question": "공동주택 분양가격의 승인 절차는 어떻게 되나요?",
+          "related_law": "공동주택 분양가격의 산정 등에 관한 규칙",
+          "topic": "분양가격승인절차",
+          "difficulty": "중급"
+        },
+        {
+          "id": 184,
+          "question": "공동주택 분양가격 산정 시 적용되는 기준일은 언제인가요?",
+          "related_law": "공동주택 분양가격의 산정 등에 관한 규칙",
+          "topic": "분양가격산정기준일",
+          "difficulty": "중급"
+        },
+        {
+          "id": 185,
+          "question": "공동주택 분양가격 산정 시 고려되는 특별한 사항은 무엇인가요?",
+          "related_law": "공동주택 분양가격의 산정 등에 관한 규칙",
+          "topic": "분양가격산정특별사항",
+          "difficulty": "고급"
+        },
+        {
+          "id": 186,
+          "question": "공동주택 층간소음의 정의는 무엇인가요?",
+          "related_law": "공동주택 층간소음의 범위와 기준에 관한 규칙",
+          "topic": "층간소음정의",
+          "difficulty": "기초"
+        },
+        {
+          "id": 187,
+          "question": "공동주택 층간소음의 측정 기준은 어떻게 되나요?",
+          "related_law": "공동주택 층간소음의 범위와 기준에 관한 규칙",
+          "topic": "층간소음측정기준",
+          "difficulty": "중급"
+        },
+        {
+          "id": 188,
+          "question": "공동주택 층간소음의 허용 기준치는 얼마나 되나요?",
+          "related_law": "공동주택 층간소음의 범위와 기준에 관한 규칙",
+          "topic": "층간소음허용기준치",
+          "difficulty": "중급"
+        },
+        {
+          "id": 189,
+          "question": "공동주택 층간소음 측정 시 측정 장소는 어디인가요?",
+          "related_law": "공동주택 층간소음의 범위와 기준에 관한 규칙",
+          "topic": "층간소음측정장소",
+          "difficulty": "중급"
+        },
+        {
+          "id": 190,
+          "question": "공동주택 층간소음 측정 시 측정 시간은 언제인가요?",
+          "related_law": "공동주택 층간소음의 범위와 기준에 관한 규칙",
+          "topic": "층간소음측정시간",
+          "difficulty": "중급"
+        },
+        {
+          "id": 191,
+          "question": "공동주택 층간소음의 측정 방법은 어떻게 되나요?",
+          "related_law": "공동주택 층간소음의 범위와 기준에 관한 규칙",
+          "topic": "층간소음측정방법",
+          "difficulty": "중급"
+        },
+        {
+          "id": 192,
+          "question": "공동주택 층간소음 발생 시 해결 절차는 어떻게 되나요?",
+          "related_law": "공동주택 층간소음의 범위와 기준에 관한 규칙",
+          "topic": "층간소음해결절차",
+          "difficulty": "중급"
+        },
+        {
+          "id": 193,
+          "question": "공동주택 층간소음 관련 분쟁 조정 방법은 무엇인가요?",
+          "related_law": "공동주택 층간소음의 범위와 기준에 관한 규칙",
+          "topic": "층간소음분쟁조정",
+          "difficulty": "중급"
+        },
+        {
+          "id": 194,
+          "question": "공동주택 층간소음 방지를 위한 관리주체의 의무는 무엇인가요?",
+          "related_law": "공동주택 층간소음의 범위와 기준에 관한 규칙",
+          "topic": "층간소음방지의무",
+          "difficulty": "중급"
+        },
+        {
+          "id": 195,
+          "question": "공동주택 층간소음 기준 위반 시 처벌은 어떻게 되나요?",
+          "related_law": "공동주택 층간소음의 범위와 기준에 관한 규칙",
+          "topic": "층간소음기준위반처벌",
+          "difficulty": "고급"
+        },
+        {
+          "id": 196,
+          "question": "부동산 거래에서 사용되는 주요 용어들의 정의는 무엇인가요?",
+          "related_law": "부동산 용어",
+          "topic": "부동산거래용어",
+          "difficulty": "기초"
+        },
+        {
+          "id": 197,
+          "question": "부동산 등기에서 사용되는 전문 용어들은 무엇인가요?",
+          "related_law": "부동산 용어",
+          "topic": "부동산등기용어",
+          "difficulty": "기초"
+        },
+        {
+          "id": 198,
+          "question": "부동산 임대차에서 사용되는 법적 용어들의 의미는 무엇인가요?",
+          "related_law": "부동산 용어",
+          "topic": "임대차법적용어",
+          "difficulty": "기초"
+        },
+        {
+          "id": 199,
+          "question": "부동산 분양에서 사용되는 계약 용어들은 무엇인가요?",
+          "related_law": "부동산 용어",
+          "topic": "분양계약용어",
+          "difficulty": "기초"
+        },
+        {
+          "id": 200,
+          "question": "부동산 관리에서 사용되는 기술적 용어들은 무엇인가요?",
+          "related_law": "부동산 용어",
+          "topic": "부동산관리기술용어",
+          "difficulty": "기초"
+        }
+      ]
+    }
+  ]
+}

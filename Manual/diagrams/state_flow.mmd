@@ -1,0 +1,195 @@
+---
+title: HolmesNyangz State Flow (Flowchart)
+---
+flowchart TB
+    %% ============================================================================
+    %% Start Node
+    %% ============================================================================
+    Start([User Query]) --> InitState
+
+    %% ============================================================================
+    %% Phase 1: Initialization
+    %% ============================================================================
+    InitState[Initialize MainSupervisorState<br/>status: initialized<br/>query, session_id, chat_session_id]
+    InitState --> LoadMemory
+
+    LoadMemory{Long-term<br/>Memory 로드}
+    LoadMemory -->|성공| UpdateMemory[Update MainSupervisorState<br/>loaded_memories]
+    LoadMemory -->|실패/없음| UpdateMemory
+    UpdateMemory --> Planning
+
+    %% ============================================================================
+    %% Phase 2: Planning
+    %% ============================================================================
+    Planning[Planning Agent<br/>PlanningState 생성]
+    Planning --> IntentAnalysis[LLM Intent 분석<br/>analyzed_intent]
+    IntentAnalysis --> ExecutionPlan[실행 계획 수립<br/>execution_steps]
+    ExecutionPlan --> TeamSelection{필요한 팀 식별}
+
+    TeamSelection -->|Search 필요| ActivateSearch[active_teams += search]
+    TeamSelection -->|Document 필요| ActivateDocument[active_teams += document]
+    TeamSelection -->|Analysis 필요| ActivateAnalysis[active_teams += analysis]
+
+    ActivateSearch --> ValidatePlan
+    ActivateDocument --> ValidatePlan
+    ActivateAnalysis --> ValidatePlan
+
+    ValidatePlan{Plan 유효성 검증}
+    ValidatePlan -->|유효| BroadcastTodo[WebSocket TODO 브로드캐스트<br/>execution_steps]
+    ValidatePlan -->|무효| ErrorState[Error State<br/>validation_errors]
+    ErrorState --> FinalResponse
+
+    BroadcastTodo --> CheckParallel{병렬 실행<br/>가능?}
+
+    %% ============================================================================
+    %% Phase 3: Team Execution
+    %% ============================================================================
+
+    %% Parallel Execution
+    CheckParallel -->|병렬| ParallelExec[Parallel Execution Groups]
+    ParallelExec --> SearchTeam
+    ParallelExec --> DocumentTeam
+    ParallelExec --> AnalysisTeam
+
+    %% Sequential Execution
+    CheckParallel -->|순차| SearchTeam
+
+    %% ============================================================================
+    %% Search Team Flow
+    %% ============================================================================
+    SearchTeam[Search Team 시작<br/>Create SearchTeamState]
+    SearchTeam --> SearchInit[Initialize SearchTeamState<br/>status: initialized]
+    SearchInit --> ExtractKeywords[Extract Keywords Node<br/>→ SearchKeywords]
+    ExtractKeywords --> SelectTools[Select Tools with LLM<br/>→ tools list]
+
+    SelectTools --> LegalSearch{Legal Search<br/>필요?}
+    LegalSearch -->|Yes| RunLegalSearch[HybridLegalSearch.search<br/>→ legal_results]
+    LegalSearch -->|No| MarketData
+    RunLegalSearch --> UpdateLegalResults[Update SearchTeamState<br/>legal_results]
+    UpdateLegalResults --> BroadcastLegal[WebSocket 브로드캐스트<br/>법률 검색 완료]
+    BroadcastLegal --> MarketData
+
+    MarketData{Market Data<br/>필요?}
+    MarketData -->|Yes| RunMarketData[MarketDataTool.search<br/>→ real_estate_results]
+    MarketData -->|No| PropertySearch
+    RunMarketData --> UpdateMarketResults[Update SearchTeamState<br/>real_estate_results]
+    UpdateMarketResults --> BroadcastMarket[WebSocket 브로드캐스트<br/>시세 검색 완료]
+    BroadcastMarket --> PropertySearch
+
+    PropertySearch{Property Search<br/>필요?}
+    PropertySearch -->|Yes| RunPropertySearch[RealEstateSearchTool.search<br/>→ property_search_results]
+    PropertySearch -->|No| LoanData
+    RunPropertySearch --> UpdatePropertyResults[Update SearchTeamState<br/>property_search_results]
+    UpdatePropertyResults --> BroadcastProperty[WebSocket 브로드캐스트<br/>매물 검색 완료]
+    BroadcastProperty --> LoanData
+
+    LoanData{Loan Data<br/>필요?}
+    LoanData -->|Yes| RunLoanData[LoanDataTool.search<br/>→ loan_results]
+    LoanData -->|No| AggregateSearch
+    RunLoanData --> UpdateLoanResults[Update SearchTeamState<br/>loan_results]
+    UpdateLoanResults --> BroadcastLoan[WebSocket 브로드캐스트<br/>대출 검색 완료]
+    BroadcastLoan --> AggregateSearch
+
+    AggregateSearch[Aggregate Results Node<br/>→ aggregated_results]
+    AggregateSearch --> SearchComplete[SearchTeamState<br/>status: completed]
+    SearchComplete --> MergeSearch[StateManager.merge_team_results<br/>search → MainSupervisorState]
+
+    %% ============================================================================
+    %% Document Team Flow
+    %% ============================================================================
+    DocumentTeam[Document Team 시작<br/>Create DocumentTeamState]
+    DocumentTeam --> DocumentInit[Initialize DocumentTeamState<br/>document_type: contract]
+    DocumentInit --> SelectTemplate[Select Template Node<br/>→ DocumentTemplate]
+    SelectTemplate --> FillTemplate[Fill Template Node<br/>→ DocumentContent]
+    FillTemplate --> ReviewDocument[Review Document Node<br/>→ ReviewResult]
+
+    ReviewDocument --> CheckRisk{Risk Level}
+    CheckRisk -->|High| HighRiskWarning[WebSocket 브로드캐스트<br/>고위험 항목 발견]
+    CheckRisk -->|Medium/Low| DocumentComplete
+    HighRiskWarning --> DocumentComplete[DocumentTeamState<br/>status: completed]
+    DocumentComplete --> MergeDocument[StateManager.merge_team_results<br/>document → MainSupervisorState]
+
+    %% ============================================================================
+    %% Analysis Team Flow
+    %% ============================================================================
+    AnalysisTeam[Analysis Team 시작<br/>Create AnalysisTeamState]
+    AnalysisTeam --> AnalysisInit[Initialize AnalysisTeamState<br/>analysis_type: comprehensive]
+    AnalysisInit --> PrepareInput[Prepare Analysis Input Node<br/>→ input_data]
+    PrepareInput --> PerformAnalysis[Perform Analysis Node<br/>→ AnalysisMetrics, insights]
+    PerformAnalysis --> GenerateReport[Generate Report Node<br/>→ AnalysisReport]
+    GenerateReport --> AnalysisComplete[AnalysisTeamState<br/>status: completed]
+    AnalysisComplete --> MergeAnalysis[StateManager.merge_team_results<br/>analysis → MainSupervisorState]
+
+    %% ============================================================================
+    %% Phase 4: Results Aggregation
+    %% ============================================================================
+    MergeSearch --> CheckAllComplete
+    MergeDocument --> CheckAllComplete
+    MergeAnalysis --> CheckAllComplete
+
+    CheckAllComplete{모든 팀<br/>완료?}
+    CheckAllComplete -->|No| WaitForTeams[Wait for active_teams]
+    WaitForTeams --> CheckAllComplete
+    CheckAllComplete -->|Yes| AggregateFinal
+
+    AggregateFinal[Aggregate Final Results Node<br/>→ aggregated_results]
+    AggregateFinal --> CheckTeamErrors{팀 실패<br/>있음?}
+    CheckTeamErrors -->|Yes| PartialResponse[Partial Response 생성<br/>성공한 팀만 사용]
+    CheckTeamErrors -->|No| GenerateFinal
+
+    PartialResponse --> GenerateFinal
+
+    %% ============================================================================
+    %% Phase 5: Final Response Generation
+    %% ============================================================================
+    GenerateFinal[Generate Final Response Node<br/>LLM 종합 분석]
+    GenerateFinal --> UpdateFinalResponse[Update MainSupervisorState<br/>final_response]
+    UpdateFinalResponse --> MarkComplete[StateManager.mark_completed<br/>status: completed<br/>end_time, total_execution_time]
+
+    MarkComplete --> BroadcastComplete[WebSocket 브로드캐스트<br/>모든 TODO 완료]
+    BroadcastComplete --> SaveMemory
+
+    %% ============================================================================
+    %% Phase 6: Memory Save & Return
+    %% ============================================================================
+    SaveMemory{Memory 저장<br/>성공?}
+    SaveMemory -->|Yes| FinalResponse
+    SaveMemory -->|No| LogMemoryError[Error Log<br/>Memory 저장 실패]
+    LogMemoryError --> FinalResponse
+
+    FinalResponse[Final Response<br/>Return to API]
+    FinalResponse --> End([End])
+
+    %% ============================================================================
+    %% Error Handling Flow
+    %% ============================================================================
+    SearchTeam -.->|Error| SearchError[Record Error<br/>SearchTeamState.error]
+    DocumentTeam -.->|Error| DocumentError[Record Error<br/>DocumentTeamState.error]
+    AnalysisTeam -.->|Error| AnalysisError[Record Error<br/>AnalysisTeamState.error]
+
+    SearchError -.-> MergeSearch
+    DocumentError -.-> MergeDocument
+    AnalysisError -.-> MergeAnalysis
+
+    %% ============================================================================
+    %% Styling
+    %% ============================================================================
+    classDef initClass fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
+    classDef planningClass fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    classDef searchClass fill:#e8f5e9,stroke:#388e3c,stroke-width:2px
+    classDef documentClass fill:#fff3e0,stroke:#f57c00,stroke-width:2px
+    classDef analysisClass fill:#fce4ec,stroke:#c2185b,stroke-width:2px
+    classDef aggregateClass fill:#e0f2f1,stroke:#00796b,stroke-width:2px
+    classDef finalClass fill:#f1f8e9,stroke:#689f38,stroke-width:2px
+    classDef errorClass fill:#ffebee,stroke:#d32f2f,stroke-width:2px
+    classDef websocketClass fill:#fff9c4,stroke:#f9a825,stroke-width:2px
+
+    class InitState,LoadMemory,UpdateMemory initClass
+    class Planning,IntentAnalysis,ExecutionPlan,TeamSelection,ValidatePlan planningClass
+    class SearchTeam,SearchInit,ExtractKeywords,SelectTools,LegalSearch,RunLegalSearch,UpdateLegalResults,MarketData,RunMarketData,UpdateMarketResults,PropertySearch,RunPropertySearch,UpdatePropertyResults,LoanData,RunLoanData,UpdateLoanResults,AggregateSearch,SearchComplete,MergeSearch searchClass
+    class DocumentTeam,DocumentInit,SelectTemplate,FillTemplate,ReviewDocument,CheckRisk,DocumentComplete,MergeDocument documentClass
+    class AnalysisTeam,AnalysisInit,PrepareInput,PerformAnalysis,GenerateReport,AnalysisComplete,MergeAnalysis analysisClass
+    class CheckAllComplete,AggregateFinal,CheckTeamErrors,PartialResponse aggregateClass
+    class GenerateFinal,UpdateFinalResponse,MarkComplete,SaveMemory,FinalResponse finalClass
+    class ErrorState,SearchError,DocumentError,AnalysisError,LogMemoryError errorClass
+    class BroadcastTodo,BroadcastLegal,BroadcastMarket,BroadcastProperty,BroadcastLoan,HighRiskWarning,BroadcastComplete websocketClass

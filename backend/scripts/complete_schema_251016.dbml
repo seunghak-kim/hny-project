@@ -1,0 +1,425 @@
+// ============================================================================
+// HolmesNyangz Complete Database Schema
+// ============================================================================
+// 생성일: 2025-10-16
+// 목적: 실제 PostgreSQL DB 스키마 전체 반영
+// 테이블 수: 17개
+//
+// 사용법:
+// 1. 전체 내용 복사
+// 2. https://dbdiagram.io/d 접속
+// 3. 에디터에 붙여넣기
+// ============================================================================
+
+// ============================================================================
+// 1. 인증 & 사용자 관리 (5 tables)
+// ============================================================================
+
+Table users {
+  id serial [pk]
+  email varchar(200) [not null, unique, note: '이메일']
+  type usertype [not null, note: '유저 타입 (ENUM)']
+  is_active boolean [note: '계정 활성화 여부']
+  created_at timestamp [default: `now()`, note: '계정 생성일']
+  updated_at timestamp [note: '계정 수정일']
+
+  indexes {
+    id
+    email [unique]
+  }
+
+  Note: '사용자 기본 정보 (인증 통합 테이블)'
+}
+
+Table user_profiles {
+  id serial [pk]
+  user_id integer [not null, unique, ref: - users.id, note: '사용자 ID']
+  nickname varchar(100) [note: '닉네임']
+  phone varchar(20) [note: '전화번호']
+  created_at timestamp [default: `now()`]
+  updated_at timestamp
+
+  Note: '사용자 프로필 정보'
+}
+
+Table local_auths {
+  id serial [pk]
+  user_id integer [not null, unique, ref: - users.id, note: '사용자 ID']
+  username varchar(100) [not null, unique, note: '로그인 아이디']
+  hashed_password varchar(255) [not null, note: '해시된 비밀번호']
+  created_at timestamp [default: `now()`]
+  updated_at timestamp
+
+  indexes {
+    username [unique]
+  }
+
+  Note: '로컬 인증 (아이디/비밀번호)'
+}
+
+Table social_auths {
+  id serial [pk]
+  user_id integer [not null, ref: > users.id, note: '사용자 ID']
+  provider varchar(50) [not null, note: '소셜 제공자 (kakao, naver, google)']
+  provider_user_id varchar(255) [not null, note: '제공자 사용자 ID']
+  created_at timestamp [default: `now()`]
+  updated_at timestamp
+
+  indexes {
+    (provider, provider_user_id) [unique]
+  }
+
+  Note: '소셜 인증 (카카오, 네이버, 구글)'
+}
+
+Table user_favorites {
+  id serial [pk]
+  user_id integer [not null, ref: > users.id]
+  real_estate_id integer [not null, ref: > real_estates.id]
+  created_at timestamp [default: `now()`]
+
+  indexes {
+    (user_id, real_estate_id) [unique]
+  }
+
+  Note: '사용자 찜 목록'
+}
+
+// ============================================================================
+// 2. 부동산 데이터 (6 tables)
+// ============================================================================
+
+Table regions {
+  id serial [pk]
+  code varchar(20) [not null, unique, note: '법정동코드']
+  name varchar(50) [not null, note: '지역명']
+  created_at timestamp [default: `now()`, note: '생성일']
+  updated_at timestamp [note: '수정일']
+
+  indexes {
+    id
+    code [unique]
+  }
+
+  Note: '지역 정보 (법정동 기준)'
+}
+
+Table real_estates {
+  id serial [pk]
+  property_type propertytype [not null, note: '부동산 종류 (ENUM)']
+  code varchar(30) [not null, unique, note: '단지코드/매물코드']
+  name varchar(100) [not null, note: '단지명/건물명']
+  region_id integer [not null, ref: > regions.id, note: '지역 ID']
+  address varchar(255) [not null, note: '도로명주소']
+  address_detail varchar(255) [note: '상세주소']
+  latitude decimal(10,7) [note: '위도']
+  longitude decimal(10,7) [note: '경도']
+  total_households integer [note: '총 세대수']
+  total_buildings integer [note: '총 동수']
+  completion_date varchar(6) [note: '준공년월 (YYYYMM)']
+  min_exclusive_area float [note: '최소 전용면적 (㎡)']
+  max_exclusive_area float [note: '최대 전용면적 (㎡)']
+  representative_area float [note: '대표 전용면적 (㎡)']
+  floor_area_ratio float [note: '용적률 (%)']
+  exclusive_area float [note: '전용면적 spc1 (㎡)']
+  supply_area float [note: '공급면적 spc2 (㎡)']
+  exclusive_area_pyeong float [note: '전용면적 (평)']
+  supply_area_pyeong float [note: '공급면적 (평)']
+  direction varchar(20) [note: '방향']
+  floor_info varchar(50) [note: '층 정보']
+  building_description text [note: '건물 설명']
+  tag_list "varchar[]" [note: '태그 리스트']
+  deal_count integer [note: '매매 매물 수']
+  lease_count integer [note: '전세 매물 수']
+  rent_count integer [note: '월세 매물 수']
+  short_term_rent_count integer [note: '단기임대 매물 수']
+  created_at timestamp [default: `now()`, note: '생성일']
+  updated_at timestamp [note: '수정일']
+
+  indexes {
+    id
+    code [unique]
+  }
+
+  Note: '부동산 매물 정보'
+}
+
+Table transactions {
+  id serial [pk]
+  real_estate_id integer [not null, ref: > real_estates.id, note: '부동산 ID']
+  region_id integer [not null, ref: > regions.id, note: '지역 ID']
+  transaction_type transactiontype [note: '거래 유형 (ENUM)']
+  transaction_date timestamp [note: '거래일']
+  sale_price integer [note: '매매가 (만원)']
+  deposit integer [note: '보증금 (만원)']
+  monthly_rent integer [note: '월세 (만원)']
+  min_sale_price integer [note: '최소 매매가 (만원)']
+  max_sale_price integer [note: '최대 매매가 (만원)']
+  min_deposit integer [note: '최소 보증금 (만원)']
+  max_deposit integer [note: '최대 보증금 (만원)']
+  min_monthly_rent integer [note: '최소 월세 (만원)']
+  max_monthly_rent integer [note: '최대 월세 (만원)']
+  article_no varchar(50) [unique, note: '매물번호']
+  article_confirm_ymd varchar(10) [note: '매물확인일자']
+  created_at timestamp [default: `now()`, note: '생성일']
+  updated_at timestamp [note: '수정일']
+
+  indexes {
+    id
+    article_no [unique]
+    transaction_date
+    (real_estate_id, transaction_date)
+    (transaction_date, transaction_type)
+  }
+
+  Note: '거래 정보 (매매, 전세, 월세)'
+}
+
+Table real_estate_agents {
+  id serial [pk]
+  real_estate_id integer [not null, ref: > real_estates.id]
+  name varchar(100) [note: '중개사명']
+  address varchar(255) [note: '중개사 주소']
+  phone varchar(20) [note: '연락처']
+  created_at timestamp [default: `now()`]
+  updated_at timestamp
+
+  Note: '부동산 중개사 정보'
+}
+
+Table nearby_facilities {
+  id serial [pk]
+  real_estate_id integer [not null, ref: > real_estates.id]
+  facility_type varchar(50) [note: '시설 유형 (학교, 병원, 지하철 등)']
+  name varchar(100) [note: '시설명']
+  distance integer [note: '거리 (m)']
+  created_at timestamp [default: `now()`]
+
+  Note: '주변 시설 정보'
+}
+
+Table trust_scores {
+  id serial [pk]
+  real_estate_id integer [not null, unique, ref: - real_estates.id]
+  score decimal(3,2) [note: '신뢰도 점수 (0.00-1.00)']
+  data_quality integer [note: '데이터 품질 점수']
+  transaction_activity integer [note: '거래 활동성 점수']
+  price_stability integer [note: '가격 안정성 점수']
+  calculated_at timestamp [default: `now()`, note: '계산일']
+
+  Note: '부동산 신뢰도 점수'
+}
+
+// ============================================================================
+// 3. 채팅 & 세션 관리 (2 tables) - 수정된 스키마!
+// ============================================================================
+
+Table chat_sessions {
+  session_id varchar(100) [pk, note: 'Session ID (WebSocket 연결 식별자)']
+  user_id integer [not null, default: 1, note: 'User ID (기본값: 1, 인증 미구현)']
+  title varchar(200) [not null, default: '새 대화', note: '세션 제목 (첫 메시지 기반 자동 생성)']
+  created_at timestamp [not null, default: `now()`, note: '세션 생성일']
+  updated_at timestamp [not null, default: `now()`, note: '세션 마지막 업데이트 (트리거 자동 갱신)']
+  last_message text [note: '마지막 메시지 미리보기']
+  message_count integer [default: 0, note: '세션 내 메시지 개수']
+  is_active boolean [default: true, note: '세션 활성 상태']
+  metadata jsonb [note: '추가 메타데이터']
+
+  indexes {
+    user_id
+    updated_at
+    (user_id, updated_at)
+  }
+
+  Note: '''
+  채팅 세션 (대화 스레드)
+  - session_id: Backend가 생성 ("session-{uuid}" 형식)
+  - WebSocket 연결 식별자로 사용
+  - chat_messages, checkpoints와 동일한 session_id 공유
+  - updated_at: 트리거로 자동 갱신 (메시지 추가 시)
+  '''
+}
+
+Table chat_messages {
+  id serial [pk, note: '메시지 고유 ID (자동 증가)']
+  session_id varchar(100) [not null, ref: > chat_sessions.session_id, note: 'chat_sessions.session_id 참조 (CASCADE 삭제)']
+  role varchar(20) [not null, note: '메시지 역할: user | assistant | system']
+  content text [not null, note: '메시지 내용 (전체 텍스트)']
+  created_at timestamp [not null, default: `now()`, note: '메시지 생성일']
+
+  indexes {
+    session_id
+    (session_id, created_at)
+  }
+
+  Note: '''
+  채팅 메시지 히스토리 (UI 표시용)
+  - role CHECK: 'user', 'assistant', 'system'만 허용
+  - session_id FK: CASCADE DELETE (세션 삭제 시 메시지도 삭제)
+  '''
+}
+
+// ============================================================================
+// 4. LangGraph Checkpoint (4 tables) - State Management
+// ============================================================================
+
+Table checkpoints {
+  session_id text [not null, ref: > chat_sessions.session_id, note: 'Session ID (chat_sessions.session_id 참조, CASCADE DELETE)']
+  checkpoint_ns text [not null, default: '', note: 'Checkpoint 네임스페이스 (기본: 빈 문자열)']
+  checkpoint_id text [not null, note: 'Checkpoint 고유 ID (LangGraph 생성)']
+  parent_checkpoint_id text [note: 'Parent checkpoint ID (버전 히스토리용)']
+  type text [note: 'Checkpoint 타입']
+  checkpoint jsonb [not null, note: 'LangGraph 상태 스냅샷 (JSONB)']
+  metadata jsonb [not null, default: `{}`, note: 'Checkpoint 메타데이터 (JSONB)']
+
+  indexes {
+    session_id
+    (session_id, checkpoint_ns, checkpoint_id) [pk]
+  }
+
+  Note: '''
+  LangGraph 상태 스냅샷 (일시정지/재개용)
+  - session_id: chat_sessions.session_id 참조 (CASCADE DELETE)
+  - 세션 삭제 시 checkpoint도 자동 삭제됨
+  - LangGraph가 자동 관리
+  '''
+}
+
+Table checkpoint_blobs {
+  session_id text [not null, ref: > chat_sessions.session_id, note: 'Session ID (chat_sessions.session_id 참조, CASCADE DELETE)']
+  checkpoint_ns text [not null, default: '', note: 'Checkpoint 네임스페이스']
+  channel text [not null, note: '채널명 (예: messages, documents)']
+  version text [not null, note: 'Blob 버전']
+  type text [not null, note: 'Blob 타입']
+  blob bytea [note: '바이너리 데이터 (BYTEA)']
+
+  indexes {
+    (session_id, checkpoint_ns, channel, version) [pk]
+  }
+
+  Note: 'LangGraph 바이너리 데이터 저장소 (CASCADE DELETE)'
+}
+
+Table checkpoint_writes {
+  session_id text [not null, ref: > chat_sessions.session_id, note: 'Session ID (chat_sessions.session_id 참조, CASCADE DELETE)']
+  checkpoint_ns text [not null, default: '', note: 'Checkpoint 네임스페이스']
+  checkpoint_id text [not null, note: 'Checkpoint ID']
+  task_id text [not null, note: 'Task ID (병렬 실행용)']
+  idx integer [not null, note: 'Write 인덱스 (순서 번호)']
+  channel text [not null, note: '채널명']
+  type text [note: 'Write 타입']
+  blob bytea [not null, note: '업데이트 데이터 (BYTEA)']
+
+  indexes {
+    session_id
+    (session_id, checkpoint_ns, checkpoint_id, task_id, idx) [pk]
+  }
+
+  Note: 'LangGraph 증분 상태 업데이트 (CASCADE DELETE)'
+}
+
+Table checkpoint_migrations {
+  v integer [pk, note: '마이그레이션 버전 번호']
+
+  Note: 'LangGraph 스키마 버전 추적'
+}
+
+// ============================================================================
+// Foreign Key 관계 요약
+// ============================================================================
+
+// 사용자 관련:
+// - user_profiles.user_id → users.id (1:1)
+// - local_auths.user_id → users.id (1:1)
+// - social_auths.user_id → users.id (1:N)
+// - user_favorites.user_id → users.id (1:N)
+
+// 부동산 관련:
+// - real_estates.region_id → regions.id (N:1)
+// - transactions.real_estate_id → real_estates.id (N:1)
+// - transactions.region_id → regions.id (N:1)
+// - real_estate_agents.real_estate_id → real_estates.id (N:1)
+// - nearby_facilities.real_estate_id → real_estates.id (N:1)
+// - trust_scores.real_estate_id → real_estates.id (1:1)
+// - user_favorites.real_estate_id → real_estates.id (N:1)
+
+// 채팅 관련:
+// - chat_messages.session_id → chat_sessions.session_id (N:1, CASCADE DELETE)
+
+// Checkpoint 관련:
+// - checkpoints.session_id → chat_sessions.session_id (N:1, CASCADE DELETE)
+// - checkpoint_blobs.session_id → chat_sessions.session_id (N:1, CASCADE DELETE)
+// - checkpoint_writes.session_id → chat_sessions.session_id (N:1, CASCADE DELETE)
+
+// ============================================================================
+// 주요 변경사항 (vs. simplified_schema_unified.dbml)
+// ============================================================================
+
+// ✅ chat_sessions에 5개 필드 추가:
+//    - last_message (마지막 메시지 미리보기)
+//    - message_count (메시지 개수)
+//    - is_active (세션 활성 상태)
+//    - metadata (JSONB 메타데이터)
+//    - updated_at 트리거로 자동 갱신
+
+// ✅ 11개 테이블 추가 (부동산 시스템):
+//    - users, user_profiles, local_auths, social_auths, user_favorites
+//    - regions, real_estates, transactions, real_estate_agents
+//    - nearby_facilities, trust_scores
+
+// ✅ ENUM 타입 사용:
+//    - usertype (users.type)
+//    - propertytype (real_estates.property_type)
+//    - transactiontype (transactions.transaction_type)
+
+// ============================================================================
+// ENUM 타입 정의 (참고용, dbdiagram.io에서는 문자열로 표시됨)
+// ============================================================================
+
+// usertype: 사용자 유형
+//   - 'individual' (개인)
+//   - 'agent' (중개사)
+//   - 'admin' (관리자)
+
+// propertytype: 부동산 종류
+//   - 'apartment' (아파트)
+//   - 'officetel' (오피스텔)
+//   - 'villa' (빌라)
+//   - 'single_house' (단독주택)
+//   - 'commercial' (상가)
+
+// transactiontype: 거래 유형
+//   - 'sale' (매매)
+//   - 'jeonse' (전세)
+//   - 'monthly_rent' (월세)
+//   - 'short_term_rent' (단기임대)
+
+// ============================================================================
+// 통합 세션 ID 개념 (Unified Session ID)
+// ============================================================================
+
+// 모든 채팅/체크포인트 테이블이 동일한 session_id 사용:
+//
+//    ┌─────────────────────────────────────────────────────┐
+//    │ chat_sessions.session_id      = "session-{uuid}"    │
+//    │ chat_messages.session_id      = "session-{uuid}"    │
+//    │ checkpoints.session_id        = "session-{uuid}"    │
+//    │ checkpoint_blobs.session_id   = "session-{uuid}"    │
+//    │ checkpoint_writes.session_id  = "session-{uuid}"    │
+//    └─────────────────────────────────────────────────────┘
+//
+// 장점:
+//   - 혼동 방지: "session_id" vs "thread_id" 구분 불필요
+//   - 쉬운 JOIN: 모든 테이블에서 동일한 컬럼명
+//   - 직관적: 하나의 session_id = 하나의 대화
+
+// ============================================================================
+// 다이어그램 확인
+// ============================================================================
+
+// 1. https://dbdiagram.io/d 접속
+// 2. 이 파일 전체 복사
+// 3. 에디터에 붙여넣기
+// 4. 자동으로 ERD 생성됨
+
+// ============================================================================

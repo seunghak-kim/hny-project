@@ -1,0 +1,54 @@
+{
+  "metadata": {
+    "title": "부동산 법률 관련 예시 질문 1000개 - Part 1",
+    "description": "4개 카테고리별 부동산 법률 관련 예시 질문 모음 (1-500번)",
+    "total_questions": 1000,
+    "part": "1",
+    "part_range": "1-500",
+    "categories": 4,
+    "created_date": "2024-12-19",
+    "source": "부동산 법률 청크 파일 기반"
+  },
+  "questions": [
+    {
+      "id": 1,
+      "category": "1_공통 매매_임대차",
+      "question": "공인중개사 자격시험의 응시 자격 요건은 무엇인가요?",
+      "related_law": "공인중개사법",
+      "topic": "자격요건",
+      "difficulty": "기초"
+    },
+    {
+      "id": 2,
+      "category": "1_공통 매매_임대차",
+      "question": "공인중개사 자격시험의 시험과목과 배점은 어떻게 되나요?",
+      "related_law": "공인중개사법",
+      "topic": "시험과목",
+      "difficulty": "기초"
+    },
+    {
+      "id": 3,
+      "category": "1_공통 매매_임대차",
+      "question": "공인중개사 자격시험의 합격 기준은 어떻게 되나요?",
+      "related_law": "공인중개사법",
+      "topic": "합격기준",
+      "difficulty": "기초"
+    },
+    {
+      "id": 4,
+      "category": "1_공통 매매_임대차",
+      "question": "공인중개사 자격시험에서 부정행위 시 처벌은 어떻게 되나요?",
+      "related_law": "공인중개사법",
+      "topic": "부정행위처벌",
+      "difficulty": "중급"
+    },
+    {
+      "id": 5,
+      "category": "1_공통 매매_임대차",
+      "question": "공인중개사 자격시험의 면제 조건은 무엇인가요?",
+      "related_law": "공인중개사법",
+      "topic": "면제조건",
+      "difficulty": "중급"
+    }
+  ]
+}
