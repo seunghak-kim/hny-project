@@ -1,38 +1,42 @@
 # Import all models to ensure they are registered with SQLAlchemy
-from app.models.real_estate import  Region
+from app.models.region import Region
 from app.models.building import Building
-from app.models.apartment import Apartment, ApartmentSaleTransaction, ApartmentRentTransaction
-from app.models.house import House, HouseSaleTransaction, HouseRentTransaction
-from app.models.villa import Villa, VillaSaleTransaction, VillaRentTransaction
-from app.models.officetel import Officetel, OfficetelSaleTransaction, OfficetelRentTransaction
+from app.models.infrastructure import Infrastructure
 from app.models.trust import TrustScore
 from app.models.users import User, UserProfile, LocalAuth, SocialAuth, UserFavorite
 from app.models.chat import ChatSession, ChatMessage
 
+# Transaction models
+from app.models.transaction.transaction import Transaction
+from app.models.transaction.sale_transaction import SaleTransaction
+from app.models.transaction.rent_transaction import RentTransaction
+from app.models.transaction.apartment import ApartmentSaleTransaction
+from app.models.transaction.villa import VillaSaleTransaction
+from app.models.transaction.house import HouseSaleTransaction
+
 __all__ = [
-    "Region",   
-    # Building (건축물 통합 정보)
+    # Region & Building
+    "Region",
     "Building",
-    # New separated models (새로운 분리 모델)
-    "Apartment",
+    "Infrastructure",
+
+    # Transaction models
+    "Transaction",
+    "SaleTransaction",
+    "RentTransaction",
     "ApartmentSaleTransaction",
-    "ApartmentRentTransaction",
-    "House",
-    "HouseSaleTransaction",
-    "HouseRentTransaction",
-    "Villa",
     "VillaSaleTransaction",
-    "VillaRentTransaction",
-    "Officetel",
-    "OfficetelSaleTransaction",
-    "OfficetelRentTransaction",
-    # Other models
+    "HouseSaleTransaction",
+
+    # User models
     "TrustScore",
     "User",
     "UserProfile",
     "LocalAuth",
     "SocialAuth",
     "UserFavorite",
+
+    # Chat models
     "ChatSession",
     "ChatMessage",
 ]

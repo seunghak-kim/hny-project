@@ -2,19 +2,24 @@ from pydantic import BaseModel, Field, field_validator
 from typing import Optional
 from datetime import datetime, date
 from decimal import Decimal
-from app.models.real_estate import PropertyType, TransactionType
+from app.models.region import PropertyType, TransactionType
 
 
 # ===== Region Schemas =====
 class RegionBase(BaseModel):
-    code: str = Field(..., max_length=20, description="법정동 코드")
-    name: str = Field(..., max_length=50, description="지역명")
+    legal_dong_code:str = Field(..., max_length=20, description="법정동 코드")
+    cido_code: str = Field(..., max_length=20, description="시도 코드")
+    gun_name: str = Field(..., max_length=50, description="군구 이름")
+    umd_name: str = Field(..., max_length=20, description="읍면동")
+    sigungu_code: str = Field(..., max_length=20, description="시군구 코드")
 
 class RegionCreate(RegionBase):
     pass
 
 class RegionUpdate(BaseModel):
-    name: Optional[str] = Field(None, max_length=50, description="지역명")
+    legal_dong_code:Optional[str] = Field(..., max_length=20, description="법정동 코드")
+    cido_code: Optional[str] = Field(..., max_length=20, description="시도 코드")
+    sigungu_code: Optional[str] = Field(..., max_length=20, description="시군구 코드")
 
 class RegionResponse(RegionBase):
     id: int = Field(..., description="지역명 ID")

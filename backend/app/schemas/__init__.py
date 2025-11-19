@@ -12,7 +12,7 @@ from app.schemas.users import (
     UserFavoriteResponse,
 )
 
-from app.schemas.real_estate import (
+from app.schemas.region import (
     RegionCreate,
     RegionUpdate,
     RegionResponse,
@@ -27,57 +27,6 @@ from app.schemas.building import (
     BuildingListResponse,
 )
 
-from app.schemas.apartment import (
-    ApartmentCreate,
-    ApartmentUpdate,
-    ApartmentResponse,
-    ApartmentWithTransactions,
-    ApartmentSaleTransactionCreate,
-    ApartmentSaleTransactionUpdate,
-    ApartmentSaleTransactionResponse,
-    ApartmentRentTransactionCreate,
-    ApartmentRentTransactionUpdate,
-    ApartmentRentTransactionResponse,
-)
-
-from app.schemas.house import (
-    HouseCreate,
-    HouseUpdate,
-    HouseResponse,
-    HouseWithTransactions,
-    HouseSaleTransactionCreate,
-    HouseSaleTransactionUpdate,
-    HouseSaleTransactionResponse,
-    HouseRentTransactionCreate,
-    HouseRentTransactionUpdate,
-    HouseRentTransactionResponse,
-)
-
-from app.schemas.villa import (
-    VillaCreate,
-    VillaUpdate,
-    VillaResponse,
-    VillaWithTransactions,
-    VillaSaleTransactionCreate,
-    VillaSaleTransactionUpdate,
-    VillaSaleTransactionResponse,
-    VillaRentTransactionCreate,
-    VillaRentTransactionUpdate,
-    VillaRentTransactionResponse,
-)
-
-from app.schemas.officetel import (
-    OfficetelCreate,
-    OfficetelUpdate,
-    OfficetelResponse,
-    OfficetelWithTransactions,
-    OfficetelSaleTransactionCreate,
-    OfficetelSaleTransactionUpdate,
-    OfficetelSaleTransactionResponse,
-    OfficetelRentTransactionCreate,
-    OfficetelRentTransactionUpdate,
-    OfficetelRentTransactionResponse,
-)
 
 from app.schemas.transaction import (
     TransactionType,
@@ -90,6 +39,8 @@ from app.schemas.transaction import (
     SaleTransactionFilter,
     RentTransactionFilter,
 )
+
+
 
 from app.schemas.trust import (
     TrustScoreCreate,
@@ -129,50 +80,6 @@ __all__ = [
     "BuildingWithDetails",
     "BuildingFilter",
     "BuildingListResponse",
-    # Apartment
-    "ApartmentCreate",
-    "ApartmentUpdate",
-    "ApartmentResponse",
-    "ApartmentWithTransactions",
-    "ApartmentSaleTransactionCreate",
-    "ApartmentSaleTransactionUpdate",
-    "ApartmentSaleTransactionResponse",
-    "ApartmentRentTransactionCreate",
-    "ApartmentRentTransactionUpdate",
-    "ApartmentRentTransactionResponse",
-    # House
-    "HouseCreate",
-    "HouseUpdate",
-    "HouseResponse",
-    "HouseWithTransactions",
-    "HouseSaleTransactionCreate",
-    "HouseSaleTransactionUpdate",
-    "HouseSaleTransactionResponse",
-    "HouseRentTransactionCreate",
-    "HouseRentTransactionUpdate",
-    "HouseRentTransactionResponse",
-    # Villa
-    "VillaCreate",
-    "VillaUpdate",
-    "VillaResponse",
-    "VillaWithTransactions",
-    "VillaSaleTransactionCreate",
-    "VillaSaleTransactionUpdate",
-    "VillaSaleTransactionResponse",
-    "VillaRentTransactionCreate",
-    "VillaRentTransactionUpdate",
-    "VillaRentTransactionResponse",
-    # Officetel
-    "OfficetelCreate",
-    "OfficetelUpdate",
-    "OfficetelResponse",
-    "OfficetelWithTransactions",
-    "OfficetelSaleTransactionCreate",
-    "OfficetelSaleTransactionUpdate",
-    "OfficetelSaleTransactionResponse",
-    "OfficetelRentTransactionCreate",
-    "OfficetelRentTransactionUpdate",
-    "OfficetelRentTransactionResponse",
     # Transaction Common
     "TransactionType",
     "ContractType",
