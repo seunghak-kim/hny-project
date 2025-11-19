@@ -33,35 +33,28 @@ class Building(Base):
     # 건물 기본 정보
     name = Column(String(100), comment="건물명")
     build_year = Column(String(4), comment="건축년도")
-    total_households = Column(Integer, comment="총 세대수")
+    min_area = Column(DECIMAL(10, 2), comment="최소 전용면적")
+    max_area = Column(DECIMAL(10, 2), comment="최대 전용면적")
 
     # 지역 정보
-    region_id = Column(Integer, ForeignKey("regions.id"), nullable=False, comment="지역 ID")
-    region_name = Column(String(50), comment="읍면동명")
-
+    region_id = Column(Integer, ForeignKey("regions.id"), nullable=False, comment="region ID")
+    legal_dong = Column(String(100), comment="법정동명")
     # 주소 정보
     address = Column(String(255), nullable=False, comment="지번 주소")
-    road_address = Column(String(255), comment="도로명 주소")
+    # road_address = Column(String(255), comment="도로명 주소")  # 현재 시스템에서는 사용되지 않음 
 
     # 위치 정보 (좌표)
     latitude = Column(DECIMAL(10, 7), comment="위도")
     longitude = Column(DECIMAL(10, 7), comment="경도")
-
-    # 주변 시설 정보 (JSON 형태)
-    nearby_subway_stations = Column(Text, comment="1km 이내 지하철역 정보(JSON)")
-    nearby_schools = Column(Text, comment="인근 초중고 정보(JSON)")
-    nearby_marts = Column(Text, comment="인근 마트 정보(JSON)")
 
     # 관리 정보
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), comment="생성일")
     updated_at = Column(TIMESTAMP(timezone=True), onupdate=func.now(), comment="수정일")
 
     # Relationships
-    region = relationship("Region")
-    apartment = relationship("Apartment", back_populates="building", uselist=False)
-    house = relationship("House", back_populates="building", uselist=False)
-    villa = relationship("Villa", back_populates="building", uselist=False)
-    officetel = relationship("Officetel", back_populates="building", uselist=False)
+    region = relationship("Region", back_populates="buildings")
+    infrastructures = relationship("Infrastructure", back_populates="building", cascade="all, delete-orphan")
+    transactions = relationship("Transaction", back_populates="building", cascade="all, delete-orphan")
 
     # Indexes
     __table_args__ = (

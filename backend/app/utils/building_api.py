@@ -21,7 +21,9 @@ from dataclasses import dataclass
 from enum import Enum
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
+import logging
 
+logger = logging.getLogger(__name__)
 
 class ResponseFormat(Enum):
     """응답 형식 열거형"""
@@ -104,6 +106,7 @@ class BaseAPIClient(ABC):
         
         adapter = HTTPAdapter(max_retries=retry_strategy)
         session.mount("http://", adapter)
+        session.mount("https://", adapter)
         
         return session
     
@@ -271,10 +274,11 @@ class TransactionPriceAPI(BaseAPIClient):
         'offi_trade': 'RTMSDataSvcOffiTrade/getRTMSDataSvcOffiTrade',
         'offi_rent': 'RTMSDataSvcOffiRent/getRTMSDataSvcOffiRent',
         
-        # 연립다세대(houses?)
+        # 연립다세대
         'rh_trade': 'RTMSDataSvcRHTrade/getRTMSDataSvcRHTrade',
-        'rh_rent' : 'RTMSDataSvcRHRent/getRTMSDataSvcRHRent',
-        # 단독/다가구(villa?)
+        'rh_rent': 'RTMSDataSvcRHRent/getRTMSDataSvcRHRent',
+        
+        # 단독/다가구
         'sh_trade': 'RTMSDataSvcSHTrade/getRTMSDataSvcSHTrade',
         'sh_rent': 'RTMSDataSvcSHRent/getRTMSDataSvcSHRent',
     }
@@ -371,13 +375,13 @@ class TransactionPriceAPI(BaseAPIClient):
             self, lawd_cd, deal_ymd, num_of_rows, page_no, debug
         )
     
-    def get_rh_trade_data(self, lawd_cd: str, deal_ymd: str, num_of_rows: str = "100",
+    def get_rh_trade_data(self, lawd_cd: str, deal_ymd: str, num_of_rows: str = "100", 
                          page_no: str = "1", debug: bool = False) -> Dict:
         """연립다세대 매매 실거래가 조회"""
         return self._create_standard_method('rh_trade', '연립다세대 매매 실거래가')(
             self, lawd_cd, deal_ymd, num_of_rows, page_no, debug
         )
-
+    
     def get_rh_rent_data(self, lawd_cd: str, deal_ymd: str, num_of_rows: str = "100",
                         page_no: str = "1", debug: bool = False) -> Dict:
         """연립다세대 전월세 실거래가 조회"""
@@ -465,7 +469,7 @@ class TransactionPriceAPI(BaseAPIClient):
 
 class BuildingHubAPI(BaseAPIClient):
     """건축HUB API 클라이언트 (리팩토링 버전)"""
-    
+
     ENDPOINTS = {
         'building_info': 'getBrTitleInfo',
         'building_summary': 'getBrRecapTitleInfo',
@@ -474,43 +478,43 @@ class BuildingHubAPI(BaseAPIClient):
         'building_dong': 'getBrDongOulnInfo',
         'building_ho': 'getBrHoOulnInfo',
     }
-    
+
     def __init__(self, service_key: Optional[str] = None, response_format: ResponseFormat = ResponseFormat.XML):
         load_dotenv()
         service_key = service_key or os.getenv('SERVICE_KEY')
-        
+
         if not service_key:
             raise ValueError("Service key가 설정되지 않았습니다.")
-        
+
         config = APIConfig(
             service_key=service_key,
             base_url="http://apis.data.go.kr/1613000/BldRgstHubService",
             response_format=response_format
         )
         super().__init__(config)
-    
+
     def _get_endpoint_url(self, endpoint: str) -> str:
         return f"{self.config.base_url}/{endpoint}"
-    
+
     def _prepare_params(self, params: Dict) -> Dict:
         base_params = {
             'serviceKey': self.config.service_key,
             'numOfRows': '10',
             'pageNo': '1'
         }
-        
+
         if self.config.response_format == ResponseFormat.JSON:
             base_params['_type'] = 'json'
-        
+
         base_params.update({k: v for k, v in params.items() if v})
         return base_params
-    
-    def get_building_info(self, sigungu_cd: str, bjdong_cd: str, plat_gb_cd: str = "0", 
-                         bun: str = "", ji: str = "", start_date: str = "", end_date: str = "", 
+
+    def get_building_info(self, sigungu_cd: str, bjdong_cd: str, plat_gb_cd: str = "0",
+                         bun: str = "", ji: str = "", start_date: str = "", end_date: str = "",
                          num_of_rows: str = "10", page_no: str = "1", debug: bool = False) -> Dict:
         """건축물대장 표제부 정보 조회"""
         bun_padded, ji_padded = APIHelper.format_address_parts(bun, ji)
-        
+
         params = {
             'sigunguCd': sigungu_cd,
             'bjdongCd': bjdong_cd,
@@ -522,58 +526,95 @@ class BuildingHubAPI(BaseAPIClient):
             'numOfRows': num_of_rows,
             'pageNo': page_no
         }
-        
+
         return self._execute_api_call('building_info', params, debug)
+
+
 
 
 class RegionCodeManager:
     """지역 코드 관리 클래스"""
-    
-    def __init__(self):
+
+    def __init__(self, code_file_path: Optional[str] = None):
         self._code_cache = None
-    
+        if code_file_path:
+            self.code_file_path = code_file_path
+        else:
+            # 스크립트 실행 위치에 관계없이 항상 backend/data 디렉토리를 기준으로 경로 설정
+            backend_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+            self.code_file_path = os.path.join(backend_root, 'data', 'legal_codes.csv')
+
     @property
     def code_data(self) -> pd.DataFrame:
+        """법정동 코드 데이터를 캐시하여 사용합니다."""
         if self._code_cache is None:
-            self._code_cache = pdr.code_bdong()
+            try:
+                logger.info(f"'{self.code_file_path}'에서 법정동 코드 로딩 중...")
+                self._code_cache = pd.read_csv(self.code_file_path, dtype=str)
+                logger.info("법정동 코드 로딩 완료.")
+            except FileNotFoundError:
+                logger.error(f"법정동 코드 파일('{self.code_file_path}')을 찾을 수 없습니다.")
+                logger.error("먼저 'code_generator.py'를 실행하여 코드 파일을 생성하세요.")
+                raise
         return self._code_cache
     
-    def get_region_codes(self, sigungu_name: str, bdong_name: str) -> Dict:
+    def get_dong_code(self, sido_name: str, sigungu_name: str, dong_name: str) -> Optional[Dict]:
         """시군구명과 읍면동명으로 지역 코드 조회"""
         try:
             code = self.code_data
-            
-            result = code.loc[
-                (code['시군구명'].str.contains(sigungu_name)) &
-                (code['읍면동명'] == bdong_name)
+            # 시도명, 시군구명, 읍면동명이 모두 일치하는 경우를 먼저 찾습니다.
+            result = code[
+                (code['시도명'].str.startswith(sido_name)) &
+                (code['시군구명'] == sigungu_name) &
+                (code['읍면동명'] == dong_name)
             ]
             
             if result.empty:
-                result = code.loc[
-                    (code['시군구명'].str.contains(sigungu_name)) &
-                    (code['읍면동명'].str.contains(bdong_name))
+                # 시군구명과 읍면동명만으로 다시 검색
+                result = code[
+                    (code['시군구명'] == sigungu_name) &
+                    (code['읍면동명'] == dong_name)
                 ]
-                
+
             if result.empty:
-                raise ValueError(f"'{sigungu_name} {bdong_name}'에 해당하는 지역을 찾을 수 없습니다.")
+                logger.warning(f"'{sido_name} {sigungu_name} {dong_name}'에 해당하는 지역을 찾을 수 없습니다.")
+                return None
             
             first_result = result.iloc[0]
-            sigungu_code = first_result['시군구코드']
-            bdong_code_full = first_result['법정동코드']
-            bdong_code = bdong_code_full[len(sigungu_code):]
-            
             return {
-                'sigungu_name': sigungu_name,
-                'bdong_name': bdong_name,
-                'sigungu_code': sigungu_code,
-                'bdong_code': bdong_code,
-                'bdong_code_full': bdong_code_full,
+                'sido_name': first_result['시도명'],
+                'sigungu_name': first_result['시군구명'],
+                'dong_name': first_result['읍면동명'],
+                'sigungu_code': first_result['sigungu_code'],
+                'eupmyeondong_code': first_result['eupmyeondong_code'],
+                'legal_code': first_result['법정동코드'],
                 'region_info': first_result.to_dict(),
-                'total_matches': len(result)
             }
-            
         except Exception as e:
-            raise Exception(f"지역 코드 조회 오류: {e}")
+            logger.error(f"지역 코드 조회 중 오류 발생: {e}")
+            return None
+
+    def get_sigungu_codes(self, sido_name: str) -> List[Dict]:
+        """시/도 이름으로 모든 시군구 코드 목록을 반환합니다."""
+        code = self.code_data
+        # 시도명이 일치하고, 시군구명은 있지만 읍면동명은 없는 행을 찾습니다.
+        results = code[
+            (code['시도명'].str.startswith(sido_name)) &
+            (code['시군구명'].notna()) &
+            (code['읍면동명'].isna())
+        ].drop_duplicates(subset=['sigungu_code'])
+        return results[['시도명', '시군구명', 'sigungu_code']].to_dict('records')
+
+    def get_dong_codes(self, sido_name:str, sigungu_name: str) -> List[Dict]:
+        """시군구 이름으로 모든 읍면동 코드 목록을 반환합니다."""
+        code = self.code_data
+        # 시군구명이 일치하고, 읍면동명이 있는 모든 행을 찾습니다.
+        results = code[
+            (code['시도명'].str.contains(sido_name)) &
+            (code['시군구명'].str.contains(sigungu_name)) &
+            (code['읍면동명'].notna())
+        ].drop_duplicates(subset=['법정동코드'])
+        return results[['시도명', '시군구명', '읍면동명', 'sigungu_code', '법정동코드']].to_dict('records')
 
 
 class DataExporter:

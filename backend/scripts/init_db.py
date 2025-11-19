@@ -11,16 +11,22 @@ sys.path.insert(0, str(project_root))
 
 from sqlalchemy import text
 from app.db.postgre_db import Base, engine, SessionLocal
-from app.models.real_estate import Region
-from app.models.building import Building
-from app.models.apartment import Apartment, ApartmentSaleTransaction, ApartmentRentTransaction
-from app.models.house import House, HouseSaleTransaction, HouseRentTransaction
-from app.models.villa import Villa, VillaSaleTransaction, VillaRentTransaction
-from app.models.officetel import Officetel, OfficetelSaleTransaction, OfficetelRentTransaction
+
+# Import all models to ensure they are registered
+from app.models.region import Region  # noqa: F401
+from app.models.building import Building  # noqa: F401
+from app.models.infrastructure import Infrastructure  # noqa: F401
 from app.models.users import User, UserFavorite, LocalAuth, UserProfile, SocialAuth, UserType
 from app.models.chat import ChatSession, ChatMessage
 from app.models.trust import TrustScore
 
+# Transaction models (import to register with SQLAlchemy)
+from app.models.transaction.transaction import Transaction  # noqa: F401
+from app.models.transaction.sale_transaction import SaleTransaction  # noqa: F401
+from app.models.transaction.rent_transaction import RentTransaction  # noqa: F401
+from app.models.transaction.apartment import ApartmentSaleTransaction  # noqa: F401
+from app.models.transaction.villa import VillaSaleTransaction  # noqa: F401
+from app.models.transaction.house import HouseSaleTransaction  # noqa: F401
 
 def kill_all_connections():
     """모든 DB 연결 종료"""

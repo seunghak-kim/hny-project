@@ -17,7 +17,7 @@ class MarketDataTool:
     def __init__(self):
         # Lazy import로 순환 참조 방지
         from app.db.postgre_db import SessionLocal
-        from app.models.real_estate import (
+        from backend.app.models.region import (
             RealEstate,
             Transaction,
             Region,

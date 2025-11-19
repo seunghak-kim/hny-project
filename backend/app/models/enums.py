@@ -13,8 +13,7 @@ class PropertyType(enum.Enum):
 class TransactionType(enum.Enum):
     """거래 유형"""
     SALE = "sale"  # 매매
-    JEONSE = "jeonse"  # 전세
-    RENT = "rent"  # 월세
+    RENT = "rent"  # 전/월세
 
 
 class ContractType(enum.Enum):

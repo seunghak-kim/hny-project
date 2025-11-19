@@ -12,25 +12,21 @@ class BuildingBase(BaseModel):
     building_type: PropertyType = Field(..., description="건물 유형 (아파트/오피스텔/단독/연립)")
     name: Optional[str] = Field(None, max_length=100, description="건물명")
     build_year: Optional[str] = Field(None, max_length=4, description="건축년도")
-    total_households: Optional[int] = Field(None, description="총 세대수")
-
+    min_area: Optional[Decimal] = Field(None, description="최소 전용면적")
+    max_area: Optional[Decimal] = Field(None, description="최대 전용면적")
+    
     # 지역 정보
     region_id: int = Field(..., description="지역 ID") # 시군구 코드 
-    region_name: Optional[str] = Field(None, max_length=50, description="읍면동명")
-
+    legal_dong: str = Field(..., max_length=100, description="법정동명")
     # 주소 정보
     address: str = Field(..., max_length=255, description="지번 주소")
-    road_address: Optional[str] = Field(None, max_length=255, description="도로명 주소")
+    # road_address: Optional[str] = Field(None, max_length=255, description="도로명 주소")
 
     # 위치 정보
     latitude: Optional[Decimal] = Field(None, description="위도")
     longitude: Optional[Decimal] = Field(None, description="경도")
 
-    # 주변 시설 정보
-    nearby_subway_stations: Optional[str] = Field(None, description="1km 이내 지하철역 정보(JSON)")
-    nearby_schools: Optional[str] = Field(None, description="인근 초중고 정보(JSON)")
-    nearby_marts: Optional[str] = Field(None, description="인근 마트 정보(JSON)")
-
+    
 
 class BuildingCreate(BuildingBase):
     """건축물 생성 스키마"""
@@ -42,16 +38,15 @@ class BuildingUpdate(BaseModel):
     building_type: Optional[PropertyType] = Field(None, description="건물 유형")
     name: Optional[str] = Field(None, max_length=100, description="건물명")
     build_year: Optional[str] = Field(None, max_length=4, description="건축년도")
-    total_households: Optional[int] = Field(None, description="총 세대수")
+    min_area: Optional[Decimal] = Field(None, description="최소 전용면적")
+    max_area: Optional[Decimal] = Field(None, description="최대 전용면적")
     region_id: Optional[int] = Field(None, description="지역 ID")
-    region_name: Optional[str] = Field(None, max_length=50, description="읍면동명")
+    legal_dong: Optional[str] = Field(None, max_length=100, description="법정동명")
     address: Optional[str] = Field(None, max_length=255, description="지번 주소")
-    road_address: Optional[str] = Field(None, max_length=255, description="도로명 주소")
+    # road_address: Optional[str] = Field(None, max_length=255, description="도로명 주소")
     latitude: Optional[Decimal] = Field(None, description="위도")
     longitude: Optional[Decimal] = Field(None, description="경도")
-    nearby_subway_stations: Optional[str] = Field(None, description="1km 이내 지하철역 정보(JSON)")
-    nearby_schools: Optional[str] = Field(None, description="인근 초중고 정보(JSON)")
-    nearby_marts: Optional[str] = Field(None, description="인근 마트 정보(JSON)")
+    
 
 
 class BuildingResponse(BuildingBase):
@@ -89,7 +84,8 @@ class BuildingFilter(BaseModel):
     max_latitude: Optional[Decimal] = Field(None, description="최대 위도")
     min_longitude: Optional[Decimal] = Field(None, description="최소 경도")
     max_longitude: Optional[Decimal] = Field(None, description="최대 경도")
-    has_subway: Optional[bool] = Field(None, description="지하철역 1km 이내 여부")
+    min_area: Optional[Decimal] = Field(None, description="최소 전용면적")
+    max_area: Optional[Decimal] = Field(None, description="최대 전용면적")
     keyword: Optional[str] = Field(None, description="건물명/주소 검색 키워드")
 
 

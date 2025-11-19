@@ -23,7 +23,7 @@ class BankLoanSearchTool:
         """필요할 때만 import (Lazy Loading)"""
         if not hasattr(self, 'SessionLocal'):
             from app.db.postgre_db import SessionLocal
-            from app.models.bank import (
+            from backend.app.models.bank.bank import (
                 Bank,
                 BankProduct,
                 ProductCategory,

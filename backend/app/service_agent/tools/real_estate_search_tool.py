@@ -22,7 +22,7 @@ class RealEstateSearchTool:
         """필요할 때만 import (Lazy Loading)"""
         if not hasattr(self, 'SessionLocal'):
             from app.db.postgre_db import SessionLocal
-            from app.models.real_estate import (
+            from backend.app.models.region import (
                 RealEstate,
                 Region,
                 Transaction,
