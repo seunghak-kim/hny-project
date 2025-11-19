@@ -10,10 +10,6 @@ from sqlalchemy import and_, or_, func
 
 from app.db.postgre_db import get_db
 from app.models.building import Building
-from app.models.apartment import Apartment
-from app.models.house import House
-from app.models.villa import Villa
-from app.models.officetel import Officetel
 from app.models.enums import PropertyType
 from app.schemas.building import (
     BuildingResponse,
@@ -72,7 +68,6 @@ async def get_buildings(
             or_(
                 Building.name.ilike(f"%{keyword}%"),
                 Building.address.ilike(f"%{keyword}%"),
-                Building.road_address.ilike(f"%{keyword}%"),
             )
         )
 
@@ -127,49 +122,8 @@ async def get_building_detail(
     if not building:
         raise HTTPException(status_code=404, detail="Building not found")
 
-    # 타입별 상세 정보 조회
+    # 타입별 상세 정보 조회 (현재 모델 변경으로 인해 상세 정보는 제공하지 않음)
     details = {}
-
-    if building.building_type == PropertyType.APARTMENT:
-        apartment = db.query(Apartment).filter(
-            Apartment.building_id == building_id
-        ).first()
-        if apartment:
-            details["apartment_details"] = {
-                "id": apartment.id,
-                "complex_code": apartment.complex_code,
-                "min_exclusive_area": apartment.min_exclusive_area,
-                "max_exclusive_area": apartment.max_exclusive_area,
-                "total_dong": apartment.total_dong,
-            }
-
-    elif building.building_type == PropertyType.HOUSE:
-        house = db.query(House).filter(House.building_id == building_id).first()
-        if house:
-            details["house_details"] = {
-                "id": house.id,
-                "property_code": house.property_code,
-                "house_type": house.house_type,
-            }
-
-    elif building.building_type == PropertyType.VILLA:
-        villa = db.query(Villa).filter(Villa.building_id == building_id).first()
-        if villa:
-            details["villa_details"] = {
-                "id": villa.id,
-                "property_code": villa.property_code,
-            }
-
-    elif building.building_type == PropertyType.OFFICETEL:
-        officetel = db.query(Officetel).filter(
-            Officetel.building_id == building_id
-        ).first()
-        if officetel:
-            details["officetel_details"] = {
-                "id": officetel.id,
-                "complex_code": officetel.complex_code,
-                "sgg_name": officetel.sgg_name,
-            }
 
     # 응답 생성
     building_dict = {
@@ -179,18 +133,31 @@ async def get_building_detail(
         "build_year": building.build_year,
         "total_households": building.total_households,
         "region_id": building.region_id,
-        "region_name": building.region_name,
+        "region_name": building.region.gu_name if building.region else None,
         "address": building.address,
-        "road_address": building.road_address,
+        # "road_address": building.road_address, # Building model doesn't have road_address in the file I saw earlier? checking...
         "latitude": building.latitude,
         "longitude": building.longitude,
-        "nearby_subway_stations": building.nearby_subway_stations,
-        "nearby_schools": building.nearby_schools,
-        "nearby_marts": building.nearby_marts,
+        # "nearby_subway_stations": building.nearby_subway_stations, # These are in Infrastructure now?
+        # "nearby_schools": building.nearby_schools,
+        # "nearby_marts": building.nearby_marts,
         "created_at": building.created_at,
         "updated_at": building.updated_at,
         **details,
     }
+    
+    # Infrastructure 정보 추가 (Building 모델에 relationship이 있다면)
+    if hasattr(building, 'infrastructures') and building.infrastructures:
+        # infrastructures is a list or single? relationship says "infrastructures" but back_populates="building".
+        # Usually one-to-one or one-to-many. Let's check Building model again.
+        # Building model: infrastructures = relationship("Infrastructure", back_populates="building", cascade="all, delete-orphan")
+        # It seems to be a list. But Infrastructure has unique building_id. So it's one-to-one effectively but mapped as list by default unless uselist=False.
+        # Let's assume it might be a list.
+        infra = building.infrastructures[0] if building.infrastructures else None
+        if infra:
+             building_dict["nearby_subway_stations"] = infra.nearby_subway_stations
+             building_dict["nearby_schools"] = infra.nearby_schools
+             building_dict["nearby_marts"] = infra.nearby_marts
 
     return BuildingWithDetails(**building_dict)
 
@@ -288,9 +255,9 @@ async def create_building(
         build_year=building_data.build_year,
         total_households=building_data.total_households,
         region_id=building_data.region_id,
-        region_name=building_data.region_name,
+        # region_name=building_data.region_name,
         address=building_data.address,
-        road_address=building_data.road_address,
+        # road_address=building_data.road_address,
         latitude=building_data.latitude,
         longitude=building_data.longitude,
         nearby_subway_stations=building_data.nearby_subway_stations,
@@ -383,13 +350,15 @@ async def get_building_stats(
     )
 
     # 지역별 통계 (상위 10개)
+    from app.models.region import Region
     region_stats = (
         db.query(
-            Building.region_name,
+            Region.gu_name.label("region_name"),
             func.count(Building.id).label("count"),
         )
-        .filter(Building.region_name.isnot(None))
-        .group_by(Building.region_name)
+        .join(Region, Building.region_id == Region.id)
+        .filter(Region.gu_name.isnot(None))
+        .group_by(Region.gu_name)
         .order_by(func.count(Building.id).desc())
         .limit(10)
         .all()

@@ -6,19 +6,18 @@
 import asyncio
 from typing import List, Optional, Dict, Any, Union, Tuple
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy.orm import Session, aliased
-from sqlalchemy import and_, or_, func
+from sqlalchemy.orm import Session, aliased, joinedload
+from sqlalchemy import and_, or_, func, case, literal_column
 from pydantic import BaseModel, Field, ConfigDict
 
 from app.db.postgre_db import get_db
 from app.models.building import Building
-from app.models.apartment import Apartment, ApartmentSaleTransaction, ApartmentRentTransaction
-from app.models.house import House, HouseSaleTransaction, HouseRentTransaction
-from app.models.villa import Villa, VillaSaleTransaction, VillaRentTransaction
-from app.models.officetel import Officetel, OfficetelSaleTransaction, OfficetelRentTransaction
-from app.models.real_estate import Region
-from app.models.base import RealEstateBase
-from app.models.enums import PropertyType
+from app.models.region import Region
+from app.models.infrastructure import Infrastructure
+from app.models.transaction.transaction import Transaction
+from app.models.transaction.sale_transaction import SaleTransaction
+from app.models.transaction.rent_transaction import RentTransaction
+from app.models.enums import PropertyType, TransactionType
 
 router = APIRouter(prefix="/api/real-estate", tags=["real-estate"])
 
@@ -75,7 +74,7 @@ class GuResponse(BaseModel):
 class PropertyResponse(BaseModel):
     """부동산 응답 모델"""
     id: int
-    code: str
+    code: str = ""
     name: str
     property_type: str
     latitude: float
@@ -89,6 +88,7 @@ class PropertyResponse(BaseModel):
     completion_date: Optional[str] = None
     min_area: Optional[float] = None
     max_area: Optional[float] = None
+    address: Optional[str] = None
 
     # 거래 건수
     deal_count: int = 0
@@ -138,105 +138,88 @@ def format_eok(value: Optional[int]) -> str:
         return ""
 
 
-def get_region_parts(region: Optional[Region], region_name: Optional[str]) -> tuple[str, str]:
+def _build_subqueries(db: Session, bounds: Optional[Dict[str, float]] = None, building_ids: Optional[List[int]] = None):
     """
-    지역 정보에서 구와 동 추출
-    - region 객체에 구 정보가 없는 경우, region_name(동)을 기반으로 DB에서 구 정보를 찾아 보완합니다.
-
-    Args:
-        region: Region 객체 (구 정보 포함)
-        region_name: property의 region_name 필드 (동 정보 포함)
-
-    Returns:
-        (gu, dong) 튜플
+    매매/전세/월세 각각에 대한 서브쿼리를 생성합니다.
+    bounds가 주어지면 해당 범위 내의 건물에 대한 거래만 집계하여 성능을 최적화합니다.
+    building_ids가 주어지면 해당 ID 목록에 있는 건물의 거래만 집계합니다.
     """
-    dong = str(region_name) if region_name else ""
-    gu = ""
+    # 공통 필터링 로직
+    def apply_bounds_filter(query):
+        if building_ids:
+            query = query.filter(Transaction.building_id.in_(building_ids))
+        elif bounds:
+            query = query.join(Building, Transaction.building_id == Building.id)\
+                         .filter(
+                             Building.latitude >= bounds["south"],
+                             Building.latitude <= bounds["north"],
+                             Building.longitude >= bounds["west"],
+                             Building.longitude <= bounds["east"]
+                         )
+        return query
 
-    if region and region.name:
-        gu = str(region.name)
-    elif dong:
-        # region_name (동)을 기반으로 부모 region (구)를 찾으려는 시도 (예: 송파구 데이터 보완)
-        from app.db.postgre_db import SessionLocal
-        db = SessionLocal()
-        try:
-            dong_region = db.query(Region).filter(Region.name == dong, Region.parent_id.isnot(None)).first()
-            if dong_region and dong_region.parent:
-                gu = dong_region.parent.name
-        finally:
-            db.close()
+    # 1. 매매 서브쿼리
+    sale_query = db.query(
+        Transaction.building_id,
+        func.min(SaleTransaction.deal_amount).label('min_sale_price'),
+        func.max(SaleTransaction.deal_amount).label('max_sale_price'),
+        func.count(SaleTransaction.id).label('sale_count')
+    ).join(
+        Transaction, SaleTransaction.transaction_id == Transaction.id
+    ).filter(
+        Transaction.transaction_type == TransactionType.SALE
+    )
+    sale_query = apply_bounds_filter(sale_query)
+    sale_subquery = sale_query.group_by(Transaction.building_id).subquery()
 
-    return gu, dong
+    # 2. 전세 서브쿼리
+    jeonse_query = db.query(
+        Transaction.building_id,
+        func.min(RentTransaction.deposit).label('min_jeonse_price'),
+        func.max(RentTransaction.deposit).label('max_jeonse_price'),
+        func.count(RentTransaction.id).label('jeonse_count')
+    ).join(
+        Transaction, RentTransaction.transaction_id == Transaction.id
+    ).filter(
+        Transaction.transaction_type == TransactionType.RENT,
+        RentTransaction.monthly_rent == 0
+    )
+    jeonse_query = apply_bounds_filter(jeonse_query)
+    jeonse_subquery = jeonse_query.group_by(Transaction.building_id).subquery()
+
+    # 3. 월세 서브쿼리
+    rent_query = db.query(
+        Transaction.building_id,
+        func.min(RentTransaction.monthly_rent).label('min_rent_price'),
+        func.max(RentTransaction.monthly_rent).label('max_rent_price'),
+        func.count(RentTransaction.id).label('rent_count')
+    ).join(
+        Transaction, RentTransaction.transaction_id == Transaction.id
+    ).filter(
+        Transaction.transaction_type == TransactionType.RENT,
+        RentTransaction.monthly_rent > 0
+    )
+    rent_query = apply_bounds_filter(rent_query)
+    rent_subquery = rent_query.group_by(Transaction.building_id).subquery()
+
+    return sale_subquery, jeonse_subquery, rent_subquery
 
 
-async def _process_properties(
-    db: Session,
-    model: RealEstateBase,
-    sale_model: Any,
-    rent_model: Any,
-    property_type_name: str,
+def _apply_filters(
+    query,
+    Building,
+    sale_subquery,
+    jeonse_subquery,
+    rent_subquery,
     bounds: Dict[str, float],
-    limit: int,
+    property_types: Optional[List[str]],
     transaction_type: Optional[str],
     min_price: Optional[int],
     max_price: Optional[int]
-) -> List[PropertyResponse]:
-    """부동산 데이터를 조회하고 처리하는 공통 함수"""
-
-    # 각 모델에 맞는 외래 키 컬럼 가져오기
-    fk_attr_sale = next((attr for attr in ['apartment_id', 'officetel_id', 'villa_id', 'house_id'] if hasattr(sale_model, attr)), None)
-    fk_attr_rent = next((attr for attr in ['apartment_id', 'officetel_id', 'villa_id', 'house_id'] if hasattr(rent_model, attr)), None)
-
-    if not fk_attr_sale or not fk_attr_rent:
-        raise ValueError("Could not determine foreign key attribute for transaction models.")
-
-    fk_col_sale = getattr(sale_model, fk_attr_sale)
-    fk_col_rent = getattr(rent_model, fk_attr_rent)
-
-    # 1. 거래 정보 서브쿼리 생성
-    sale_subquery = db.query(
-        fk_col_sale.label("property_id"),
-        func.min(sale_model.deal_amount).label('min_sale_price'),
-        func.max(sale_model.deal_amount).label('max_sale_price'),
-        func.count(sale_model.id).label('sale_count')
-    ).group_by(fk_col_sale).subquery()
-
-    jeonse_subquery = db.query(
-        fk_col_rent.label("property_id"),
-        func.min(rent_model.deposit).label('min_jeonse_price'),
-        func.max(rent_model.deposit).label('max_jeonse_price'),
-        func.count(rent_model.id).label('jeonse_count')
-    ).filter(rent_model.monthly_rent == 0).group_by(fk_col_rent).subquery()
-
-    rent_subquery = db.query(
-        fk_col_rent.label("property_id"),
-        func.min(rent_model.deposit).label('min_rent_price'),
-        func.max(rent_model.deposit).label('max_rent_price'),
-        func.count(rent_model.id).label('rent_count')
-    ).filter(rent_model.monthly_rent > 0).group_by(fk_col_rent).subquery()
-
-    # 2. 메인 쿼리 (Building, Region 조인 추가 - N+1 문제 방지)
-    from sqlalchemy.orm import joinedload
-    from app.models.real_estate import Region
-
-    query = db.query(
-        model,
-        Building,
-        Region,
-        sale_subquery.c.min_sale_price, sale_subquery.c.max_sale_price, sale_subquery.c.sale_count,
-        jeonse_subquery.c.min_jeonse_price, jeonse_subquery.c.max_jeonse_price, jeonse_subquery.c.jeonse_count,
-        rent_subquery.c.min_rent_price, rent_subquery.c.max_rent_price, rent_subquery.c.rent_count
-    ).join(
-        Building, model.building_id == Building.id
-    ).join(
-        Region, model.region_id == Region.id
-    ).outerjoin(
-        sale_subquery, model.id == sale_subquery.c.property_id
-    ).outerjoin(
-        jeonse_subquery, model.id == jeonse_subquery.c.property_id
-    ).outerjoin(
-        rent_subquery, model.id == rent_subquery.c.property_id
-    ).filter(
+):
+    """공통 필터 적용"""
+    # Viewport Filter
+    query = query.filter(
         and_(
             Building.latitude.between(bounds['south'], bounds['north']),
             Building.longitude.between(bounds['west'], bounds['east']),
@@ -245,7 +228,18 @@ async def _process_properties(
         )
     )
 
-    # 3. 거래 유형 필터링
+    # Property Type Filter
+    if property_types:
+        type_enums = []
+        for pt in property_types:
+            try:
+                type_enums.append(PropertyType(pt.lower()))
+            except ValueError:
+                pass
+        if type_enums:
+            query = query.filter(Building.building_type.in_(type_enums))
+
+    # Transaction Type Filter
     if transaction_type:
         if transaction_type.lower() == "sale":
             query = query.filter(sale_subquery.c.sale_count > 0)
@@ -254,20 +248,18 @@ async def _process_properties(
         elif transaction_type.lower() == "rent":
             query = query.filter(rent_subquery.c.rent_count > 0)
 
-    # 4. 가격 필터링 (만원 단위)
+    # Price Filter (만원 단위)
     if min_price is not None or max_price is not None:
         price_filters = []
         min_p = min_price * 10000 if min_price is not None else None
         max_p = max_price * 10000 if max_price is not None else None
 
         if min_p is not None:
-            # 매매 또는 전세의 '최소' 가격이 min_p 이상인 경우
             price_filters.append(or_(
                 sale_subquery.c.min_sale_price >= min_p,
                 jeonse_subquery.c.min_jeonse_price >= min_p
             ))
         if max_p is not None:
-            # 매매 또는 전세의 '최소' 가격이 max_p 이하인 경우
             price_filters.append(or_(
                 sale_subquery.c.min_sale_price <= max_p,
                 jeonse_subquery.c.min_jeonse_price <= max_p
@@ -275,49 +267,288 @@ async def _process_properties(
 
         if price_filters:
             query = query.filter(and_(*price_filters))
+            
+    return query
 
-    properties = query.limit(limit).all()
+
+async def _process_properties(
+    db: Session,
+    bounds: Dict[str, float],
+    limit: int,
+    property_types: Optional[List[str]],
+    transaction_type: Optional[str],
+    min_price: Optional[int],
+    max_price: Optional[int]
+) -> List[PropertyResponse]:
+    """부동산 데이터를 조회하고 처리하는 공통 함수"""
+
+    target_ids = None
+    if min_price is None and max_price is None:
+        # 최적화: 가격 필터가 없는 경우 (사이드바 검색 등)
+        # 먼저 건물 ID 목록을 가져온 후, 해당 건물의 거래 내역만 조회 (Global Aggregation 방지)
+        
+        # 1. 건물 ID 조회
+        id_query = db.query(Building.id)
+        
+        # Bounds Filter
+        if bounds:
+            id_query = id_query.filter(
+                Building.latitude >= bounds['south'],
+                Building.latitude <= bounds['north'],
+                Building.longitude >= bounds['west'],
+                Building.longitude <= bounds['east']
+            )
+            
+        # Property Type Filter
+        if property_types:
+            type_enums = []
+            for pt in property_types:
+                try:
+                    type_enums.append(PropertyType(pt.lower()))
+                except ValueError:
+                    pass
+            if type_enums:
+                id_query = id_query.filter(Building.building_type.in_(type_enums))
+        
+        # Limit 적용
+        target_ids = [r[0] for r in id_query.limit(limit).all()]
+        
+        if not target_ids:
+            return []
+            
+        # 2. 서브쿼리 생성 (ID 기반)
+        sale_subquery, jeonse_subquery, rent_subquery = _build_subqueries(db, building_ids=target_ids)
+    else:
+        # 기존 로직: Bounds 기반 서브쿼리
+        # 1. 서브쿼리 생성 (bounds 필터링 적용)
+        sale_subquery, jeonse_subquery, rent_subquery = _build_subqueries(db, bounds=bounds)
+
+    # 3. 메인 쿼리 (Building, Region, Infrastructure 조인)
+    query = db.query(
+        Building,
+        Region,
+        Infrastructure if limit <= 10000 else literal_column('NULL').label('infrastructure'),
+        sale_subquery.c.min_sale_price, sale_subquery.c.max_sale_price, sale_subquery.c.sale_count,
+        jeonse_subquery.c.min_jeonse_price, jeonse_subquery.c.max_jeonse_price, jeonse_subquery.c.jeonse_count,
+        rent_subquery.c.min_rent_price, rent_subquery.c.max_rent_price, rent_subquery.c.rent_count
+    ).join(
+        Region, Building.region_id == Region.id
+    )
+
+    # limit이 작을 때만 Infrastructure 조인 (성능 최적화)
+    if limit <= 10000:
+        query = query.outerjoin(
+            Infrastructure, Building.id == Infrastructure.building_id
+        )
+
+    query = query.outerjoin(
+        sale_subquery, Building.id == sale_subquery.c.building_id
+    ).outerjoin(
+        jeonse_subquery, Building.id == jeonse_subquery.c.building_id
+    ).outerjoin(
+        rent_subquery, Building.id == rent_subquery.c.building_id
+    )
+
+    # 4. 필터 적용
+    if target_ids is not None:
+        # 최적화 경로: ID로 필터링
+        query = query.filter(Building.id.in_(target_ids))
+        # Bounds, property_types, limit은 이미 target_ids를 생성할 때 적용됨
+    else:
+        # 기존 경로: 공통 필터 적용
+        query = _apply_filters(
+            query, Building, sale_subquery, jeonse_subquery, rent_subquery,
+            bounds, property_types, transaction_type, min_price, max_price
+        )
+        query = query.limit(limit)
+
+    properties = query.all()
 
     # 4. 결과 포맷팅
     result = []
-    for prop, building, region, min_s, max_s, s_cnt, min_j, max_j, j_cnt, min_r, max_r, r_cnt in properties:
-        # Region을 미리 join했으므로 get_region_parts 대신 직접 사용 (N+1 문제 해결)
-        gu = region.name if region else ""
-        dong = building.region_name if building.region_name else ""
+    for building, region, infra, min_s, max_s, s_cnt, min_j, max_j, j_cnt, min_r, max_r, r_cnt in properties:
+        gu = region.gu_name if region else ""
+        dong = building.legal_dong if building.legal_dong else ""
 
-        # PropertyResponse 모델에 맞게 데이터 구성 (모델 필드명 사용)
-        # name이 비어있거나 "-"이면 "구 동" 형식으로 변환
-        property_name = prop.name
+        property_name = building.name
         if not property_name or property_name.strip() in ['-', '']:
-            # 이름이 없으면 "구 동" 형식으로 생성
             property_name = f"{gu} {dong}" if gu and dong else property_name
 
-        # limit이 크면 사이드바 검색용이므로 nearby facilities 제외 (성능 최적화)
         include_facilities = limit <= 10000
+        
+        area_summary = ""
+        if building.min_area:
+            min_pyeong = float(building.min_area) / 3.3058
+            area_summary = f"{float(building.min_area):.0f}㎡({min_pyeong:.0f}평)"
+            if building.max_area and building.max_area != building.min_area:
+                max_pyeong = float(building.max_area) / 3.3058
+                area_summary += f" ~ {float(building.max_area):.0f}㎡({max_pyeong:.0f}평)"
+
+        type_map = {
+            PropertyType.APARTMENT: "아파트",
+            PropertyType.OFFICETEL: "오피스텔",
+            PropertyType.VILLA: "빌라",
+            PropertyType.HOUSE: "단독/다가구"
+        }
+        property_type_kor = type_map.get(building.building_type, building.building_type.value)
 
         prop_data = PropertyResponse(
-            id=prop.id,
-            code=getattr(prop, 'property_code', getattr(prop, 'complex_code', '')),
+            id=building.id,
+            code=str(building.id),
             name=property_name,
-            property_type=property_type_name,
+            property_type=property_type_kor,
             latitude=float(building.latitude) if building.latitude is not None else 0.0,
             longitude=float(building.longitude) if building.longitude is not None else 0.0,
-            gu=gu, dong=dong, completion_date=building.build_year,
-            total_households=building.total_households or getattr(prop, 'total_households', None),
-            total_buildings=getattr(prop, 'total_buildings', None),
-            min_area=getattr(prop, 'min_area', getattr(prop, 'min_exclusive_area', None)),
-            max_area=getattr(prop, 'max_area', getattr(prop, 'max_exclusive_area', None)),
-            deal_count=s_cnt or 0, lease_count=j_cnt or 0, rent_count=r_cnt or 0,
+            gu=gu,
+            dong=dong,
+            completion_date=building.build_year,
+            min_area=float(building.min_area) if building.min_area else None,
+            max_area=float(building.max_area) if building.max_area else None,
+            address=building.address,
+            deal_count=s_cnt or 0,
+            lease_count=j_cnt or 0,
+            rent_count=r_cnt or 0,
             total_article_count=(s_cnt or 0) + (j_cnt or 0) + (r_cnt or 0),
-            sale_min_price=min_s, sale_max_price=max_s, jeonse_min_price=min_j, jeonse_max_price=max_j, rent_min_price=min_r, rent_max_price=max_r,
-            sale_min_price_eok=format_eok(min_s), sale_max_price_eok=format_eok(max_s), jeonse_min_price_eok=format_eok(min_j), jeonse_max_price_eok=format_eok(max_j),
+            sale_min_price=min_s, sale_max_price=max_s,
+            jeonse_min_price=min_j, jeonse_max_price=max_j,
+            rent_min_price=min_r, rent_max_price=max_r,
+            sale_min_price_eok=format_eok(min_s), sale_max_price_eok=format_eok(max_s),
+            jeonse_min_price_eok=format_eok(min_j), jeonse_max_price_eok=format_eok(max_j),
             rent_min_price_eok=format_eok(min_r), rent_max_price_eok=format_eok(max_r),
-            nearby_subway_stations=building.nearby_subway_stations if include_facilities else None,
-            nearby_schools=building.nearby_schools if include_facilities else None,
-            nearby_marts=building.nearby_marts if include_facilities else None
+            area_summary=area_summary,
+            nearby_subway_stations=infra.nearby_subway_stations if infra and include_facilities else None,
+            nearby_schools=infra.nearby_schools if infra and include_facilities else None,
+            nearby_marts=infra.nearby_marts if infra and include_facilities else None
         )
         result.append(prop_data)
     return result
+
+
+def _get_dong_aggregation(
+    db: Session,
+    bounds: Dict[str, float],
+    property_types: Optional[List[str]],
+    transaction_type: Optional[str],
+    min_price: Optional[int],
+    max_price: Optional[int]
+) -> List[DongResponse]:
+    """동 단위 DB 집계"""
+    # 1. 서브쿼리 생성 (bounds 필터링 적용)
+    sale_subquery, jeonse_subquery, rent_subquery = _build_subqueries(db, bounds)
+
+    # 집계 쿼리
+    query = db.query(
+        Region.gu_name,
+        Building.legal_dong,
+        func.count(Building.id).label('count'),
+        func.avg(Building.latitude).label('avg_lat'),
+        func.avg(Building.longitude).label('avg_lng'),
+        func.avg(sale_subquery.c.max_sale_price).label('avg_sale'),
+        func.avg(jeonse_subquery.c.max_jeonse_price).label('avg_jeonse'),
+        func.avg(rent_subquery.c.max_rent_price).label('avg_rent'),
+        func.sum(func.coalesce(sale_subquery.c.sale_count, 0) + 
+                 func.coalesce(jeonse_subquery.c.jeonse_count, 0) + 
+                 func.coalesce(rent_subquery.c.rent_count, 0)).label('total_trans')
+    ).join(
+        Region, Building.region_id == Region.id
+    ).outerjoin(
+        sale_subquery, Building.id == sale_subquery.c.building_id
+    ).outerjoin(
+        jeonse_subquery, Building.id == jeonse_subquery.c.building_id
+    ).outerjoin(
+        rent_subquery, Building.id == rent_subquery.c.building_id
+    )
+
+    query = _apply_filters(
+        query, Building, sale_subquery, jeonse_subquery, rent_subquery,
+        bounds, property_types, transaction_type, min_price, max_price
+    )
+
+    # Group by
+    results = query.group_by(Region.gu_name, Building.legal_dong).all()
+
+    response = []
+    for row in results:
+        if not row.legal_dong:
+            continue
+            
+        response.append(DongResponse(
+            type="dong",
+            gu=row.gu_name,
+            dong=row.legal_dong,
+            count=row.count,
+            property_type="동 최저가",
+            latitude=float(row.avg_lat) if row.avg_lat else 0.0,
+            longitude=float(row.avg_lng) if row.avg_lng else 0.0,
+            avg_sale_price_eok=format_eok(int(row.avg_sale)) if row.avg_sale else None,
+            avg_jeonse_price_eok=format_eok(int(row.avg_jeonse)) if row.avg_jeonse else None,
+            avg_rent_price_eok=format_eok(int(row.avg_rent)) if row.avg_rent else None,
+            total_transactions=int(row.total_trans) if row.total_trans else 0
+        ))
+    return response
+
+
+def _get_gu_aggregation(
+    db: Session,
+    bounds: Dict[str, float],
+    property_types: Optional[List[str]],
+    transaction_type: Optional[str],
+    min_price: Optional[int],
+    max_price: Optional[int]
+) -> List[GuResponse]:
+    """구 단위 DB 집계"""
+    # 1. 서브쿼리 생성 (bounds 필터링 적용)
+    sale_subquery, jeonse_subquery, rent_subquery = _build_subqueries(db, bounds)
+
+    # 집계 쿼리
+    query = db.query(
+        Region.gu_name,
+        func.count(Building.id).label('count'),
+        func.avg(Building.latitude).label('avg_lat'),
+        func.avg(Building.longitude).label('avg_lng'),
+        func.avg(sale_subquery.c.max_sale_price).label('avg_sale'),
+        func.avg(jeonse_subquery.c.max_jeonse_price).label('avg_jeonse'),
+        func.avg(rent_subquery.c.max_rent_price).label('avg_rent'),
+        func.sum(func.coalesce(sale_subquery.c.sale_count, 0) + 
+                 func.coalesce(jeonse_subquery.c.jeonse_count, 0) + 
+                 func.coalesce(rent_subquery.c.rent_count, 0)).label('total_trans')
+    ).join(
+        Region, Building.region_id == Region.id
+    ).outerjoin(
+        sale_subquery, Building.id == sale_subquery.c.building_id
+    ).outerjoin(
+        jeonse_subquery, Building.id == jeonse_subquery.c.building_id
+    ).outerjoin(
+        rent_subquery, Building.id == rent_subquery.c.building_id
+    )
+
+    query = _apply_filters(
+        query, Building, sale_subquery, jeonse_subquery, rent_subquery,
+        bounds, property_types, transaction_type, min_price, max_price
+    )
+
+    # Group by
+    results = query.group_by(Region.gu_name).all()
+
+    response = []
+    for row in results:
+        if not row.gu_name:
+            continue
+            
+        response.append(GuResponse(
+            type="gu",
+            gu=row.gu_name,
+            count=row.count,
+            property_type="구 최저가",
+            latitude=float(row.avg_lat) if row.avg_lat else 0.0,
+            longitude=float(row.avg_lng) if row.avg_lng else 0.0,
+            avg_sale_price_eok=format_eok(int(row.avg_sale)) if row.avg_sale else None,
+            avg_jeonse_price_eok=format_eok(int(row.avg_jeonse)) if row.avg_jeonse else None,
+            avg_rent_price_eok=format_eok(int(row.avg_rent)) if row.avg_rent else None,
+            total_transactions=int(row.total_trans) if row.total_trans else 0
+        ))
+    return response
+
 
 # ============================================================================
 # API Endpoints
@@ -347,517 +578,109 @@ async def get_properties(
     db: Session = Depends(get_db)
 ):
     """
-    지도 viewport 기반 부동산 조회 (분리된 모델 기반)
-
-    **성능 최적화:**
-    - Viewport 경계로 필터링하여 필요한 데이터만 조회
-    - Zoom level에 따라 결과 수 제한
-    - 각 property type별로 병렬 조회 가능
-
-    **필터링:**
-    - 부동산 유형, 거래 유형, 가격 범위 (프론트엔드에서 처리)
+    지도 viewport 기반 부동산 조회
     """
 
-    # DB 조회 limit 설정 (각 property type당 limit)
-    # limit이 크면 (>10000) 사이드바 검색용으로 전체 로드, 작으면 지도 마커용
+    # DB 조회 limit 설정
     db_limit = limit if limit > 10000 else min(limit, 5000)
 
-    # 1. 모든 부동산 유형의 데이터를 병렬로 조회
-    type_filter = []
+    # Property Types 파싱
+    pt_list = None
     if property_types:
-        type_filter = [pt.strip().lower() for pt in property_types.split(',')]
-
-    tasks = []
-    property_map = {
-        "apartment": (Apartment, ApartmentSaleTransaction, ApartmentRentTransaction, "아파트"),
-        "officetel": (Officetel, OfficetelSaleTransaction, OfficetelRentTransaction, "오피스텔"),
-        "villa": (Villa, VillaSaleTransaction, VillaRentTransaction, "빌라"),
-        "house": (House, HouseSaleTransaction, HouseRentTransaction, "단독/다가구"),
-    }
+        pt_list = [pt.strip().lower() for pt in property_types.split(',')]
 
     bounds = {"south": south, "north": north, "west": west, "east": east}
 
-    for prop_key, (model, sale_model, rent_model, prop_name) in property_map.items():
-        if not type_filter or prop_key in type_filter:
-            tasks.append(
-                _process_properties(
-                    db, model, sale_model, rent_model, prop_name,
-                    bounds, db_limit, transaction_type, min_price, max_price
-                )
-            )
-
-    all_properties = []
-    results_from_db = await asyncio.gather(*tasks)
-    for prop_list in results_from_db:
-        all_properties.extend(prop_list)
-
-    # limit이 크면 (>10000) 사이드바 검색용이므로 집계 없이 개별 매물만 반환
-    if limit > 10000:
-        return all_properties[:limit]
-
-    # 줌 레벨에 따른 집계 전략 (지도 마커용):
-    # - 줌 레벨 9 이상: 아무것도 표시하지 않음 (빈 배열 반환)
-    # - 줌 레벨 7-8: 구 단위 집계 (강남, 서초, 송파 3개만)
-    # - 줌 레벨 5-6: 동 단위 집계
-    # - 줌 레벨 4 이하 (확대): 개별 매물
-    if zoom and zoom >= 9:
-        # 줌 레벨 9 이상에서는 아무것도 표시하지 않음
-        return []
-    elif zoom and 7 <= zoom <= 8:
-        # 구 단위 집계 반환 (줌 레벨 7-8에서 3개 구만 표시)
-        gu_aggregated_data = _aggregate_by_gu(all_properties)
-        return gu_aggregated_data
+    # 줌 레벨에 따른 집계 전략
+    if zoom and zoom >= 7:
+        # 구 단위 DB 집계 (줌 레벨 7 이상, 즉 축소된 상태)
+        return _get_gu_aggregation(
+            db, bounds, pt_list, transaction_type, min_price, max_price
+        )
     elif zoom and 5 <= zoom <= 6:
-        # 동 단위 집계 반환 (중간 줌 레벨)
-        dong_aggregated_data = _aggregate_by_dong(all_properties)
-        return dong_aggregated_data
+        # 동 단위 DB 집계
+        return _get_dong_aggregation(
+            db, bounds, pt_list, transaction_type, min_price, max_price
+        )
 
     # 그 외의 줌 레벨에서는 개별 매물 데이터를 반환
-    # 프론트엔드에서 줌 레벨에 따라 클러스터링 수행
-    return all_properties[:limit]
+    return await _process_properties(
+        db, bounds, db_limit, pt_list, transaction_type, min_price, max_price
+    )
 
-def _aggregate_by_dong(properties: List[PropertyResponse]) -> List[DongResponse]:
-    """
-    매물 목록을 동 단위로 집계합니다.
-
-    Args:
-        properties: 집계할 PropertyResponse 목록
-
-    Returns:
-        동 단위 집계 목록
-    """
-    if not properties:
-        return []
-
-    dong_map: Dict[tuple[str, str], List[PropertyResponse]] = {}
-
-    # 동별로 그룹화
-    for prop in properties:
-        key = (prop.gu, prop.dong)
-        if key not in dong_map:
-            dong_map[key] = []
-        dong_map[key].append(prop)
-
-    # 각 동별 집계
-    result = []
-    for (gu, dong), props in dong_map.items():
-        if not dong:  # 동 정보가 없으면 스킵
-            continue
-
-        # 평균 위치 계산
-        avg_lat = sum(p.latitude for p in props) / len(props)
-        avg_lng = sum(p.longitude for p in props) / len(props)
-
-        # 평균 가격 계산 (만원 단위) - 평균을 내서 더 정확한 가격 표시
-        sale_prices = [p.sale_max_price for p in props if p.sale_max_price and p.sale_max_price > 0]
-        jeonse_prices = [p.jeonse_max_price for p in props if p.jeonse_max_price and p.jeonse_max_price > 0]
-        rent_prices = [p.rent_max_price for p in props if p.rent_max_price and p.rent_max_price > 0]
-
-        avg_sale = int(sum(sale_prices) / len(sale_prices)) if sale_prices else None
-        avg_jeonse = int(sum(jeonse_prices) / len(jeonse_prices)) if jeonse_prices else None
-        avg_rent = int(sum(rent_prices) / len(rent_prices)) if rent_prices else None
-
-        # 최소한 하나의 가격 정보가 있는 경우만 추가
-        if not (avg_sale or avg_jeonse or avg_rent):
-            continue
-
-        total_trans = sum(p.total_article_count for p in props)
-
-        result.append(DongResponse(
-            type="dong",
-            gu=gu,
-            dong=dong,
-            count=len(props),
-            property_type="동 최저가",
-            latitude=avg_lat,
-            longitude=avg_lng,
-            avg_sale_price_eok=format_eok(avg_sale),
-            avg_jeonse_price_eok=format_eok(avg_jeonse),
-            avg_rent_price_eok=format_eok(avg_rent),
-            total_transactions=total_trans
-        ))
-
-    return result
-
-
-def _aggregate_by_gu(properties: List[PropertyResponse]) -> List[GuResponse]:
-    """
-    매물 목록을 구 단위로 집계합니다.
-
-    Args:
-        properties: 집계할 PropertyResponse 목록
-
-    Returns:
-        구 단위 집계 목록
-    """
-    if not properties:
-        return []
-
-    gu_map: Dict[str, List[PropertyResponse]] = {}
-
-    # 구별로 그룹화
-    for prop in properties:
-        if prop.gu not in gu_map:
-            gu_map[prop.gu] = []
-        gu_map[prop.gu].append(prop)
-
-    # 각 구별 집계
-    result = []
-    for gu, props in gu_map.items():
-        if not gu:  # 구 정보가 없으면 스킵
-            continue
-
-        # 평균 위치 계산
-        avg_lat = sum(p.latitude for p in props) / len(props)
-        avg_lng = sum(p.longitude for p in props) / len(props)
-
-        # 평균 가격 계산 (만원 단위) - 평균을 내서 더 정확한 가격 표시
-        sale_prices = [p.sale_max_price for p in props if p.sale_max_price and p.sale_max_price > 0]
-        jeonse_prices = [p.jeonse_max_price for p in props if p.jeonse_max_price and p.jeonse_max_price > 0]
-        rent_prices = [p.rent_max_price for p in props if p.rent_max_price and p.rent_max_price > 0]
-
-        avg_sale = int(sum(sale_prices) / len(sale_prices)) if sale_prices else None
-        avg_jeonse = int(sum(jeonse_prices) / len(jeonse_prices)) if jeonse_prices else None
-        avg_rent = int(sum(rent_prices) / len(rent_prices)) if rent_prices else None
-
-        # 최소한 하나의 가격 정보가 있는 경우만 추가
-        if not (avg_sale or avg_jeonse or avg_rent):
-            continue
-
-        total_trans = sum(p.total_article_count for p in props)
-
-        result.append(GuResponse(
-            type="gu",
-            gu=gu,
-            count=len(props),
-            property_type="구 최저가",
-            latitude=avg_lat,
-            longitude=avg_lng,
-            avg_sale_price_eok=format_eok(avg_sale),
-            avg_jeonse_price_eok=format_eok(avg_jeonse),
-            avg_rent_price_eok=format_eok(avg_rent),
-            total_transactions=total_trans
-        ))
-
-    return result
-
-
-def _create_clusters(
-    properties: List[PropertyResponse],
-    grid_size: int = 100
-) -> List[ClusterResponse]:
-    """
-    부동산 목록을 기반으로 클러스터를 생성합니다. (간단한 그리드 기반 클러스터링)
-
-    Args:
-        properties: 클러스터링할 PropertyResponse 목록
-        grid_size: 클러스터링 그리드의 픽셀 크기 (가정)
-
-    Returns:
-        클러스터 목록
-    """
-    if not properties:
-        return []
-
-    clusters: Dict[Tuple[int, int], List[PropertyResponse]] = {}
-    
-    # 위도/경도 범위를 찾아 그리드 셀 크기 계산
-    min_lat = min(p.latitude for p in properties)
-    max_lat = max(p.latitude for p in properties)
-    min_lon = min(p.longitude for p in properties)
-    max_lon = max(p.longitude for p in properties)
-
-    lat_span = max_lat - min_lat if max_lat > min_lat else 1
-    lon_span = max_lon - min_lon if max_lon > min_lon else 1
-
-    # 각 부동산을 그리드 셀에 할당
-    for prop in properties:
-        grid_x = int((prop.longitude - min_lon) / lon_span * grid_size)
-        grid_y = int((prop.latitude - min_lat) / lat_span * grid_size)
-        if (grid_x, grid_y) not in clusters:
-            clusters[(grid_x, grid_y)] = []
-        clusters[(grid_x, grid_y)].append(prop)
-
-    # 각 셀을 클러스터로 변환
-    cluster_list = []
-    for cell_props in clusters.values():
-        avg_lat = sum(p.latitude for p in cell_props) / len(cell_props)
-        avg_lon = sum(p.longitude for p in cell_props) / len(cell_props)
-        cluster_list.append(ClusterResponse(type="cluster", count=len(cell_props), latitude=avg_lat, longitude=avg_lon))
-
-    return cluster_list
 
 @router.get("/stats")
 async def get_statistics(db: Session = Depends(get_db)):
     """
-    부동산 데이터 통계 (분리된 모델 기반)
+    부동산 데이터 통계
     """
-    # 각 부동산 유형별 건수
-    apt_count = db.query(Apartment).count()
-    offi_count = db.query(Officetel).count()
-    villa_count = db.query(Villa).count()
-    house_count = db.query(House).count()
+    # 1. 부동산 유형별 건수
+    # Building 테이블에서 building_type별로 그룹화하여 카운트
+    building_counts = db.query(
+        Building.building_type, func.count(Building.id)
+    ).group_by(Building.building_type).all()
+    
+    by_type = {
+        "아파트": 0,
+        "오피스텔": 0,
+        "빌라": 0,
+        "단독/다가구": 0
+    }
+    
+    type_map = {
+        PropertyType.APARTMENT: "아파트",
+        PropertyType.OFFICETEL: "오피스텔",
+        PropertyType.VILLA: "빌라",
+        PropertyType.HOUSE: "단독/다가구"
+    }
+    
+    total_properties = 0
+    for b_type, count in building_counts:
+        if b_type in type_map:
+            by_type[type_map[b_type]] = count
+            total_properties += count
 
-    total_properties = apt_count + offi_count + villa_count + house_count
+    # 2. 거래 건수 (유형별 + 거래종류별)
+    # Transaction 테이블과 Building 테이블을 조인하여 집계
+    transaction_counts = db.query(
+        Building.building_type,
+        Transaction.transaction_type,
+        func.count(Transaction.id)
+    ).join(
+        Building, Transaction.building_id == Building.id
+    ).group_by(
+        Building.building_type, Transaction.transaction_type
+    ).all()
 
-    # 거래 건수
-    apt_sale_count = db.query(ApartmentSaleTransaction).count()
-    apt_rent_count = db.query(ApartmentRentTransaction).count()
-    offi_sale_count = db.query(OfficetelSaleTransaction).count()
-    offi_rent_count = db.query(OfficetelRentTransaction).count()
-    villa_sale_count = db.query(VillaSaleTransaction).count()
-    villa_rent_count = db.query(VillaRentTransaction).count()
-    house_sale_count = db.query(HouseSaleTransaction).count()
-    house_rent_count = db.query(HouseRentTransaction).count()
+    by_transaction = {
+        "아파트_매매": 0, "아파트_전월세": 0,
+        "오피스텔_매매": 0, "오피스텔_전월세": 0,
+        "빌라_매매": 0, "빌라_전월세": 0,
+        "단독다가구_매매": 0, "단독다가구_전월세": 0
+    }
 
-    total_transactions = (
-        apt_sale_count + apt_rent_count +
-        offi_sale_count + offi_rent_count +
-        villa_sale_count + villa_rent_count +
-        house_sale_count + house_rent_count
-    )
+    total_transactions = 0
+    
+    for b_type, t_type, count in transaction_counts:
+        total_transactions += count
+        
+        k_type = type_map.get(b_type, "")
+        if not k_type:
+            continue
+            
+        k_trans = "매매" if t_type == TransactionType.SALE else "전월세"
+        
+        # 키 이름 매핑 (단독/다가구 -> 단독다가구)
+        if k_type == "단독/다가구":
+            k_type = "단독다가구"
+            
+        key = f"{k_type}_{k_trans}"
+        if key in by_transaction:
+            by_transaction[key] += count
 
     return {
         "total_properties": total_properties,
         "total_transactions": total_transactions,
-        "by_type": {
-            "아파트": apt_count,
-            "오피스텔": offi_count,
-            "빌라": villa_count,
-            "단독/다가구": house_count
-        },
-        "by_transaction": {
-            "아파트_매매": apt_sale_count,
-            "아파트_전월세": apt_rent_count,
-            "오피스텔_매매": offi_sale_count,
-            "오피스텔_전월세": offi_rent_count,
-            "빌라_매매": villa_sale_count,
-            "빌라_전월세": villa_rent_count,
-            "단독다가구_매매": house_sale_count,
-            "단독다가구_전월세": house_rent_count
-        }
+        "by_type": by_type,
+        "by_transaction": by_transaction
     }
-
-
-# ============================================================================
-# Building 기반 통합 조회 엔드포인트 (NEW - 성능 최적화)
-# ============================================================================
-
-class BuildingPropertyResponse(BaseModel):
-    """Building 기반 부동산 응답 모델"""
-    id: int
-    building_id: int
-    name: str
-    property_type: str
-    latitude: float
-    longitude: float
-
-    # 기본 정보
-    gu: str = ""
-    dong: str = ""
-    build_year: Optional[str] = None
-    total_households: Optional[int] = None
-    address: str = ""
-
-    # 거래 정보
-    deal_count: int = 0
-    lease_count: int = 0
-    rent_count: int = 0
-
-    # 가격 정보 (만원 단위)
-    sale_min_price: Optional[int] = None
-    sale_max_price: Optional[int] = None
-    jeonse_min_price: Optional[int] = None
-    jeonse_max_price: Optional[int] = None
-    rent_min_price: Optional[int] = None
-    rent_max_price: Optional[int] = None
-
-    # 가격 정보 (억원 단위 - 표시용)
-    sale_min_price_eok: Optional[str] = None
-    sale_max_price_eok: Optional[str] = None
-    jeonse_min_price_eok: Optional[str] = None
-    jeonse_max_price_eok: Optional[str] = None
-
-    model_config = ConfigDict(from_attributes=True)
-
-
-@router.get("/properties/unified", response_model=List[BuildingPropertyResponse])
-async def get_properties_unified(
-    # Viewport bounds
-    south: float = Query(..., description="남쪽 위도 (viewport 하단)"),
-    north: float = Query(..., description="북쪽 위도 (viewport 상단)"),
-    west: float = Query(..., description="서쪽 경도 (viewport 좌측)"),
-    east: float = Query(..., description="동쪽 경도 (viewport 우측)"),
-
-    # Filters
-    building_types: Optional[str] = Query(None, description="건물 유형 (쉼표로 구분: apartment,officetel,villa,house)"),
-    transaction_type: Optional[str] = Query(None, description="거래 유형 (sale, jeonse, rent)"),
-    min_price: Optional[int] = Query(None, description="최소 가격 (만원)"),
-    max_price: Optional[int] = Query(None, description="최대 가격 (만원)"),
-    min_build_year: Optional[str] = Query(None, description="최소 건축년도 (YYYY)"),
-    max_build_year: Optional[str] = Query(None, description="최대 건축년도 (YYYY)"),
-
-    # Pagination
-    limit: int = Query(1000, le=5000, description="최대 결과 수"),
-    offset: int = Query(0, description="결과 오프셋"),
-
-    db: Session = Depends(get_db)
-):
-    """
-    Building 테이블 기반 통합 부동산 조회 (성능 최적화 버전)
-
-    **장점:**
-    - 모든 부동산 타입을 한 번에 조회 (단일 쿼리)
-    - 공통 필터를 Building 테이블에서 처리
-    - 기존 /properties 엔드포인트 대비 3-5배 빠른 성능
-
-    **권장 사용 사례:**
-    - 지도 뷰포트 기반 조회
-    - 여러 타입의 부동산을 동시에 표시
-    - 건축년도, 총 세대수 등 공통 속성 필터링
-    """
-
-    # 1. Building 테이블 기본 쿼리
-    query = db.query(Building).filter(
-        Building.latitude.between(south, north),
-        Building.longitude.between(west, east),
-        Building.latitude.isnot(None),
-        Building.longitude.isnot(None),
-    )
-
-    # 2. 건물 타입 필터
-    if building_types:
-        type_list = [t.strip().upper() for t in building_types.split(',')]
-        type_enums = []
-        type_map = {
-            "APARTMENT": PropertyType.APARTMENT,
-            "OFFICETEL": PropertyType.OFFICETEL,
-            "VILLA": PropertyType.VILLA,
-            "HOUSE": PropertyType.HOUSE,
-        }
-        for t in type_list:
-            if t in type_map:
-                type_enums.append(type_map[t])
-
-        if type_enums:
-            query = query.filter(Building.building_type.in_(type_enums))
-
-    # 3. 건축년도 필터
-    if min_build_year:
-        query = query.filter(Building.build_year >= min_build_year)
-    if max_build_year:
-        query = query.filter(Building.build_year <= max_build_year)
-
-    # 4. Building 데이터 조회
-    buildings = query.offset(offset).limit(limit).all()
-
-    if not buildings:
-        return []
-
-    building_ids = [b.id for b in buildings]
-
-    # 5. 각 타입별 거래 정보 조회
-    # Apartment
-    apt_sale_stats = db.query(
-        Apartment.building_id,
-        Apartment.id.label('property_id'),
-        func.min(ApartmentSaleTransaction.deal_amount).label('min_sale'),
-        func.max(ApartmentSaleTransaction.deal_amount).label('max_sale'),
-        func.count(ApartmentSaleTransaction.id).label('sale_count')
-    ).join(
-        ApartmentSaleTransaction, Apartment.id == ApartmentSaleTransaction.apartment_id
-    ).filter(
-        Apartment.building_id.in_(building_ids)
-    ).group_by(Apartment.building_id, Apartment.id).all()
-
-    apt_rent_stats = db.query(
-        Apartment.building_id,
-        Apartment.id.label('property_id'),
-        func.min(ApartmentRentTransaction.deposit).label('min_jeonse'),
-        func.max(ApartmentRentTransaction.deposit).label('max_jeonse'),
-        func.count(func.nullif(ApartmentRentTransaction.monthly_rent, 0)).label('rent_count'),
-        func.count(ApartmentRentTransaction.id).label('lease_count')
-    ).join(
-        ApartmentRentTransaction, Apartment.id == ApartmentRentTransaction.apartment_id
-    ).filter(
-        Apartment.building_id.in_(building_ids)
-    ).group_by(Apartment.building_id, Apartment.id).all()
-
-    # 6. 통계를 building_id로 매핑
-    stats_map = {}
-
-    for stat in apt_sale_stats:
-        bid = stat.building_id
-        if bid not in stats_map:
-            stats_map[bid] = {
-                'property_id': stat.property_id,
-                'sale_min': stat.min_sale,
-                'sale_max': stat.max_sale,
-                'sale_count': stat.sale_count,
-            }
-
-    for stat in apt_rent_stats:
-        bid = stat.building_id
-        if bid in stats_map:
-            stats_map[bid].update({
-                'jeonse_min': stat.min_jeonse,
-                'jeonse_max': stat.max_jeonse,
-                'rent_count': stat.rent_count,
-                'lease_count': stat.lease_count,
-            })
-        elif bid not in stats_map:
-            stats_map[bid] = {
-                'property_id': stat.property_id,
-                'jeonse_min': stat.min_jeonse,
-                'jeonse_max': stat.max_jeonse,
-                'rent_count': stat.rent_count,
-                'lease_count': stat.lease_count,
-            }
-
-    # 7. 응답 생성
-    results = []
-    for building in buildings:
-        stats = stats_map.get(building.id, {})
-
-        # 가격 필터 적용 (transaction_type에 따라)
-        if transaction_type and min_price:
-            if transaction_type == "sale" and (not stats.get('sale_min') or stats.get('sale_min') < min_price * 10000):
-                continue
-            if transaction_type in ["jeonse", "rent"] and (not stats.get('jeonse_min') or stats.get('jeonse_min') < min_price * 10000):
-                continue
-
-        if transaction_type and max_price:
-            if transaction_type == "sale" and (not stats.get('sale_max') or stats.get('sale_max') > max_price * 10000):
-                continue
-            if transaction_type in ["jeonse", "rent"] and (not stats.get('jeonse_max') or stats.get('jeonse_max') > max_price * 10000):
-                continue
-
-        # PropertyType enum을 문자열로 변환
-        property_type_str = building.building_type.value if building.building_type else "unknown"
-
-        results.append(BuildingPropertyResponse(
-            id=stats.get('property_id', 0),
-            building_id=building.id,
-            name=building.name or "",
-            property_type=property_type_str,
-            latitude=float(building.latitude) if building.latitude else 0.0,
-            longitude=float(building.longitude) if building.longitude else 0.0,
-            gu="",  # TODO: Region 조인으로 가져오기
-            dong=building.region_name or "",
-            build_year=building.build_year,
-            total_households=building.total_households,
-            address=building.address,
-            deal_count=stats.get('sale_count', 0),
-            lease_count=stats.get('lease_count', 0),
-            rent_count=stats.get('rent_count', 0),
-            sale_min_price=stats.get('sale_min'),
-            sale_max_price=stats.get('sale_max'),
-            jeonse_min_price=stats.get('jeonse_min'),
-            jeonse_max_price=stats.get('jeonse_max'),
-            sale_min_price_eok=format_eok(stats.get('sale_min')),
-            sale_max_price_eok=format_eok(stats.get('sale_max')),
-            jeonse_min_price_eok=format_eok(stats.get('jeonse_min')),
-            jeonse_max_price_eok=format_eok(stats.get('jeonse_max')),
-        ))
-
-    return results
