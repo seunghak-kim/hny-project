@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo, useCallback } from "react"
+import { useState, useEffect, useMemo, useCallback, useRef } from "react"
 import { getAllDistrictNames, getDistrictCoordinatesNew, getDistrictCenterNew } from "@/lib/district-coordinates"
 import { clusterProperties, getClusterStyle, createDetailedMarkerContent, createClusterMarkerContent } from "@/lib/clustering"
 import type { PropertyData } from "./types"
@@ -33,8 +33,8 @@ export function useMap(props: UseMapProps): UseMapReturn {
   const { mapRef, properties, transactionFilter, onPropertySelect } = props
 
   const [map, setMap] = useState<any>(null)
-  const [markers, setMarkers] = useState<any[]>([])
-  const [polygons, setPolygons] = useState<any[]>([])
+  const markersRef = useRef<any[]>([])
+  const polygonsRef = useRef<any[]>([])
   const [currentZoom, setCurrentZoom] = useState(7)
   const [loading, setLoading] = useState(true)
 
@@ -172,7 +172,7 @@ export function useMap(props: UseMapProps): UseMapReturn {
       console.error('Error adding map click listener:', error)
     }
 
-    setPolygons(newPolygons)
+    polygonsRef.current = newPolygons
   }, [])
 
   // Initialize Kakao Map
@@ -244,23 +244,38 @@ export function useMap(props: UseMapProps): UseMapReturn {
 
   // Update clusters when properties or zoom changes - optimized with useMemo
   const clusters = useMemo(() => {
+    console.log('[useMap] Recalculating clusters', {
+      propertiesCount: properties.length,
+      zoom: currentZoom,
+      transactionFilter
+    })
+
     // 줌 레벨 9 이상(축소 상태)에서는 아무것도 표시하지 않음
     if (currentZoom >= 9) {
+      console.log('[useMap] Zoom too high, returning empty clusters')
       return []
     }
 
     if (properties.length > 0) {
       const newClusters = clusterProperties(properties, currentZoom, transactionFilter)
+      console.log('[useMap] Clusters calculated:', newClusters.length)
       return newClusters
     }
     // Return empty array if no properties in viewport
+    console.log('[useMap] No properties, returning empty clusters')
     return []
   }, [properties, currentZoom, transactionFilter])
 
   // Setup property markers using the new marker utilities
   const setupPropertyMarkers = useCallback((kakaoMap: any) => {
+    console.log('[useMap] setupPropertyMarkers called', {
+      clustersCount: clusters.length,
+      zoom: currentZoom,
+      markersCount: markersRef.current.length
+    })
+
     // Clear existing markers efficiently
-    markers.forEach(marker => {
+    markersRef.current.forEach(marker => {
       try {
         marker.setMap(null)
       } catch (error) {
@@ -275,11 +290,14 @@ export function useMap(props: UseMapProps): UseMapReturn {
     const clustersToRender = clusters.slice(0, MAX_MARKERS)
 
     if (clusters.length === 0) {
-      setMarkers([])
+      console.log('[useMap] No clusters to render')
+      markersRef.current = []
       return
     }
 
-    clustersToRender.forEach((cluster) => {
+    console.log('[useMap] Rendering clusters:', clustersToRender.length)
+
+    clustersToRender.forEach((cluster, index) => {
       try {
         const style = getClusterStyle(cluster.count, currentZoom, cluster.averagePrice)
         const position = new window.kakao.maps.LatLng(cluster.center.lat, cluster.center.lng)
@@ -305,6 +323,7 @@ export function useMap(props: UseMapProps): UseMapReturn {
 
         // 가격 정보가 없어서 빈 마커 콘텐츠가 반환된 경우 스킵
         if (!markerContent || markerContent.trim() === '') {
+          if (index < 5) console.log('[useMap] Empty marker content for cluster:', index)
           return
         }
 
@@ -357,8 +376,9 @@ export function useMap(props: UseMapProps): UseMapReturn {
       }
     })
 
-    setMarkers(newMarkers)
-  }, [clusters, currentZoom, markers, onPropertySelect, transactionFilter])
+    console.log('[useMap] Markers created:', newMarkers.length)
+    markersRef.current = newMarkers
+  }, [clusters, currentZoom, onPropertySelect, transactionFilter])
 
   // Update markers when map or clusters change
   useEffect(() => {

@@ -69,8 +69,8 @@ export function useProperties(props: UsePropertiesProps): UsePropertiesReturn {
 
         // 집계 데이터는 avg_*_price_eok 필드로 가격 검증
         const hasAggregatePrice = item.avg_sale_price_eok ||
-                                  item.avg_jeonse_price_eok ||
-                                  item.avg_rent_price_eok;
+          item.avg_jeonse_price_eok ||
+          item.avg_rent_price_eok;
 
         if (!hasAggregatePrice) {
           console.warn('[Transform] Aggregate data has no prices:', item)
@@ -225,10 +225,12 @@ export function useProperties(props: UsePropertiesProps): UsePropertiesReturn {
 
   // Load property data from API based on map viewport (지도 렌더링용)
   const loadPropertiesFromAPI = useCallback(async (mapInstance: any) => {
+    console.log('[useProperties] loadPropertiesFromAPI called', { mapInstance: !!mapInstance })
     if (!mapInstance) return
 
     try {
       setLoading(true)
+      console.log('[useProperties] Loading started')
 
       // Get map bounds
       const bounds = mapInstance.getBounds()
@@ -291,17 +293,21 @@ export function useProperties(props: UsePropertiesProps): UsePropertiesReturn {
         }
       }
 
+      console.log('[useProperties] Fetching properties with params:', params.toString())
       // Fetch from API
       const response = await fetch(`http://localhost:8000/api/real-estate/properties?${params}`)
       const data = await response.json()
+      console.log('[useProperties] API response received, items:', data.length)
 
       const transformed = transformAPIResponse(data)
+      console.log('[useProperties] Transformed items:', transformed.length)
 
       setProperties(transformed)
     } catch (error) {
       console.error("Error loading property data from API:", error)
       setProperties([])
     } finally {
+      console.log('[useProperties] Loading finished')
       setLoading(false)
     }
   }, [propertyTypeFilter, transactionFilter, transformAPIResponse])
