@@ -98,39 +98,62 @@ export function getPropertyMarkerData(
     const monthlyHigh = property.rent_max_price
 
     // Determine by filter or priority
-    if (transactionFilter === "매매" && isValidPrice(saleHigh)) {
-      const price = parsePrice(saleHigh)
-      priceText = formatPriceInEok(price)
-      markerColor = getMarkerColor('매매')
-      iconText = getIconText('매매')
-    } else if (transactionFilter === "전세" && isValidPrice(rentHigh)) {
-      const price = parsePrice(rentHigh)
-      priceText = formatPriceInEok(price)
-      markerColor = getMarkerColor('전세')
-      iconText = getIconText('전세')
-    } else if (transactionFilter === "월세" && isValidPrice(monthlyHigh)) {
-      const price = parsePrice(monthlyHigh)
-      priceText = formatPriceInEok(price)
-      markerColor = getMarkerColor('월세')
-      iconText = getIconText('월세')
-    } else if (isValidPrice(saleHigh)) {
-      const price = parsePrice(saleHigh)
-      priceText = formatPriceInEok(price)
-      markerColor = getMarkerColor('매매')
-      iconText = getIconText('매매')
-    } else if (isValidPrice(rentHigh)) {
-      const price = parsePrice(rentHigh)
-      priceText = formatPriceInEok(price)
-      markerColor = getMarkerColor('전세')
-      iconText = getIconText('전세')
-    } else if (isValidPrice(monthlyHigh)) {
-      const price = parsePrice(monthlyHigh)
-      priceText = formatPriceInEok(price)
-      markerColor = getMarkerColor('월세')
-      iconText = getIconText('월세')
+    if (transactionFilter === "매매") {
+      if (isValidPrice(saleHigh)) {
+        const price = parsePrice(saleHigh)
+        priceText = formatPriceInEok(price)
+        markerColor = getMarkerColor('매매')
+        iconText = getIconText('매매')
+      } else {
+        // Filter is Sale but no Sale price -> Hide marker
+        priceText = ''
+        iconText = ''
+        markerColor = ''
+      }
+    } else if (transactionFilter === "전세") {
+      if (isValidPrice(rentHigh)) {
+        const price = parsePrice(rentHigh)
+        priceText = formatPriceInEok(price)
+        markerColor = getMarkerColor('전세')
+        iconText = getIconText('전세')
+      } else {
+        priceText = ''
+        iconText = ''
+        markerColor = ''
+      }
+    } else if (transactionFilter === "월세") {
+      if (isValidPrice(monthlyHigh)) {
+        const price = parsePrice(monthlyHigh)
+        priceText = formatPriceInEok(price)
+        markerColor = getMarkerColor('월세')
+        iconText = getIconText('월세')
+      } else {
+        priceText = ''
+        iconText = ''
+        markerColor = ''
+      }
     } else {
-      priceText = '-'
-      iconText = '?'
+      // "전체" filter - use priority
+      if (isValidPrice(saleHigh)) {
+        const price = parsePrice(saleHigh)
+        priceText = formatPriceInEok(price)
+        markerColor = getMarkerColor('매매')
+        iconText = getIconText('매매')
+      } else if (isValidPrice(rentHigh)) {
+        const price = parsePrice(rentHigh)
+        priceText = formatPriceInEok(price)
+        markerColor = getMarkerColor('전세')
+        iconText = getIconText('전세')
+      } else if (isValidPrice(monthlyHigh)) {
+        const price = parsePrice(monthlyHigh)
+        priceText = formatPriceInEok(price)
+        markerColor = getMarkerColor('월세')
+        iconText = getIconText('월세')
+      } else {
+        priceText = ''
+        iconText = ''
+        markerColor = ''
+      }
     }
   }
 
@@ -145,6 +168,14 @@ export function createPropertyMarkerContent(
   transactionFilter: string
 ): string {
   const { priceText, markerColor, iconText } = getPropertyMarkerData(property, transactionFilter)
+
+  // If no valid price/color (hidden), return empty string to prevent rendering
+  if (!priceText || !markerColor || priceText === '-' || priceText === '') {
+    return ''
+  }
+
+  const isApartment = property.property_type === "아파트" || property.property_type === "APT"
+  const propertyTypeBadge = !isApartment && property.property_type ? property.property_type : ''
 
   return `
     <div style="
@@ -207,8 +238,12 @@ export function createPropertyMarkerContent(
         box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         white-space: nowrap;
         border: 1px solid rgba(255,255,255,0.3);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
       ">
-        ${priceText}
+        <span>${priceText}</span>
+        ${propertyTypeBadge ? `<span style="font-size: 9px; font-weight: 500; opacity: 0.9; border-top: 1px solid rgba(255,255,255,0.3); width: 100%; text-align: center; margin-top: 1px; padding-top: 1px;">${propertyTypeBadge}</span>` : ''}
       </div>
     </div>
   `

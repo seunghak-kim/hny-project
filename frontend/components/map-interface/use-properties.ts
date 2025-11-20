@@ -312,6 +312,92 @@ export function useProperties(props: UsePropertiesProps): UsePropertiesReturn {
     }
   }, [propertyTypeFilter, transactionFilter, transformAPIResponse])
 
+  // Filter properties for MAP rendering (apply price/area filters client-side)
+  // The API only filters by viewport, property type, and transaction type.
+  // We need to apply price and area filters here to ensure markers match the sidebar.
+  const filteredMapProperties = useMemo(() => {
+    let filtered = properties
+
+    // Price range filter - optimized to respect transaction filter
+    const isSaleFilterActive = salePriceRange[1] < 50 || salePriceRange[0] > 0
+    const isJeonseFilterActive = jeonsePriceRange[1] < 20 || jeonsePriceRange[0] > 0
+    const isMonthlyFilterActive = monthlyPriceRange[1] < 10 || monthlyPriceRange[0] > 0
+
+    if (isSaleFilterActive || isJeonseFilterActive || isMonthlyFilterActive) {
+      filtered = filtered.filter((property) => {
+        // 동/구 집계 데이터는 필터링 제외 (항상 표시)
+        if (property.type === "dong" || property.type === "gu") return true
+
+        // If specific transaction filter is selected, ONLY check that price range
+        if (transactionFilter === "매매") {
+          return isPriceInRange(property.sale_max_price, salePriceRange[0], salePriceRange[1])
+        }
+        if (transactionFilter === "전세") {
+          return isPriceInRange(property.jeonse_max_price, jeonsePriceRange[0], jeonsePriceRange[1])
+        }
+        if (transactionFilter === "월세") {
+          return isPriceInRange(property.rent_max_price, monthlyPriceRange[0], monthlyPriceRange[1])
+        }
+
+        // If "전체", check if ANY of the ACTIVE ranges match
+        let matches = false
+        let hasActiveFilter = false
+
+        if (isSaleFilterActive) {
+          hasActiveFilter = true
+          if (isPriceInRange(property.sale_max_price, salePriceRange[0], salePriceRange[1])) {
+            matches = true
+          }
+        }
+
+        if (isJeonseFilterActive) {
+          hasActiveFilter = true
+          if (isPriceInRange(property.jeonse_max_price, jeonsePriceRange[0], jeonsePriceRange[1])) {
+            matches = true
+          }
+        }
+
+        if (isMonthlyFilterActive) {
+          hasActiveFilter = true
+          if (isPriceInRange(property.rent_max_price, monthlyPriceRange[0], monthlyPriceRange[1])) {
+            matches = true
+          }
+        }
+
+        return hasActiveFilter ? matches : true
+      })
+    }
+
+    // Area filter
+    const isAreaFilterActive = areaRange[0] > 0 || areaRange[1] < 70
+    if (isAreaFilterActive) {
+      filtered = filtered.filter((property) => {
+        // 동/구 집계 데이터는 필터링 제외
+        if (property.type === "dong" || property.type === "gu") return true
+
+        const areaStr = property.area_summary
+        if (!areaStr) return true
+
+        const pyeongMatch = areaStr.match(/(\d+(?:\.\d+)?)평/)
+        if (pyeongMatch) {
+          const pyeong = parseFloat(pyeongMatch[1])
+          return pyeong >= areaRange[0] && pyeong <= areaRange[1]
+        }
+
+        const sqmMatch = areaStr.match(/(\d+(?:\.\d+)?)㎡/)
+        if (sqmMatch) {
+          const sqm = parseFloat(sqmMatch[1])
+          const pyeong = sqm / 3.3058
+          return pyeong >= areaRange[0] && pyeong <= areaRange[1]
+        }
+
+        return true
+      })
+    }
+
+    return filtered
+  }, [properties, transactionFilter, salePriceRange, jeonsePriceRange, monthlyPriceRange, areaRange])
+
   // Load all properties for sidebar search (초기 로딩)
   useEffect(() => {
     loadAllPropertiesFromAPI()
@@ -400,28 +486,58 @@ export function useProperties(props: UsePropertiesProps): UsePropertiesReturn {
       })
     }
 
-    // Price range filter - only apply if ranges are not at default max values
-    const isPriceFilterActive =
-      salePriceRange[1] < 50 || salePriceRange[0] > 0 ||
-      jeonsePriceRange[1] < 20 || jeonsePriceRange[0] > 0 ||
-      monthlyPriceRange[1] < 10 || monthlyPriceRange[0] > 0
+    // Price range filter - optimized to respect transaction filter
+    const isSaleFilterActive = salePriceRange[1] < 50 || salePriceRange[0] > 0
+    const isJeonseFilterActive = jeonsePriceRange[1] < 20 || jeonsePriceRange[0] > 0
+    const isMonthlyFilterActive = monthlyPriceRange[1] < 10 || monthlyPriceRange[0] > 0
 
-    if (isPriceFilterActive) {
+    if (isSaleFilterActive || isJeonseFilterActive || isMonthlyFilterActive) {
       filtered = filtered.filter((property) => {
-        let matchesFilter = false
-
-        // Check each price type
-        if (isPriceInRange(property.sale_max_price, salePriceRange[0], salePriceRange[1])) {
-          matchesFilter = true
+        // If specific transaction filter is selected, ONLY check that price range
+        if (transactionFilter === "매매") {
+          return isPriceInRange(property.sale_max_price, salePriceRange[0], salePriceRange[1])
         }
-        if (isPriceInRange(property.jeonse_max_price, jeonsePriceRange[0], jeonsePriceRange[1])) {
-          matchesFilter = true
+        if (transactionFilter === "전세") {
+          return isPriceInRange(property.jeonse_max_price, jeonsePriceRange[0], jeonsePriceRange[1])
         }
-        if (isPriceInRange(property.rent_max_price, monthlyPriceRange[0], monthlyPriceRange[1])) {
-          matchesFilter = true
+        if (transactionFilter === "월세") {
+          return isPriceInRange(property.rent_max_price, monthlyPriceRange[0], monthlyPriceRange[1])
         }
 
-        return matchesFilter
+        // If "전체" (All), check if ANY of the ACTIVE ranges match
+        // If a range is NOT active, we don't filter by it (effectively "match all" for that type? No, that would be too permissive)
+        // We want: (Sale Range Active AND Sale Match) OR (Jeonse Range Active AND Jeonse Match) ...
+        // But if a range is NOT active, it shouldn't restrict.
+        // However, if I set Sale Range, I want to see items that match Sale Range.
+        // If I set Sale Range AND Jeonse Range, I want items that match Sale Range OR Jeonse Range.
+
+        let matches = false
+        let hasActiveFilter = false
+
+        if (isSaleFilterActive) {
+          hasActiveFilter = true
+          if (isPriceInRange(property.sale_max_price, salePriceRange[0], salePriceRange[1])) {
+            matches = true
+          }
+        }
+
+        if (isJeonseFilterActive) {
+          hasActiveFilter = true
+          if (isPriceInRange(property.jeonse_max_price, jeonsePriceRange[0], jeonsePriceRange[1])) {
+            matches = true
+          }
+        }
+
+        if (isMonthlyFilterActive) {
+          hasActiveFilter = true
+          if (isPriceInRange(property.rent_max_price, monthlyPriceRange[0], monthlyPriceRange[1])) {
+            matches = true
+          }
+        }
+
+        // If no filters are active (shouldn't happen due to outer if), return true
+        // If filters are active, return true if at least one matched
+        return hasActiveFilter ? matches : true
       })
     }
 
@@ -566,7 +682,7 @@ export function useProperties(props: UsePropertiesProps): UsePropertiesReturn {
   }, [map, transformAPIResponse])
 
   return {
-    properties,
+    properties: filteredMapProperties,
     allProperties,
     filteredProperties,
     displayedProperties,

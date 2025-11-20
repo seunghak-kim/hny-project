@@ -1,18 +1,20 @@
 "use client"
 
+import { AIRiskAnalysis } from "./map-interface/ai-risk-analysis"
 import { useState, useRef, useCallback, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Search } from "lucide-react"
+import { Search, Train, School, ShoppingBasket, X, MapPin, Building2, Home, ChevronLeft } from "lucide-react"
 import { Slider } from "@/components/ui/slider"
 import { getAllDistrictNames } from "@/lib/district-coordinates"
 import { FloatingChatButton } from "@/components/floating-chat-button"
 import { useMap } from "./map-interface/use-map"
 import { useProperties } from "./map-interface/use-properties"
 import { formatPriceInEok } from "./map-interface/price-utils"
+import { ScrollArea } from "@/components/ui/scroll-area"
 
 export function MapInterface() {
   const mapRef = useRef<HTMLDivElement>(null)
@@ -77,8 +79,15 @@ export function MapInterface() {
   // Update properties hook with map instance and handle initial load / filter changes
   useEffect(() => {
     if (map) {
-      // Initial load
-      loadPropertiesFromAPI(map)
+      // Initial load with a slight delay to ensure map is ready and layout is correct
+      const initialLoadTimer = setTimeout(() => {
+        try {
+          map.relayout()
+          loadPropertiesFromAPI(map)
+        } catch (error) {
+          console.error('Error during initial map load:', error)
+        }
+      }, 500)
 
       // Setup zoom and drag listeners
       let zoomTimeoutId: NodeJS.Timeout | null = null
@@ -103,6 +112,7 @@ export function MapInterface() {
         window.kakao.maps.event.addListener(map, "dragend", dragEndListener)
 
         return () => {
+          clearTimeout(initialLoadTimer)
           if (zoomTimeoutId) clearTimeout(zoomTimeoutId)
           if (dragTimeoutId) clearTimeout(dragTimeoutId)
           window.kakao.maps.event.removeListener(map, "zoom_changed", zoomChangeListener)
@@ -149,25 +159,33 @@ export function MapInterface() {
     setIsFullscreen(!isFullscreen)
   }
 
+  // Helper to get property type color
+  const getPropertyTypeColor = (type: string) => {
+    if (type === "아파트") return "bg-blue-100 text-blue-700 border-blue-200"
+    if (type === "오피스텔") return "bg-purple-100 text-purple-700 border-purple-200"
+    if (type === "빌라") return "bg-orange-100 text-orange-700 border-orange-200"
+    return "bg-gray-100 text-gray-700 border-gray-200"
+  }
+
   return (
     <>
       <div className={`${isFullscreen ? "fixed inset-0 z-50" : ""} flex h-full bg-background relative`}>
         {/* Left Panel - Search and Filters */}
         <div
-          className={`border-r border-border flex flex-col transition-all duration-300 ease-in-out ${sidebarOpen ? 'w-80' : 'w-0 overflow-hidden'
-            }`}
+          className={`border-r border-border flex flex-col transition-all duration-300 ease-in-out bg-white z-20 shadow-xl ${sidebarOpen ? 'w-[400px]' : 'w-0 overflow-hidden'
+            } `}
         >
           {/* Header */}
-          <div className="p-4 border-b border-border bg-primary">
+          <div className="p-5 border-b border-border bg-sidebar-primary text-sidebar-primary-foreground shadow-sm">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-lg font-bold text-primary-foreground">
-                  {selectedProperty ? selectedProperty.name : "서울 강남3구 부동산 정보"}
+                <h2 className="text-xl font-bold tracking-tight">
+                  {selectedProperty ? "매물 상세 정보" : "서울 강남3구 부동산"}
                 </h2>
-                <p className="text-sm text-primary-foreground/80">
+                <p className="text-xs text-sidebar-primary-foreground/80 mt-1 opacity-90">
                   {selectedProperty
-                    ? `${selectedProperty.gu} ${selectedProperty.dong}`
-                    : "서비스 가능 지역: 강남구, 서초구, 송파구"
+                    ? `${selectedProperty.gu} ${selectedProperty.dong} `
+                    : "강남구 · 서초구 · 송파구 실거래가"
                   }
                 </p>
               </div>
@@ -176,9 +194,9 @@ export function MapInterface() {
                   variant="ghost"
                   size="icon"
                   onClick={() => setSelectedProperty(null)}
-                  className="text-primary-foreground hover:bg-primary-foreground/20"
+                  className="text-sidebar-primary-foreground hover:bg-white/20 rounded-full"
                 >
-                  ✕
+                  <X className="h-5 w-5" />
                 </Button>
               )}
             </div>
@@ -186,22 +204,22 @@ export function MapInterface() {
 
           {/* Search - Hide when showing property detail */}
           {!selectedProperty && (
-            <div className="p-4 border-b border-border">
+            <div className="p-4 border-b border-border bg-slate-50/50">
               <div className="flex gap-2 mb-3">
-                <Input
-                  placeholder="단지명, 구, 동으로 검색..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="flex-1"
-                />
-                <Button onClick={handleSearch} size="icon">
-                  <Search className="h-4 w-4" />
-                </Button>
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="지역, 지하철역, 단지명 검색"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-9 bg-white border-slate-200 focus-visible:ring-slate-400"
+                  />
+                </div>
               </div>
 
               <div className="flex gap-2 mb-3">
                 <Select value={filterType} onValueChange={setFilterType}>
-                  <SelectTrigger className="flex-1">
+                  <SelectTrigger className="flex-1 bg-white border-slate-200">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -215,7 +233,7 @@ export function MapInterface() {
                 </Select>
 
                 <Select value={sortBy} onValueChange={setSortBy}>
-                  <SelectTrigger className="w-32">
+                  <SelectTrigger className="w-32 bg-white border-slate-200">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -225,107 +243,117 @@ export function MapInterface() {
                 </Select>
               </div>
 
-              <div className="text-sm text-muted-foreground">
-                {loading ? (
-                  <span>로딩 중...</span>
-                ) : (
-                  <span>총 {filteredProperties.length}개 매물</span>
-                )}
+              <div className="flex items-center justify-between text-xs text-muted-foreground px-1">
+                <span>총 <span className="font-bold text-slate-900">{filteredProperties.length.toLocaleString()}</span>개 매물</span>
+                {loading && <span className="animate-pulse">데이터 불러오는 중...</span>}
               </div>
             </div>
           )}
 
           {/* Property List or Property Detail */}
           {selectedProperty ? (
-            <div className="flex-1 overflow-y-auto p-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-xl">{selectedProperty.name}</CardTitle>
-                  <div className="text-sm text-muted-foreground">
-                    {selectedProperty.gu} {selectedProperty.dong}
-                  </div>
-                  {selectedProperty.property_type && (
-                    <Badge className="w-fit mt-2">{selectedProperty.property_type}</Badge>
-                  )}
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {/* 가격 정보 */}
-                  <div>
-                    <h3 className="font-semibold mb-2 text-sm">가격 정보</h3>
-                    <div className="grid grid-cols-2 gap-2 text-sm">
-                      {selectedProperty.sale_max_price_eok && (
-                        <div className="bg-red-50 p-2 rounded">
-                          <div className="text-xs text-red-600">매매</div>
-                          <div className="font-semibold">{selectedProperty.sale_max_price_eok}</div>
+            <ScrollArea className="flex-1 bg-slate-50">
+              <div className="p-4 pb-20">
+                <Card className="border-0 shadow-none bg-transparent">
+                  <CardHeader className="p-0 mb-6">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <Badge className={`mb-2 hover:bg-opacity-100 ${getPropertyTypeColor(selectedProperty.property_type || '아파트')} border-0`}>
+                          {selectedProperty.property_type || '아파트'}
+                        </Badge>
+                        <CardTitle className="text-2xl font-bold text-slate-900 leading-tight">
+                          {selectedProperty.name}
+                        </CardTitle>
+                        <div className="flex items-center text-slate-500 mt-2 text-sm">
+                          <MapPin className="h-3.5 w-3.5 mr-1" />
+                          {selectedProperty.gu} {selectedProperty.dong}
                         </div>
-                      )}
-                      {selectedProperty.jeonse_max_price_eok && (
-                        <div className="bg-blue-50 p-2 rounded">
-                          <div className="text-xs text-blue-600">전세</div>
-                          <div className="font-semibold">{selectedProperty.jeonse_max_price_eok}</div>
-                        </div>
-                      )}
-                      {selectedProperty.rent_max_price_eok && (
-                        <div className="bg-green-50 p-2 rounded">
-                          <div className="text-xs text-green-600">월세</div>
-                          <div className="font-semibold">{selectedProperty.rent_max_price_eok}</div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* 단지 정보 */}
-                  {selectedProperty.total_households && (
-                    <div>
-                      <h3 className="font-semibold mb-2 text-sm">단지 정보</h3>
-                      <div className="space-y-1 text-sm">
-                        {selectedProperty.total_households && (
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">세대수</span>
-                            <span className="font-medium">{selectedProperty.total_households}세대</span>
-                          </div>
-                        )}
-                        {selectedProperty.total_buildings && (
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">동수</span>
-                            <span className="font-medium">{selectedProperty.total_buildings}동</span>
-                          </div>
-                        )}
-                        {selectedProperty.completion_date && (
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">준공</span>
-                            <span className="font-medium">{selectedProperty.completion_date}</span>
-                          </div>
-                        )}
                       </div>
                     </div>
-                  )}
+                  </CardHeader>
 
-                  {/* 주변 시설 정보 */}
-                  {(selectedProperty.nearby_subway_stations || selectedProperty.nearby_schools || selectedProperty.nearby_marts) && (
-                    <div>
-                      <h3 className="font-semibold mb-2 text-sm">주변 시설</h3>
-                      <div className="space-y-3">
-                        {/* Subway Stations */}
+                  <CardContent className="p-0 space-y-6">
+                    {/* 가격 정보 Cards */}
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="bg-white p-3 rounded-xl border border-slate-100 shadow-sm flex flex-col items-center justify-center text-center">
+                        <span className="text-xs text-slate-500 font-medium mb-1">매매</span>
+                        <span className={`font-bold ${selectedProperty.sale_max_price_eok ? 'text-slate-900' : 'text-slate-300'} `}>
+                          {selectedProperty.sale_max_price_eok || '-'}
+                        </span>
+                      </div>
+                      <div className="bg-white p-3 rounded-xl border border-slate-100 shadow-sm flex flex-col items-center justify-center text-center">
+                        <span className="text-xs text-slate-500 font-medium mb-1">전세</span>
+                        <span className={`font-bold ${selectedProperty.jeonse_max_price_eok ? 'text-slate-900' : 'text-slate-300'} `}>
+                          {selectedProperty.jeonse_max_price_eok || '-'}
+                        </span>
+                      </div>
+                      <div className="bg-white p-3 rounded-xl border border-slate-100 shadow-sm flex flex-col items-center justify-center text-center">
+                        <span className="text-xs text-slate-500 font-medium mb-1">월세</span>
+                        <span className={`font-bold ${selectedProperty.rent_max_price_eok ? 'text-slate-900' : 'text-slate-300'} `}>
+                          {selectedProperty.rent_max_price_eok || '-'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* 단지 정보 */}
+                    {(selectedProperty.total_households || selectedProperty.completion_date) && (
+                      <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-4">
+                        <h3 className="font-semibold text-slate-900 mb-3 flex items-center">
+                          <Building2 className="h-4 w-4 mr-2 text-slate-500" />
+                          단지 정보
+                        </h3>
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                          {selectedProperty.total_households && (
+                            <div className="flex flex-col">
+                              <span className="text-xs text-slate-500">세대수</span>
+                              <span className="font-medium text-slate-900">{selectedProperty.total_households}세대</span>
+                            </div>
+                          )}
+                          {selectedProperty.total_buildings && (
+                            <div className="flex flex-col">
+                              <span className="text-xs text-slate-500">동수</span>
+                              <span className="font-medium text-slate-900">{selectedProperty.total_buildings}동</span>
+                            </div>
+                          )}
+                          {selectedProperty.completion_date && (
+                            <div className="flex flex-col">
+                              <span className="text-xs text-slate-500">준공일</span>
+                              <span className="font-medium text-slate-900">{selectedProperty.completion_date}</span>
+                            </div>
+                          )}
+                          {selectedProperty.area_summary && (
+                            <div className="flex flex-col">
+                              <span className="text-xs text-slate-500">면적</span>
+                              <span className="font-medium text-slate-900 truncate" title={selectedProperty.area_summary}>
+                                {selectedProperty.area_summary}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 주변 시설 정보 */}
+                    {(selectedProperty.nearby_subway_stations || selectedProperty.nearby_schools || selectedProperty.nearby_marts) && (
+                      <div className="space-y-4">
+                        <h3 className="font-semibold text-slate-900 flex items-center px-1">
+                          <MapPin className="h-4 w-4 mr-2 text-slate-500" />
+                          주변 편의시설
+                        </h3>
+
                         {/* Subway Stations */}
                         {selectedProperty.nearby_subway_stations && (() => {
                           try {
                             const stations = JSON.parse(selectedProperty.nearby_subway_stations)
-
-                            // Helper to extract line name from category or name
+                            // Helper functions (same as before but cleaner)
                             const getLineName = (station: any) => {
                               if (station.category) {
-                                // category format: "교통,수송 > 지하철 > 2호선"
                                 const parts = station.category.split('>')
                                 const lastPart = parts[parts.length - 1].trim()
-                                if (lastPart.endsWith('호선') || lastPart.endsWith('선')) {
-                                  return lastPart
-                                }
+                                if (lastPart.endsWith('호선') || lastPart.endsWith('선')) return lastPart
                               }
                               return ''
                             }
-
-                            // Helper to get subway icon path
                             const getSubwayIcon = (line: string) => {
                               const lineMap: Record<string, string> = {
                                 "수도권1호선": "/images/subway_img/line_1.svg",
@@ -342,51 +370,45 @@ export function MapInterface() {
                               }
                               return lineMap[line] || null
                             }
-
-                            // Helper to calculate walking time (80m/min)
-                            const getWalkingTime = (distance: number) => {
-                              const minutes = Math.ceil(distance / 80)
-                              return `${distance}m / 도보 ${minutes}분`
+                            const getWalkingTime = (distance: number) => `${distance} m / 도보 ${Math.ceil(distance / 80)} 분`
+                            const getCleanStationName = (name: string, line: string) => {
+                              let cleaned = name
+                              if (line) cleaned = cleaned.replace(line, '')
+                              cleaned = cleaned.replace(/\s*\d+호선$/, '').replace(/\s*[가-힣]+선$/, '')
+                              return cleaned.trim()
                             }
 
                             if (stations && stations.length > 0) {
                               return (
-                                <div>
-                                  <div className="text-xs font-medium text-blue-600 mb-1">🚇 지하철역</div>
-                                  {stations.slice(0, 3).map((station: any, idx: number) => {
-                                    const lineName = getLineName(station)
-                                    const iconPath = getSubwayIcon(lineName)
-
-                                    return (
-                                      <div key={idx} className="text-sm flex items-center justify-between py-1">
-                                        <div className="flex items-center gap-2">
-                                          <span>{station.name}</span>
-                                          {iconPath ? (
-                                            <img
-                                              src={iconPath}
-                                              alt={lineName}
-                                              className="h-4 w-auto object-contain"
-                                              onError={(e) => {
-                                                // Fallback to text if image fails
-                                                e.currentTarget.style.display = 'none'
-                                                e.currentTarget.nextElementSibling?.classList.remove('hidden')
-                                              }}
-                                            />
-                                          ) : null}
-                                          <span className={`text-xs text-muted-foreground ${iconPath ? 'hidden' : ''}`}>
-                                            {lineName ? `(${lineName})` : ''}
-                                          </span>
+                                <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-4">
+                                  <div className="flex items-center gap-2 mb-3 text-sm font-medium text-slate-700">
+                                    <Train className="h-4 w-4 text-blue-500" />
+                                    지하철역
+                                  </div>
+                                  <div className="space-y-3">
+                                    {stations.slice(0, 3).map((station: any, idx: number) => {
+                                      const lineName = getLineName(station)
+                                      const iconPath = getSubwayIcon(lineName)
+                                      const cleanName = getCleanStationName(station.name, lineName)
+                                      return (
+                                        <div key={idx} className="flex items-center justify-between text-sm">
+                                          <div className="flex items-center gap-2">
+                                            {iconPath ? (
+                                              <img src={iconPath} alt={lineName} className="h-4 w-auto object-contain"
+                                                onError={(e) => { e.currentTarget.style.display = 'none'; const fallback = e.currentTarget.parentElement?.lastElementChild; if (fallback) fallback.classList.remove('hidden'); }} />
+                                            ) : null}
+                                            <span className="font-medium text-slate-700">{cleanName}</span>
+                                            <span className={`text-xs text-slate-400 ${iconPath ? 'hidden' : ''} `}>{lineName}</span>
+                                          </div>
+                                          <span className="text-xs text-blue-600 font-medium bg-blue-50 px-2 py-1 rounded-full">{getWalkingTime(station.distance)}</span>
                                         </div>
-                                        <span className="text-blue-600 font-semibold">{getWalkingTime(station.distance)}</span>
-                                      </div>
-                                    )
-                                  })}
+                                      )
+                                    })}
+                                  </div>
                                 </div>
                               )
                             }
-                          } catch (e) {
-                            console.error('Failed to parse subway stations:', e)
-                          }
+                          } catch (e) { return null }
                           return null
                         })()}
 
@@ -394,29 +416,26 @@ export function MapInterface() {
                         {selectedProperty.nearby_schools && (() => {
                           try {
                             const schools = JSON.parse(selectedProperty.nearby_schools)
-
-                            // Helper to calculate walking time (80m/min)
-                            const getWalkingTime = (distance: number) => {
-                              const minutes = Math.ceil(distance / 80)
-                              return `${distance}m / 도보 ${minutes}분`
-                            }
-
+                            const getWalkingTime = (distance: number) => `${distance} m / 도보 ${Math.ceil(distance / 80)} 분`
                             if (schools && schools.length > 0) {
                               return (
-                                <div>
-                                  <div className="text-xs font-medium text-green-600 mb-1">🏫 학교</div>
-                                  {schools.slice(0, 3).map((school: any, idx: number) => (
-                                    <div key={idx} className="text-sm flex justify-between py-1">
-                                      <span>{school.name}</span>
-                                      <span className="text-green-600 font-semibold">{getWalkingTime(school.distance)}</span>
-                                    </div>
-                                  ))}
+                                <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-4">
+                                  <div className="flex items-center gap-2 mb-3 text-sm font-medium text-slate-700">
+                                    <School className="h-4 w-4 text-green-500" />
+                                    학교
+                                  </div>
+                                  <div className="space-y-3">
+                                    {schools.slice(0, 3).map((school: any, idx: number) => (
+                                      <div key={idx} className="flex items-center justify-between text-sm">
+                                        <span className="font-medium text-slate-700">{school.name}</span>
+                                        <span className="text-xs text-green-600 font-medium bg-green-50 px-2 py-1 rounded-full">{getWalkingTime(school.distance)}</span>
+                                      </div>
+                                    ))}
+                                  </div>
                                 </div>
                               )
                             }
-                          } catch (e) {
-                            console.error('Failed to parse schools:', e)
-                          }
+                          } catch (e) { return null }
                           return null
                         })()}
 
@@ -424,80 +443,86 @@ export function MapInterface() {
                         {selectedProperty.nearby_marts && (() => {
                           try {
                             const marts = JSON.parse(selectedProperty.nearby_marts)
-
-                            // Helper to calculate driving time (400m/min -> ~24km/h)
-                            const getDrivingTime = (distance: number) => {
-                              const minutes = Math.ceil(distance / 400)
-                              return `${distance}m / 차량 ${minutes}분`
-                            }
-
+                            const getDrivingTime = (distance: number) => `${distance} m / 차량 ${Math.ceil(distance / 400)} 분`
                             if (marts && marts.length > 0) {
                               return (
-                                <div>
-                                  <div className="text-xs font-medium text-orange-600 mb-1">🏪 편의시설</div>
-                                  {marts.slice(0, 3).map((mart: any, idx: number) => (
-                                    <div key={idx} className="text-sm flex justify-between py-1">
-                                      <span>{mart.name}</span>
-                                      <span className="text-orange-600 font-semibold">{getDrivingTime(mart.distance)}</span>
-                                    </div>
-                                  ))}
+                                <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-4">
+                                  <div className="flex items-center gap-2 mb-3 text-sm font-medium text-slate-700">
+                                    <ShoppingBasket className="h-4 w-4 text-orange-500" />
+                                    편의시설
+                                  </div>
+                                  <div className="space-y-3">
+                                    {marts.slice(0, 3).map((mart: any, idx: number) => (
+                                      <div key={idx} className="flex items-center justify-between text-sm">
+                                        <span className="font-medium text-slate-700">{mart.name}</span>
+                                        <span className="text-xs text-orange-600 font-medium bg-orange-50 px-2 py-1 rounded-full">{getDrivingTime(mart.distance)}</span>
+                                      </div>
+                                    ))}
+                                  </div>
                                 </div>
                               )
                             }
-                          } catch (e) {
-                            console.error('Failed to parse marts:', e)
-                          }
+                          } catch (e) { return null }
                           return null
                         })()}
                       </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
+                    )}
+                  </CardContent>
+                </Card>
+                <AIRiskAnalysis />
+              </div>
+            </ScrollArea>
           ) : (
-            <div className="flex-1 overflow-y-auto" onScroll={handleScroll}>
-              <div className="p-4 space-y-2">
+            <div className="flex-1 overflow-y-auto bg-slate-50" onScroll={handleScroll}>
+              <div className="p-3 space-y-2">
                 {displayedProperties.map((property) => (
                   <Card
-                    key={`${property.name}-${property.latitude}-${property.longitude}`}
-                    className="cursor-pointer hover:shadow-md transition-shadow"
-                    onClick={() => handlePropertyClick(property)}
+                    key={`${property.name} -${property.latitude} -${property.longitude} `}
+                    className="cursor-pointer hover:shadow-lg transition-all duration-200 border border-slate-200 hover:border-slate-300 group bg-white"
+                    onClick={() => {
+                      handlePropertyClick(property)
+                      if (map) {
+                        const moveLatLon = new window.kakao.maps.LatLng(property.latitude, property.longitude)
+                        map.setLevel(1)
+                        map.panTo(moveLatLon)
+                      }
+                    }}
                   >
                     <CardContent className="p-3">
                       <div className="flex justify-between items-start mb-2">
                         <div className="flex-1">
-                          <h3 className="font-semibold text-sm mb-1">{property.name}</h3>
-                          <p className="text-xs text-muted-foreground">
+                          <div className="flex items-center gap-2 mb-1">
+                            <Badge variant="outline" className={`text-[10px] px-1.5 py-0 h-5 ${getPropertyTypeColor(property.property_type || '아파트')} border-0 bg-opacity-50`}>
+                              {property.property_type || '아파트'}
+                            </Badge>
+                          </div>
+                          <h3 className="font-bold text-base text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-1">
+                            {property.name}
+                          </h3>
+                          <p className="text-xs text-slate-500 mt-0.5 flex items-center">
+                            <MapPin className="h-3 w-3 mr-0.5 inline" />
                             {property.gu} {property.dong}
                           </p>
                         </div>
-                        {property.property_type && (
-                          <Badge variant="outline" className="text-xs">
-                            {property.property_type}
-                          </Badge>
-                        )}
                       </div>
-                      <div className="grid grid-cols-3 gap-1 text-xs">
+
+                      <div className="flex items-center gap-2 text-xs mt-2">
                         {property.sale_max_price_eok && (
-                          <div className="bg-red-50 px-2 py-1 rounded text-center">
-                            <div className="text-red-600 font-semibold">
-                              {property.sale_max_price_eok}
-                            </div>
+                          <div className="flex items-center gap-1.5 bg-slate-50 px-2 py-1 rounded-md border border-slate-100">
+                            <span className="text-slate-500 font-medium">매매</span>
+                            <span className="text-slate-900 font-bold">{property.sale_max_price_eok}</span>
                           </div>
                         )}
                         {property.jeonse_max_price_eok && (
-                          <div className="bg-blue-50 px-2 py-1 rounded text-center">
-                            <div className="text-blue-600 font-semibold">
-                              {property.jeonse_max_price_eok}
-                            </div>
+                          <div className="flex items-center gap-1.5 bg-slate-50 px-2 py-1 rounded-md border border-slate-100">
+                            <span className="text-slate-500 font-medium">전세</span>
+                            <span className="text-slate-900 font-bold">{property.jeonse_max_price_eok}</span>
                           </div>
                         )}
                         {property.rent_max_price_eok && (
-                          <div className="bg-green-50 px-2 py-1 rounded text-center">
-                            <div className="text-green-600 font-semibold">
-                              {property.rent_max_price_eok}
-                            </div>
+                          <div className="flex items-center gap-1.5 bg-slate-50 px-2 py-1 rounded-md border border-slate-100">
+                            <span className="text-slate-500 font-medium">월세</span>
+                            <span className="text-slate-900 font-bold">{property.rent_max_price_eok}</span>
                           </div>
                         )}
                       </div>
@@ -505,10 +530,11 @@ export function MapInterface() {
                   </Card>
                 ))}
                 {isLoadingMore && (
-                  <div className="text-center py-4 text-sm text-muted-foreground">
-                    로딩 중...
+                  <div className="text-center py-6">
+                    <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-solid border-current border-r-transparent align-[-0.125em] text-blue-600 motion-reduce:animate-[spin_1.5s_linear_infinite]" />
                   </div>
                 )}
+
               </div>
             </div>
           )}
@@ -517,8 +543,8 @@ export function MapInterface() {
         {/* Sidebar Toggle Button */}
         <button
           onClick={() => setSidebarOpen(!sidebarOpen)}
-          className="absolute left-0 top-1/2 -translate-y-1/2 z-20 bg-white border border-border rounded-r-lg p-2 shadow-md hover:bg-gray-50 transition-all"
-          style={{ left: sidebarOpen ? '320px' : '0px' }}
+          className="absolute left-0 top-1/2 -translate-y-1/2 z-20 bg-white border border-border rounded-r-lg p-2 shadow-md hover:bg-gray-50 transition-all duration-300 ease-in-out"
+          style={{ left: sidebarOpen ? '400px' : '0px' }}
         >
           <svg
             className="w-5 h-5 text-gray-600"
@@ -589,7 +615,7 @@ export function MapInterface() {
                         <div className="flex items-center justify-between mb-4">
                           <span className="text-sm font-medium">매매가</span>
                           <span className="text-sm text-muted-foreground">
-                            {salePriceRange[0]}억 ~ {salePriceRange[1] >= 50 ? '50억 이상' : `${salePriceRange[1]}억`}
+                            {salePriceRange[0]}억 ~ {salePriceRange[1] >= 50 ? '50억 이상' : `${salePriceRange[1]} 억`}
                           </span>
                         </div>
                         <Slider
@@ -606,7 +632,7 @@ export function MapInterface() {
                         <div className="flex items-center justify-between mb-4">
                           <span className="text-sm font-medium">전세가</span>
                           <span className="text-sm text-muted-foreground">
-                            {jeonsePriceRange[0]}억 ~ {jeonsePriceRange[1] >= 20 ? '20억 이상' : `${jeonsePriceRange[1]}억`}
+                            {jeonsePriceRange[0]}억 ~ {jeonsePriceRange[1] >= 20 ? '20억 이상' : `${jeonsePriceRange[1]} 억`}
                           </span>
                         </div>
                         <Slider
@@ -623,7 +649,7 @@ export function MapInterface() {
                         <div className="flex items-center justify-between mb-4">
                           <span className="text-sm font-medium">월세 (보증금)</span>
                           <span className="text-sm text-muted-foreground">
-                            {monthlyPriceRange[0]}억 ~ {monthlyPriceRange[1] >= 10 ? '10억 이상' : `${monthlyPriceRange[1]}억`}
+                            {monthlyPriceRange[0]}억 ~ {monthlyPriceRange[1] >= 10 ? '10억 이상' : `${monthlyPriceRange[1]} 억`}
                           </span>
                         </div>
                         <Slider
@@ -672,7 +698,7 @@ export function MapInterface() {
                         <div className="flex items-center justify-between mb-4">
                           <span className="text-sm font-medium">면적 (평)</span>
                           <span className="text-sm text-muted-foreground">
-                            {areaRange[0]}평 ~ {areaRange[1] >= 70 ? '70평 이상' : `${areaRange[1]}평`}
+                            {areaRange[0]}평 ~ {areaRange[1] >= 70 ? '70평 이상' : `${areaRange[1]} 평`}
                           </span>
                         </div>
                         <Slider

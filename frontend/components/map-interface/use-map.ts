@@ -206,10 +206,11 @@ export function useMap(props: UseMapProps): UseMapReturn {
           if (mapRef.current) {
             const mapOption = {
               center: new window.kakao.maps.LatLng(37.5095, 127.0628),
-              level: 7,
+              level: 5,
             }
 
             const kakaoMap = new window.kakao.maps.Map(mapRef.current, mapOption)
+            kakaoMap.setMaxLevel(8) // Prevent zooming out too far
             setMap(kakaoMap)
             setLoading(false)
 
@@ -219,9 +220,8 @@ export function useMap(props: UseMapProps): UseMapReturn {
               setCurrentZoom(level)
             })
 
-            setTimeout(() => {
-              setupMapBoundaries(kakaoMap)
-            }, 100)
+            // Setup boundaries immediately
+            setupMapBoundaries(kakaoMap)
           }
         })
       } catch (error) {
