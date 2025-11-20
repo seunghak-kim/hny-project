@@ -1042,7 +1042,7 @@ def collect_office_sale(api, lawd_cd, db: Session):
     skipped_count = 0  # 스킵된 건수 추적
 
     for data in tqdm(data_list, desc=f"[{REGIONS.get(lawd_cd)}] 오피스텔 매매", unit="건"):
-        name = parse_str(data.get('offiNum')) # 오피스텔 이름
+        name = parse_str(data.get('offiNm')) # 오피스텔 이름
         if not name : continue
         address = f"{parse_str(data.get('umdNm'))} {parse_str(data.get('jibun'))}"
         trans_date = parse_date(data.get('dealYear'), data.get('dealMonth'), data.get('dealDay'))
@@ -1147,7 +1147,7 @@ def collect_office_rent(api, lawd_cd, db: Session):
     skipped_count = 0  # 스킵된 건수 추적
 
     for data in tqdm(data_list, desc=f"[{REGIONS.get(lawd_cd)}] 오피스텔 전월세", unit="건"):
-        name = parse_str(data.get('offiNum')) # 오피스텔 이름
+        name = parse_str(data.get('offiNm')) # 오피스텔 이름
         if not name : continue
         address = f"{parse_str(data.get('umdNm'))} {parse_str(data.get('jibun'))}"
         trans_date = parse_date(data.get('dealYear'), data.get('dealMonth'), data.get('dealDay'))
