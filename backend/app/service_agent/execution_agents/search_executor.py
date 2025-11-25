@@ -73,6 +73,7 @@ class SearchExecutor:
         self.market_data_tool = None
         self.real_estate_search_tool = None  # ✅ Phase 2 추가
         self.loan_data_tool = None
+        self.loan_comparison_tool = None  # ✅ 은행 간 대출 비교
 
         # 공공데이터 API 도구 (NEW)
         self.transaction_price_tool = None
@@ -109,6 +110,13 @@ class SearchExecutor:
             logger.info("LoanDataTool initialized successfully")
         except Exception as e:
             logger.warning(f"LoanDataTool initialization failed: {e}")
+
+        try:
+            from app.service_agent.tools.loan_comparison_tool import LoanComparisonTool
+            self.loan_comparison_tool = LoanComparisonTool()
+            logger.info("LoanComparisonTool initialized successfully (PostgreSQL)")
+        except Exception as e:
+            logger.warning(f"LoanComparisonTool initialization failed: {e}")
 
         try:
             from app.service_agent.tools.real_estate_search_tool import RealEstateSearchTool
@@ -391,6 +399,19 @@ class SearchExecutor:
                     "주택담보대출",
                     "금리 정보",
                     "대출 한도"
+                ],
+                "available": True
+            }
+
+        if self.loan_comparison_tool:
+            tools["loan_comparison"] = {
+                "name": "loan_comparison",
+                "description": "여러 은행의 대출 조건 비교 (금리, 한도, 우대조건)",
+                "capabilities": [
+                    "은행별 금리 비교",
+                    "대출 한도 비교",
+                    "우대조건 비교",
+                    "최적 대출 상품 추천"
                 ],
                 "available": True
             }
@@ -865,6 +886,89 @@ class SearchExecutor:
                 logger.error(f"Loan search failed: {e}")
                 state["search_progress"]["loan_search"] = "failed"
                 execution_results["loan_data"] = {
+                    "status": "error",
+                    "error": str(e)
+                }
+
+        # === 3-1. 은행별 대출 비교 ===
+        if "loan_comparison" in selected_tools and self.loan_comparison_tool:
+            try:
+                logger.info("[SearchTeam] Executing loan comparison")
+
+                # 쿼리에서 은행명 추출
+                banks = []
+                bank_keywords = {
+                    "kb": ["kb", "국민", "국민은행"],
+                    "shinhan": ["신한", "신한은행"],
+                    "woori": ["우리", "우리은행"],
+                    "hana": ["하나", "하나은행"],
+                    "kakao": ["카카오", "카카오뱅크"],
+                    "k": ["k뱅크", "케이뱅크"],
+                    "sc": ["sc", "제일", "sc제일"]
+                }
+
+                query_lower = query.lower()
+                for bank_code, keywords in bank_keywords.items():
+                    if any(kw in query_lower for kw in keywords):
+                        banks.append(bank_code)
+
+                # 대출 타입 추출 (우선순위 순서로 확인)
+                loan_type = "주택담보대출"  # 기본값
+                loan_type_patterns = {
+                    "전세자금대출": ["전세", "전월세", "전세금"],
+                    "신용대출": ["신용대출", "마이너스통장", "신용"],
+                    "주택담보대출": ["주택담보", "아파트담보", "담보대출"],
+                    "주택구입자금대출": ["주택구입", "주택매매"],
+                }
+
+                for ltype, patterns in loan_type_patterns.items():
+                    if any(pattern in query for pattern in patterns):
+                        loan_type = ltype
+                        break
+
+                logger.info(f"[SearchTeam] Loan comparison - banks: {banks or 'all'}, type: {loan_type}")
+
+                # 대출 비교 실행
+                result = await self.loan_comparison_tool.execute(
+                    banks=banks if banks else None,
+                    loan_type=loan_type,
+                    user_conditions=None,
+                    include_policy_loans=True
+                )
+
+                if result.get("bank_comparisons"):
+                    comparison_data = result["bank_comparisons"]
+                    policy_data = result.get("policy_loans", [])
+
+                    logger.info(f"[SearchTeam] Loan comparison data - banks: {len(comparison_data)}, policy: {len(policy_data)}")
+                    if comparison_data:
+                        first_bank = comparison_data[0]
+                        logger.info(f"[SearchTeam] First bank sample: {first_bank.get('bank')}, product: {first_bank.get('product_name')[:50] if first_bank.get('product_name') else 'N/A'}")
+
+                    state["loan_comparison_results"] = {
+                        "bank_comparisons": comparison_data,
+                        "policy_loans": policy_data,
+                        "recommendations": result.get("recommendations", []),
+                        "insights": result.get("insights", []),
+                        "comparison_analysis": result.get("comparison_analysis", {})
+                    }
+                    state["search_progress"]["loan_comparison"] = "completed"
+                    logger.info(f"[SearchTeam] Loan comparison completed: {len(comparison_data)} banks compared")
+                    execution_results["loan_comparison"] = {
+                        "status": "success",
+                        "bank_count": len(comparison_data),
+                        "policy_count": len(policy_data)
+                    }
+                else:
+                    state["search_progress"]["loan_comparison"] = "no_results"
+                    execution_results["loan_comparison"] = {
+                        "status": "no_results"
+                    }
+
+            except Exception as e:
+                logger.error(f"Loan comparison failed: {e}", exc_info=True)
+                state["search_progress"]["loan_comparison"] = "failed"
+                execution_results["loan_comparison"] = {
                     "status": "error",
                     "error": str(e)
                 }

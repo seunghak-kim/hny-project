@@ -104,52 +104,55 @@ intents:
   - name: LOAN_COMPARISON
     display_name: "대출조건비교"
     description: |
-      여러 대출 상품의 조건, 금리, 한도 비교 분석.
-      은행별 대출 조건을 비교하거나 최적 대출 상품을 찾는 경우.
-    category: "검색+분석"
+      여러 은행의 대출 상품 조건(금리, 한도, 우대조건 등)을 비교.
+      은행 간 대출 조건을 비교하거나 어느 은행이 유리한지 찾는 경우.
+      특정 은행명이 명시되어 있고 "비교"가 핵심 키워드.
+    category: "검색"
     tools:
-      - loan_simulator_tool
+      - loan_comparison_tool
     agents:
       - search_team
-      - analysis_team
     question_patterns:
       - "비교해줘"
       - "어느 은행이"
       - "어디가 유리"
       - "금리 비교"
+      - "조건 비교"
     examples:
       - "KB국민, 신한, 우리은행 주택담보대출 금리 비교해줘"
-      - "연봉 5천만원인데 전세자금대출 얼마까지 받을 수 있어요?"
-      - "DSR 40% 규제 적용받는데 어느 은행이 한도가 높아요?"
+      - "어느 은행이 주택담보대출 한도가 높아요?"
+      - "카카오뱅크랑 K뱅크 전세대출 조건 어디가 나아요?"
       - "보금자리론이랑 시중은행 대출 중 어떤 게 유리한가요?"
     complexity: medium
-    requires_analysis: true
+    requires_analysis: false
     enabled: true
     priority: 4
 
-  # 5. 건축물대장조회
-  - name: BUILDING_REGISTRY
-    display_name: "건축물대장조회"
+  # 4-1. 대출가능액계산
+  - name: LOAN_SIMULATION
+    display_name: "대출가능액계산"
     description: |
-      건축물대장 API 조회 요청.
-      특정 건물의 건축물대장 정보를 확인하는 경우.
-    category: "검색"
+      사용자의 연봉, 소득, DSR/DTI 조건을 기반으로 대출 가능 금액을 계산.
+      "얼마까지 받을 수 있어요?", "대출 가능액" 같은 계산 요청.
+      은행 비교가 아니라 본인의 대출 한도를 알고 싶은 경우.
+    category: "분석"
     tools:
-      - building_registry_tool
+      - loan_simulator_tool
     agents:
-      - search_team
+      - analysis_team
     question_patterns:
-      - "건축물대장"
-      - "건물정보"
-      - "준공일자"
-      - "용도/면적 조회"
+      - "얼마까지 받을 수"
+      - "대출 가능액"
+      - "최대 얼마"
+      - "DSR 계산"
+      - "DTI 계산"
     examples:
-      - "서울 강남구 테헤란로 123 건물 건축물대장 조회해줘"
-      - "이 빌라 불법 증축 있는지 건축물대장으로 확인 가능해?"
-      - "건물 준공일자가 언제인지 건축물대장에서 확인해주세요"
-      - "주차장 면적이랑 세대수 건축물대장에 어떻게 나와있어요?"
-    complexity: low
-    requires_analysis: false
+      - "연봉 5천만원인데 전세자금대출 얼마까지 받을 수 있어요?"
+      - "DSR 40% 규제 적용받는데 대출 가능 금액 계산해줘"
+      - "소득 4천만원, 기존 대출 1억 있는데 주택담보대출 최대 얼마 받을 수 있어?"
+      - "LTV 70%면 3억 집에서 얼마 빌릴 수 있나요?"
+    complexity: medium
+    requires_analysis: true
     enabled: true
     priority: 5
 
@@ -408,7 +411,7 @@ intents:
     enabled: true
     priority: 14
 
-  # 15. 사용법안내
+  # 15. 사용법안내 (비활성화 - UI Tooltip으로 처리)
   - name: USAGE
     display_name: "사용법안내"
     description: |
@@ -432,7 +435,7 @@ intents:
       - "도움말 보여줘"
     complexity: low
     requires_analysis: false
-    enabled: true
+    enabled: false
     priority: 0
 
   # 16. 무관
