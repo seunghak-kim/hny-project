@@ -2,37 +2,28 @@
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { MessageCircle, Map, FileText, Users, Home, ChevronLeft, ChevronRight, Plus, Brain, Activity } from "lucide-react"
-import { SessionList } from "@/components/session-list"
+import { MessageCircle, Home, ChevronLeft, ChevronRight, Plus, Brain, Activity } from "lucide-react"
 import type { PageType } from "@/app/page"
-import type { SessionListItem } from "@/hooks/use-chat-sessions"
 
 interface SidebarProps {
   currentPage: PageType
   onPageChange: (page: PageType) => void
-  sessions: SessionListItem[]
-  currentSessionId: string | null
+  sessions?: any[]
+  currentSessionId?: string | null
   onCreateSession: () => Promise<string | null>
-  onSwitchSession: (sessionId: string) => void
-  onDeleteSession: (sessionId: string) => Promise<boolean>
+  onSwitchSession?: (sessionId: string) => void
+  onDeleteSession?: (sessionId: string) => Promise<boolean>
 }
 
 export function Sidebar({
   currentPage,
   onPageChange,
-  sessions,
-  currentSessionId,
   onCreateSession,
-  onSwitchSession,
-  onDeleteSession
 }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false)
 
   const menuItems = [
     { id: "chat" as PageType, label: "메인 챗봇", icon: MessageCircle },
-    { id: "map" as PageType, label: "지도 검색", icon: Map },
-    { id: "lease_contract" as PageType, label: "계약서 생성", icon: FileText },
-    { id: "consultation" as PageType, label: "매물 추천", icon: Users },
   ]
 
   return (
@@ -138,25 +129,6 @@ export function Sidebar({
           </div>
         )}
       </nav>
-
-      {/* Session List */}
-      {!isCollapsed && (
-        <div className="border-t border-sidebar-border py-4">
-          <h3 className="px-4 mb-3 text-xs font-semibold text-sidebar-foreground/70 uppercase tracking-wider">
-            최근 대화
-          </h3>
-          <SessionList
-            sessions={sessions}
-            currentSessionId={currentSessionId}
-            onSessionClick={(sessionId) => {
-              onSwitchSession(sessionId)
-              onPageChange("chat")
-            }}
-            onSessionDelete={onDeleteSession}
-            isCollapsed={isCollapsed}
-          />
-        </div>
-      )}
 
       {/* Footer */}
       {!isCollapsed && (

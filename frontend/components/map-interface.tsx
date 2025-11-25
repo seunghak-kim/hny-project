@@ -10,7 +10,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Search, Train, School, ShoppingBasket, X, MapPin, Building2, Home, ChevronLeft } from "lucide-react"
 import { Slider } from "@/components/ui/slider"
 import { getAllDistrictNames } from "@/lib/district-coordinates"
-import { FloatingChatButton } from "@/components/floating-chat-button"
 import { useMap } from "./map-interface/use-map"
 import { useProperties } from "./map-interface/use-properties"
 import { formatPriceInEok } from "./map-interface/price-utils"
@@ -72,7 +71,13 @@ export function MapInterface() {
     mapRef,
     properties,
     transactionFilter,
-    onPropertySelect: handlePropertyClick
+    onPropertySelect: (property) => {
+      handlePropertyClick(property)
+      // 매물 선택 시 사이드바 자동으로 열기
+      if (!sidebarOpen) {
+        setSidebarOpen(true)
+      }
+    }
   })
 
   // Update properties hook with map instance
@@ -724,8 +729,8 @@ export function MapInterface() {
               </div>
             </div>
 
-            {/* Map Control Buttons */}
-            <div className="absolute top-4 right-4 z-10 flex flex-col gap-2">
+            {/* Map Control Buttons - 우측 하단으로 이동 */}
+            <div className="absolute bottom-4 right-4 z-10 flex flex-col gap-2">
               <Button
                 variant="outline"
                 size="sm"
@@ -765,7 +770,6 @@ export function MapInterface() {
           </div>
         </div>
       </div>
-      <FloatingChatButton />
     </>
   )
 }

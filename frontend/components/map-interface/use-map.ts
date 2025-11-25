@@ -23,6 +23,7 @@ export interface UseMapReturn {
   map: any
   currentZoom: number
   loading: boolean
+  error: string | null
   clusters: any[]
 }
 
@@ -37,6 +38,7 @@ export function useMap(props: UseMapProps): UseMapReturn {
   const polygonsRef = useRef<any[]>([])
   const [currentZoom, setCurrentZoom] = useState(7)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   // Setup map boundaries with service area polygons
   const setupMapBoundaries = useCallback((kakaoMap: any) => {
@@ -196,6 +198,8 @@ export function useMap(props: UseMapProps): UseMapReturn {
 
     script.onerror = () => {
       console.error('Failed to load Kakao Maps SDK')
+      setError('Kakao Maps SDK 로드에 실패했습니다.')
+      setLoading(false)
     }
 
     document.head.appendChild(script)
@@ -226,6 +230,7 @@ export function useMap(props: UseMapProps): UseMapReturn {
         })
       } catch (error) {
         console.error('Error initializing map:', error)
+        setError('지도를 불러오는데 실패했습니다.')
         setLoading(false)
       }
     }
@@ -391,6 +396,7 @@ export function useMap(props: UseMapProps): UseMapReturn {
     map,
     currentZoom,
     loading,
+    error,
     clusters
   }
 }

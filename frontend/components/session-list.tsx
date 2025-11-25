@@ -83,8 +83,8 @@ export function SessionList({
               className={`
                 group relative px-3 py-2.5 rounded-lg cursor-pointer transition-all
                 ${isActive
-                  ? 'bg-sidebar-accent text-sidebar-accent-foreground border border-sidebar-border'
-                  : 'hover:bg-sidebar-accent/50'
+                  ? 'bg-primary/10 text-sidebar-accent-foreground border border-primary/20'
+                  : 'hover:bg-primary/5'
                 }
               `}
               onClick={() => onSessionClick(session.id)}

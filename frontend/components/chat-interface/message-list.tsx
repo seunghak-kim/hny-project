@@ -22,13 +22,14 @@ interface MessageListProps {
  */
 export function MessageList({ messages, threeLayerProgress, animatedSupervisorProgress }: MessageListProps) {
   const scrollAreaRef = useRef<HTMLDivElement>(null)
+  const bottomRef = useRef<HTMLDivElement>(null)
 
   // 스크롤 자동 이동
   useEffect(() => {
-    if (scrollAreaRef.current) {
-      scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight
+    if (bottomRef.current) {
+      bottomRef.current.scrollIntoView({ behavior: "smooth" })
     }
-  }, [messages])
+  }, [messages, threeLayerProgress])
 
   return (
     <div ref={scrollAreaRef} className="flex-1 overflow-y-auto px-4 py-2">
@@ -116,6 +117,7 @@ export function MessageList({ messages, threeLayerProgress, animatedSupervisorPr
             )}
           </div>
         ))}
+        <div ref={bottomRef} />
       </div>
     </div>
   )
