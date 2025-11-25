@@ -98,6 +98,13 @@ class ConnectionManager:
 
         if websocket:
             try:
+                # WebSocket 상태 확인 - 닫힌 연결이면 제거하고 큐잉
+                if websocket.client_state.name in ["DISCONNECTED", "CLOSED"]:
+                    logger.warning(f"WebSocket for {session_id} is closed, removing from active connections")
+                    self.disconnect(session_id)
+                    await self._queue_message(session_id, message)
+                    return False
+
                 # datetime 객체를 ISO 형식 문자열로 자동 변환
                 serialized_message = self._serialize_datetimes(message)
                 await websocket.send_json(serialized_message)
@@ -105,6 +112,8 @@ class ConnectionManager:
                 return True
             except Exception as e:
                 logger.error(f"Failed to send message to {session_id}: {e}")
+                # 연결 끊김으로 판단, active_connections에서 제거
+                self.disconnect(session_id)
                 await self._queue_message(session_id, message)
                 return False
         else:
