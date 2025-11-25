@@ -1,7 +1,7 @@
 from pydantic import BaseModel, EmailStr, Field, field_validator
 from typing import Optional
 from datetime import datetime
-from app.models.users import UserType, Gender, SocialProvider
+from backend.app.models.auth.users import UserType, Gender, SocialProvider
 
 
 # ===== User Schemas =====

@@ -16,7 +16,7 @@ from app.db.postgre_db import Base, engine, SessionLocal
 from app.models.region import Region  # noqa: F401
 from app.models.building import Building  # noqa: F401
 from app.models.infrastructure import Infrastructure  # noqa: F401
-from app.models.users import User, UserFavorite, LocalAuth, UserProfile, SocialAuth, UserType
+from app.models.auth.users import User, UserFavorite, LocalAuth, UserProfile, SocialAuth, UserType
 from app.models.chat import ChatSession, ChatMessage
 from app.models.trust import TrustScore
 
@@ -27,6 +27,31 @@ from app.models.transaction.rent_transaction import RentTransaction  # noqa: F40
 from app.models.transaction.apartment import ApartmentSaleTransaction  # noqa: F401
 from app.models.transaction.villa import VillaSaleTransaction  # noqa: F401
 from app.models.transaction.house import HouseSaleTransaction  # noqa: F401
+
+# Policy models (import to register with SQLAlchemy)
+from app.models.policy.housing_policy import (  # noqa: F401
+    PolicyCategory,
+    HousingPolicy,
+    PolicyTargetType,
+    PolicyEligibilityRanks,
+    PolicyFinancialSupport,
+    PolicyContact,
+    PolicyLink
+)
+
+# Checkpoint models (import to register with SQLAlchemy)
+from app.models.checkpoint.checkpoint import (  # noqa: F401
+    CheckPoint,
+    CheckPointBlob,
+    CheckPointWrite
+)
+
+# Legal models (import to register with SQLAlchemy)
+from app.models.legal.law import (  # noqa: F401
+    Law,
+    Article,
+    LegalReference
+)
 
 def kill_all_connections():
     """모든 DB 연결 종료"""
