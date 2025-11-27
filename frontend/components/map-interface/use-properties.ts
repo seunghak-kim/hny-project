@@ -321,7 +321,7 @@ export function useProperties(props: UsePropertiesProps): UsePropertiesReturn {
     // Price range filter - optimized to respect transaction filter
     const isSaleFilterActive = salePriceRange[1] < 50 || salePriceRange[0] > 0
     const isJeonseFilterActive = jeonsePriceRange[1] < 20 || jeonsePriceRange[0] > 0
-    const isMonthlyFilterActive = monthlyPriceRange[1] < 10 || monthlyPriceRange[0] > 0
+    const isMonthlyFilterActive = monthlyPriceRange[1] < 10000 || monthlyPriceRange[0] > 0 // 만원 단위
 
     if (isSaleFilterActive || isJeonseFilterActive || isMonthlyFilterActive) {
       filtered = filtered.filter((property) => {
@@ -336,7 +336,8 @@ export function useProperties(props: UsePropertiesProps): UsePropertiesReturn {
           return isPriceInRange(property.jeonse_max_price, jeonsePriceRange[0], jeonsePriceRange[1])
         }
         if (transactionFilter === "월세") {
-          return isPriceInRange(property.rent_max_price, monthlyPriceRange[0], monthlyPriceRange[1])
+          // monthlyPriceRange는 만원 단위이므로 /10000 해서 억 단위로 변환
+          return isPriceInRange(property.rent_max_price, monthlyPriceRange[0] / 10000, monthlyPriceRange[1] / 10000)
         }
 
         // If "전체", check if ANY of the ACTIVE ranges match
@@ -359,7 +360,8 @@ export function useProperties(props: UsePropertiesProps): UsePropertiesReturn {
 
         if (isMonthlyFilterActive) {
           hasActiveFilter = true
-          if (isPriceInRange(property.rent_max_price, monthlyPriceRange[0], monthlyPriceRange[1])) {
+          // monthlyPriceRange는 만원 단위이므로 /10000 해서 억 단위로 변환
+          if (isPriceInRange(property.rent_max_price, monthlyPriceRange[0] / 10000, monthlyPriceRange[1] / 10000)) {
             matches = true
           }
         }
@@ -489,7 +491,7 @@ export function useProperties(props: UsePropertiesProps): UsePropertiesReturn {
     // Price range filter - optimized to respect transaction filter
     const isSaleFilterActive = salePriceRange[1] < 50 || salePriceRange[0] > 0
     const isJeonseFilterActive = jeonsePriceRange[1] < 20 || jeonsePriceRange[0] > 0
-    const isMonthlyFilterActive = monthlyPriceRange[1] < 10 || monthlyPriceRange[0] > 0
+    const isMonthlyFilterActive = monthlyPriceRange[1] < 10000 || monthlyPriceRange[0] > 0 // 만원 단위
 
     if (isSaleFilterActive || isJeonseFilterActive || isMonthlyFilterActive) {
       filtered = filtered.filter((property) => {
@@ -501,7 +503,8 @@ export function useProperties(props: UsePropertiesProps): UsePropertiesReturn {
           return isPriceInRange(property.jeonse_max_price, jeonsePriceRange[0], jeonsePriceRange[1])
         }
         if (transactionFilter === "월세") {
-          return isPriceInRange(property.rent_max_price, monthlyPriceRange[0], monthlyPriceRange[1])
+          // monthlyPriceRange는 만원 단위이므로 /10000 해서 억 단위로 변환
+          return isPriceInRange(property.rent_max_price, monthlyPriceRange[0] / 10000, monthlyPriceRange[1] / 10000)
         }
 
         // If "전체" (All), check if ANY of the ACTIVE ranges match
@@ -530,7 +533,8 @@ export function useProperties(props: UsePropertiesProps): UsePropertiesReturn {
 
         if (isMonthlyFilterActive) {
           hasActiveFilter = true
-          if (isPriceInRange(property.rent_max_price, monthlyPriceRange[0], monthlyPriceRange[1])) {
+          // monthlyPriceRange는 만원 단위이므로 /10000 해서 억 단위로 변환
+          if (isPriceInRange(property.rent_max_price, monthlyPriceRange[0] / 10000, monthlyPriceRange[1] / 10000)) {
             matches = true
           }
         }

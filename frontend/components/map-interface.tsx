@@ -12,7 +12,7 @@ import { Slider } from "@/components/ui/slider"
 import { getAllDistrictNames } from "@/lib/district-coordinates"
 import { useMap } from "./map-interface/use-map"
 import { useProperties } from "./map-interface/use-properties"
-import { formatPriceInEok } from "./map-interface/price-utils"
+import { formatPriceInEok, parsePrice } from "./map-interface/price-utils"
 import { ScrollArea } from "@/components/ui/scroll-area"
 
 export function MapInterface() {
@@ -28,10 +28,10 @@ export function MapInterface() {
   const [priceFilterOpen, setPriceFilterOpen] = useState(false)
   const [areaFilterOpen, setAreaFilterOpen] = useState(false)
 
-  // Price filter ranges (in 억원)
+  // Price filter ranges (in 억원, except monthly which is in 만원)
   const [salePriceRange, setSalePriceRange] = useState<[number, number]>([0, 50])
   const [jeonsePriceRange, setJeonsePriceRange] = useState<[number, number]>([0, 20])
-  const [monthlyPriceRange, setMonthlyPriceRange] = useState<[number, number]>([0, 10])
+  const [monthlyPriceRange, setMonthlyPriceRange] = useState<[number, number]>([0, 10000]) // 만원 단위
 
   // Area filter (in 평)
   const [areaRange, setAreaRange] = useState<[number, number]>([0, 70])
@@ -294,8 +294,8 @@ export function MapInterface() {
                       </div>
                       <div className="bg-white p-3 rounded-xl border border-slate-100 shadow-sm flex flex-col items-center justify-center text-center">
                         <span className="text-xs text-slate-500 font-medium mb-1">월세</span>
-                        <span className={`font-bold ${selectedProperty.rent_max_price_eok ? 'text-slate-900' : 'text-slate-300'} `}>
-                          {selectedProperty.rent_max_price_eok || '-'}
+                        <span className={`font-bold ${selectedProperty.rent_max_price ? 'text-slate-900' : 'text-slate-300'} `}>
+                          {selectedProperty.rent_max_price ? formatPriceInEok(parsePrice(selectedProperty.rent_max_price)) : '-'}
                         </span>
                       </div>
                     </div>
@@ -524,10 +524,10 @@ export function MapInterface() {
                             <span className="text-slate-900 font-bold">{property.jeonse_max_price_eok}</span>
                           </div>
                         )}
-                        {property.rent_max_price_eok && (
+                        {property.rent_max_price && (
                           <div className="flex items-center gap-1.5 bg-slate-50 px-2 py-1 rounded-md border border-slate-100">
                             <span className="text-slate-500 font-medium">월세</span>
-                            <span className="text-slate-900 font-bold">{property.rent_max_price_eok}</span>
+                            <span className="text-slate-900 font-bold">{formatPriceInEok(parsePrice(property.rent_max_price))}</span>
                           </div>
                         )}
                       </div>
@@ -654,14 +654,14 @@ export function MapInterface() {
                         <div className="flex items-center justify-between mb-4">
                           <span className="text-sm font-medium">월세 (보증금)</span>
                           <span className="text-sm text-muted-foreground">
-                            {monthlyPriceRange[0]}억 ~ {monthlyPriceRange[1] >= 10 ? '10억 이상' : `${monthlyPriceRange[1]} 억`}
+                            {monthlyPriceRange[0] === 0 ? '0원' : `${monthlyPriceRange[0]}만원`} ~ {monthlyPriceRange[1] >= 10000 ? '1억 이상' : `${monthlyPriceRange[1]}만원`}
                           </span>
                         </div>
                         <Slider
                           value={monthlyPriceRange}
                           onValueChange={(value) => setMonthlyPriceRange(value as [number, number])}
-                          max={10}
-                          step={0.5}
+                          max={10000}
+                          step={500}
                           className="mb-2"
                         />
                       </div>
@@ -670,7 +670,7 @@ export function MapInterface() {
                         <Button variant="outline" size="sm" onClick={() => {
                           setSalePriceRange([0, 50])
                           setJeonsePriceRange([0, 20])
-                          setMonthlyPriceRange([0, 10])
+                          setMonthlyPriceRange([0, 10000])
                         }}>
                           초기화
                         </Button>

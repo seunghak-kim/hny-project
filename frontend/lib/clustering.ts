@@ -333,9 +333,9 @@ function getPropertyPrice(property: any, transactionFilter?: string): number | u
         return parseFloat(numStr)
       }
     } else if (transactionFilter === "월세") {
-      const priceStr = property.rent_max_price_eok
+      const priceStr = property.rent_max_price
       if (priceStr && priceStr !== '') {
-        const numStr = priceStr.replace('억', '').trim()
+        const numStr = priceStr.replace('만원', '').trim()
         const eokValue = parseFloat(numStr)
         // 억원 단위를 만원 단위로 변환 (월세는 만원 단위로 처리)
         return eokValue * 10000
